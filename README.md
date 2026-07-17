@@ -124,6 +124,11 @@ A real-time query-filtered interface mapped out with clean responsive constraint
 <img width="1912" height="863" alt="Transaction History 2" src="https://github.com/user-attachments/assets/c1704740-fa60-474b-9c6a-6de623887d84" />
 <img width="881" height="312" alt="transaction_history_process" src="https://github.com/user-attachments/assets/6766b6f6-642f-40c4-86b5-dee11bb8c7ff" />
 
+8. Automated CI/CD Pipeline & Smart Contract Unit Tests (Level 3 Core Requirement)
+Proof of fully functional GitHub Actions automated workflow execution. The pipeline compiles the repository, triggers isolated Soroban unit testing routines, checks cross-device frontend builds, and finishes with a 100% success rate:
+<img width="1875" height="602" alt="workflow" src="https://github.com/user-attachments/assets/b46407cb-0fe0-41c4-8698-9702a263ac40" />
+
+
 
 --
 
