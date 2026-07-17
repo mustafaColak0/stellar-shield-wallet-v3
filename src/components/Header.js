@@ -2751,7 +2751,6 @@ function Header() {
             )}
           </div>
         )}
-        s
       </div>
     </div>
   );
