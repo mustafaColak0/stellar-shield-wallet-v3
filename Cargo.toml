@@ -1,8 +1,11 @@
-
-
 [workspace.dependencies]
-soroban-sdk = "20.3.2"
+soroban-sdk = "27.0.0"
 
+[workspace]
+resolver = "2"
+members = [
+    "anonymousFeedbackSmartContract/contracts/hello-world"
+]
 
 [profile.release]
 opt-level = "z"
@@ -13,8 +16,3 @@ debug-assertions = false
 panic = "abort"
 codegen-units = 1
 lto = true
-
-# For more information about this profile see https://soroban.stellar.org/docs/basic-tutorials/logging#cargotoml-profile
-[profile.release-with-logs]
-inherits = "release"
-debug-assertions = true

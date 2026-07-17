@@ -1,5 +1,12 @@
 [package]
 name = "hello-world"
+<<<<<<< HEAD
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+=======
 version = "0.0.0"
 edition = "2021"
 publish = false
@@ -7,9 +14,14 @@ publish = false
 [lib]
 crate-type = ["lib", "cdylib"]
 doctest = false
+>>>>>>> e2ccd177025aaf389b08a9f684661b28a85d6ff4
 
 [dependencies]
 soroban-sdk = { workspace = true }
 
 [dev-dependencies]
+<<<<<<< HEAD
 soroban-sdk = { workspace = true, features = ["testutils"] }
+=======
+soroban-sdk = { workspace = true, features = ["testutils"] }
+>>>>>>> e2ccd177025aaf389b08a9f684661b28a85d6ff4
