@@ -52,7 +52,7 @@ const sendXlmTransaction = async (destination, amount) => {
 
     const transaction = new TransactionBuilder(account, {
       fee: "10000", // 0.001 XLM fee
-      networkPassphrase: Networks.TESTNET,
+      networkPassphrase: StellarSdk.Networks.TESTNET,
     })
       .addOperation(
         Operation.payment({
