@@ -32,16 +32,27 @@ const getBalance = async () => {
   return xlm ? xlm.balance : "0";
 };
 
-const userSignTransaction = async (xdr, network, signWith) => {
-  return await signTransaction(xdr, {
-    network,
-    accountToSign: signWith,
-  });
+// ================= BURASI DÜZELTİLDİ =================
+// Soroban.js ile tam uyumlu hale getirildi. Parametre karmaşası ve network ismi çözüldü!
+const userSignTransaction = async (xdr, signWith) => {
+  try {
+    const signed = await signTransaction(xdr, {
+      network: "TESTNET",
+      accountToSign: signWith,
+    });
+    // Eğer Freighter obje döndürürse signedTxXdr'ı al, string döndürürse direkt kendisini al
+    return typeof signed === "object" && signed.signedTxXdr
+      ? signed.signedTxXdr
+      : signed;
+  } catch (error) {
+    console.error("Freighter signing error:", error);
+    throw error;
+  }
 };
+// =====================================================
 
 const sendXlmTransaction = async (destination, amount) => {
   try {
-    // Guaranteed address retrieval method
     const addressData = await getPublicKey();
     const address =
       typeof addressData === "object" ? addressData.address : addressData;
@@ -51,8 +62,8 @@ const sendXlmTransaction = async (destination, amount) => {
     const account = await server.loadAccount(address);
 
     const transaction = new TransactionBuilder(account, {
-      fee: "10000", // 0.001 XLM fee
-      networkPassphrase: StellarSdk.Networks.TESTNET,
+      fee: "10000",
+      networkPassphrase: Networks.TESTNET,
     })
       .addOperation(
         Operation.payment({
@@ -70,7 +81,6 @@ const sendXlmTransaction = async (destination, amount) => {
       accountToSign: address,
     });
 
-    // Extract the xdr field if signedXdr is an object
     const finalXdr =
       typeof signedXdr === "object" ? signedXdr.signedTxXdr : signedXdr;
 
@@ -88,17 +98,13 @@ const sendXlmTransaction = async (destination, amount) => {
   }
 };
 
-// Function fetching real-time network fee stats
 const fetchNetworkFee = async () => {
   try {
     const feeStats = await server.feeStats();
-    // feeStats.fee_charged.mode returns the most common current network fee in stroops
-    // 1 XLM = 10,000,000 Stroops. Converting to XLM.
     const baseFeeInXlm = (
       parseInt(feeStats.fee_charged.mode) / 10000000
     ).toFixed(5);
 
-    // Estimate network congestion based on transaction throughput
     const ledgerCapacity = parseFloat(feeStats.ledger_capacity_usage) || 0;
     let congestion = "Low (⚡ Normal)";
     if (ledgerCapacity > 0.7) congestion = "High (🔥 Intense)";
@@ -110,6 +116,7 @@ const fetchNetworkFee = async () => {
     return { success: false, baseFee: "0.00010", status: "Unknown" };
   }
 };
+
 export {
   checkConnection,
   retrievePublicKey,

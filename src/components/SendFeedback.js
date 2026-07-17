@@ -4,11 +4,28 @@ import { sendFeedback } from "./Soroban";
 
 export const SendFeedback = () => {
   const [fbData, _setFbData] = useState("");
-  const [fbId, _setFbId] = useState();
+  const [fbId, _setFbId] = useState("");
   const pubKey = useContext(pubKeyData);
 
   const handleCreateFeedback = async () => {
-    await sendFeedback(pubKey, fbData).then((values) => _setFbId(values));
+    try {
+      const res = await sendFeedback(pubKey, fbData);
+
+      if (res && res.hash) {
+        _setFbId(res.hash);
+      } else {
+        _setFbId("Başarıyla Gönderildi!");
+      }
+
+      // KANKA BÜYÜK DOKUNUŞ: 4 saniye sonra ekranı ve inputu sıfırla
+      setTimeout(() => {
+        _setFbId("");
+        _setFbData("");
+      }, 4000);
+    } catch (error) {
+      console.error("Arayüz hatası:", error);
+      _setFbId("İşlem başarısız oldu.");
+    }
   };
 
   return (
@@ -17,8 +34,9 @@ export const SendFeedback = () => {
         Create Feedback
         <input
           type="text"
-          className="sm:w-full p-2 rounded-md"
+          className="sm:w-full p-2 rounded-md text-black"
           placeholder="Enter your Feedback"
+          value={fbData} // Otomatik sıfırlanabilmesi için value bağladık
           onChange={(e) => _setFbData(e.target.value)}
         />
         <button
@@ -28,10 +46,12 @@ export const SendFeedback = () => {
           Create
         </button>
       </div>
-      <div>
-        <div className="text-2xl">Feedback Id</div>
-        <div className="text-2xl bg-cyan-300 p-4 border-4 border-black">
-          {fbId}
+      <div className="mt-4 w-full text-center">
+        <div className="text-2xl font-bold text-slate-800">
+          Tx Hash / Status
+        </div>
+        <div className="text-lg bg-cyan-300 p-4 border-4 border-black rounded-md break-all text-black font-mono">
+          {fbId || "Henüz işlem yapılmadı"}
         </div>
       </div>
     </div>

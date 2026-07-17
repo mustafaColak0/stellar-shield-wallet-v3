@@ -11,6 +11,7 @@ import {
   nativeToScVal,
   rpc,
 } from "@stellar/stellar-sdk";
+import { Dashboard, BookOpen, Shield, MessageSquare } from "lucide-react";
 import { signTransaction, isConnected } from "@stellar/freighter-api";
 import {
   checkConnection,
@@ -131,7 +132,7 @@ export const handleTrueSorobanDeposit = async (
 
     // 4. Target Soroban Smart Contract ID
     const contractId =
-      "CBUGTNGT3K7JTQNVGZNN2FSMCIWTP2NWSBMKRXZDC5IJQD2LTEUF7Z5F";
+      "CAXUSWZ5LFT4FITJIMYAX4FVL57ZM2LVRDW233PF7YXLJYIQCVZLV43H";
 
     // 5. Construct the initial transaction structure
     const tx = new TransactionBuilder(account, { fee: "10000" })
@@ -190,15 +191,22 @@ export const handleTrueSorobanDeposit = async (
   }
 };
 
-function Header() {
+function Header({
+  activeTab,
+  setActiveTab,
+  pubKey,
+  setPubKey,
+  connected,
+  darkMode,
+  setDarkMode,
+  SendFeedback,
+  FetchFeedback,
+  setConnected,
+}) {
   // ---------------- STATE MANAGEMENT ----------------
-  const [connected, setConnected] = useState(false);
   const [connectedWalletType, setConnectedWalletType] = useState("");
-  const [publicKey, setPublicKey] = useState("");
   const [balance, setBalance] = useState("0");
   const [loading, setLoading] = useState(false);
-  const [darkMode, setDarkMode] = useState(true);
-  const [activeTab, setActiveTab] = useState("dashboard");
   const [showAddressBook, setShowAddressBook] = useState(true);
   const [isSecurityChecked, setIsSecurityChecked] = useState(false);
   const [showSecurityCheck, setShowSecurityCheck] = useState(false);
@@ -247,7 +255,7 @@ function Header() {
   const [juryTxStatus, setJuryTxStatus] = useState("IDLE");
   const [jurySorobanError, setJurySorobanError] = useState("");
   const [sorobanContractId, setSorobanContractId] = useState(
-    "CBUGTNGT3K7JTQNVGZNN2FSMCIWTP2NWSBMKRXZDC5IJQD2LTEUF7Z5F",
+    "CAXUSWZ5LFT4FITJIMYAX4FVL57ZM2LVRDW233PF7YXLJYIQCVZLV43H",
   );
   const [totalRaised, setTotalRaised] = useState(1240);
   const [fundAmount, setFundAmount] = useState("");
@@ -456,7 +464,7 @@ function Header() {
         if (hasAccess) {
           const key = await retrievePublicKey();
           if (key) {
-            setPublicKey(key);
+            setPubKey(key);
             setConnected(true);
             setConnectedWalletType("Freighter");
             const bal = await getBalance();
@@ -575,7 +583,7 @@ function Header() {
     setAmount(fundAmount);
     // Display verified on-chain contract address to ensure end-to-end auditability
     const myRealContractId =
-      "CBUGTNGT3K7JTQNVGZNN2FSMCIWTP2NWSBMKRXZDC5IJQD2LTEUF7Z5F";
+      "CAXUSWZ5LFT4FITJIMYAX4FVL57ZM2LVRDW233PF7YXLJYIQCVZLV43H";
 
     setAmount(fundAmount);
     setDestination(myRealContractId);
@@ -604,7 +612,7 @@ function Header() {
     setTimeout(() => {
       const addedAmount = parseFloat(fundAmount);
       const myRealContractId =
-        "CBUGTNGT3K7JTQNVGZNN2FSMCIWTP2NWSBMKRXZDC5IJQD2LTEUF7Z5F";
+        "CAXUSWZ5LFT4FITJIMYAX4FVL57ZM2LVRDW233PF7YXLJYIQCVZLV43H";
 
       const newHistoryTx = {
         id: Date.now(),
@@ -632,9 +640,7 @@ function Header() {
       const newEvent = {
         id: Date.now(),
         type: "DEPOSIT",
-        user: publicKey
-          ? `${publicKey.slice(0, 5)}...${publicKey.slice(-4)}`
-          : "You",
+        user: pubKey ? `${pubKey.slice(0, 5)}...${pubKey.slice(-4)}` : "You",
         amount: `${addedAmount} XLM`,
         time: "Şimdi",
       };
@@ -692,7 +698,7 @@ function Header() {
         if (hasAccess) {
           const key = await retrievePublicKey();
           if (key) {
-            setPublicKey(key);
+            setPubKey(key);
             setConnected(true);
             setConnectedWalletType("Freighter");
             const bal = await getBalance();
@@ -736,14 +742,14 @@ function Header() {
 
   const disconnectWallet = () => {
     setConnected(false);
-    setPublicKey("");
+    setPubKey("");
     setBalance("0");
     setBalanceData([]);
     setConnectedWalletType("");
     setActiveTab("dashboard");
   };
 
-  const copyToClipboard = (textToCopy = publicKey) => {
+  const copyToClipboard = (textToCopy = pubKey) => {
     navigator.clipboard.writeText(textToCopy);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -1033,12 +1039,19 @@ function Header() {
               { id: "contacts", icon: BookUser, label: "Address Book" },
               { id: "receive", icon: QrCode, label: "QR Code (Receive)" },
               { id: "security", icon: ShieldAlert, label: "Security Audit" },
+              { id: "feedback", icon: MessageSquare, label: "Feedback" },
             ].map((item) => (
               <button
                 key={item.id}
                 onClick={() => connected && setActiveTab(item.id)}
                 disabled={!connected}
-                className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-sm transition-all ${!connected ? "opacity-40 cursor-not-allowed" : activeTab === item.id ? "bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/10" : "text-slate-400 hover:bg-slate-800/50"}`}
+                className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-sm transition-all ${
+                  !connected
+                    ? "opacity-40 cursor-not-allowed"
+                    : activeTab === item.id
+                      ? "bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/10"
+                      : "text-slate-400 hover:bg-slate-800/50"
+                }`}
               >
                 <item.icon size={20} /> {item.label}
               </button>
@@ -1146,7 +1159,7 @@ function Header() {
                       connectedWalletType === "xBull"
                         ? "GBXBULL1234567890XBULLTESTNETSECRETKEY"
                         : "GBALBEDO0987654321ALBEDOTESTNETSECRETKEY";
-                    setPublicKey(mockKey);
+                    setPubKey(mockKey);
                     setConnected(true);
                     setBalance("10000.0000");
                     const now = new Date().toLocaleTimeString("tr-TR", {
@@ -1988,7 +2001,7 @@ function Header() {
                             if (
                               destination === sorobanContractId ||
                               destination ===
-                                "CBUGTNGT3K7JTQNVGZNN2FSMCIWTP2NWSBMKRXZDC5IJQD2LTEUF7Z5F"
+                                "CAXUSWZ5LFT4FITJIMYAX4FVL57ZM2LVRDW233PF7YXLJYIQCVZLV43H"
                             ) {
                               confirmSorobanDeposit();
                             } else {
@@ -2263,18 +2276,18 @@ function Header() {
                 {/* QR Code Frame */}
                 <div className="text-center">
                   <div className="bg-white p-4 rounded-2xl inline-block shadow-xl border border-slate-200">
-                    {connected && publicKey ? (
+                    {connected && pubKey ? (
                       <QRCodeSVG
                         value={
                           qrAmount || qrMemo
-                            ? `web+stellar:pay?destination=${publicKey}${
+                            ? `web+stellar:pay?destination=${pubKey}${
                                 qrAmount ? `&amount=${qrAmount}` : ""
                               }${
                                 qrMemo
                                   ? `&memo=${encodeURIComponent(qrMemo)}&memo_type=MEMO_TEXT`
                                   : ""
                               }`
-                            : publicKey
+                            : pubKey
                         }
                         size={220}
                         level="H"
@@ -2295,12 +2308,12 @@ function Header() {
                   </label>
                   <div className="w-full bg-slate-950 border border-slate-900 rounded-xl p-3 flex items-center justify-between font-mono text-xs text-cyan-400">
                     <span className="truncate mr-2">
-                      {publicKey || "GBUJJYN..."}
+                      {pubKey || "GBUJJYN..."}
                     </span>
                     <button
                       type="button"
                       onClick={() =>
-                        connected && publicKey && copyToClipboard(publicKey)
+                        connected && pubKey && copyToClipboard(pubKey)
                       }
                       className="text-slate-500 hover:text-cyan-400 transition-colors shrink-0"
                     >
@@ -2373,7 +2386,6 @@ function Header() {
                 </div>
               </div>
             )}
-
             {/* SECURITY AUDIT & JURY VERIFICATION MATRIX */}
             {activeTab === "security" && (
               <div className="w-full max-w-5xl mx-auto space-y-6 text-slate-300 font-sans p-6 pb-32 rounded-2xl bg-[#030712] border border-slate-900 shadow-2xl animate-in fade-in zoom-in-95 duration-300">
@@ -2644,7 +2656,7 @@ function Header() {
                             const depositAmount = Number(fundAmount) || 10;
 
                             await handleTrueSorobanDeposit(
-                              publicKey,
+                              pubKey,
                               depositAmount,
                               setRealTxHash,
                               setSorobanError,
@@ -2689,7 +2701,6 @@ function Header() {
                       </div>
                     )}
                   </div>
-
                   {/* Right Card: Live Contract Event Stream */}
                   <div className="p-5 rounded-xl bg-[#090d16] border border-slate-900 flex flex-col h-[250px]">
                     <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3">
@@ -2746,6 +2757,34 @@ function Header() {
                       )}
                     </div>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* FEEDBACK TAB MATRIX */}
+            {activeTab === "feedback" && (
+              <div className="w-full max-w-5xl mx-auto space-y-6 text-slate-300 font-sans p-6 pb-32 rounded-2xl bg-[#030712] border border-slate-900 shadow-2xl animate-in fade-in zoom-in-95 duration-300">
+                {/* Üst Başlık */}
+                <div className="border-b border-slate-900 pb-4">
+                  <h2 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-400 tracking-wide">
+                    💬 Soroban Cross-Contract Feedback Matrix
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Level 3 Architecture: Interact with anonymous feedback
+                    storage and cross-contract state logs.
+                  </p>
+                </div>
+
+                {/* SENİN BİLEŞENLERİNİN ENTEGRE EDİLDİĞİ YER */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Geri Bildirim Gönderme Bileşeni */}
+                  <SendFeedback
+                    pubKey={pubKey}
+                    // Eğer gerekiyorsa diğer propları da buraya yazabilirsin, örn: fbData={fbData}
+                  />
+
+                  {/* Geri Bildirim Çekme Bileşeni */}
+                  <FetchFeedback />
                 </div>
               </div>
             )}
