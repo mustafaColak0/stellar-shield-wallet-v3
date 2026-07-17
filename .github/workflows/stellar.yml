@@ -23,17 +23,5 @@ jobs:
           echo ""
           echo "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s"
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "18"
-          cache: "npm"
-          cache-dependency-path: "stellar-connect-wallet/package.json"
-
-      - name: Install Frontend Dependencies
-        run: |
-          cd stellar-connect-wallet
-          npm ci || npm install
-
       - name: CI Pipeline Success Check
-        run: echo "Stellar Shield dApp Frontend & Contract CI workflow completed successfully!"
+        run: echo "Stellar Shield Contract CI workflow completed successfully!"
