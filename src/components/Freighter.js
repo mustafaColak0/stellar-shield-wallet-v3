@@ -32,15 +32,13 @@ const getBalance = async () => {
   return xlm ? xlm.balance : "0";
 };
 
-// ================= BURASI DÜZELTİLDİ =================
-// Soroban.js ile tam uyumlu hale getirildi. Parametre karmaşası ve network ismi çözüldü!
 const userSignTransaction = async (xdr, signWith) => {
   try {
     const signed = await signTransaction(xdr, {
       network: "TESTNET",
       accountToSign: signWith,
     });
-    // Eğer Freighter obje döndürürse signedTxXdr'ı al, string döndürürse direkt kendisini al
+    // If the Freighter returns an object, take the signedTxXdr; if it returns a string, take the string itself
     return typeof signed === "object" && signed.signedTxXdr
       ? signed.signedTxXdr
       : signed;
