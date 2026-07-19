@@ -1189,7 +1189,9 @@ function Header({
             )}
           </div>
         ) : (
-          <div className="w-full space-y-6">
+          <div
+            className={`w-full space-y-6 p-4 rounded-3xl transition-colors duration-500 ${darkMode ? "bg-transparent" : "bg-slate-100 shadow-inner"}`}
+          >
             {activeTab === "dashboard" && (
               <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
                 {/*  LIVE CYBER TIP FEED */}
@@ -1214,24 +1216,27 @@ function Header({
                     SHIELD_CORE // LIVE_FEED
                   </div>
                 </div>
-
                 {/* Top Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* LEFT CARD: Balance + Crowdfund + Simulation Button */}
-                  <div className="p-6 rounded-2xl bg-[#030712] border border-slate-900 shadow-2xl flex flex-col justify-between space-y-6">
-                    <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-2">
-                        Total Wallet Assets
-                      </span>
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-3xl font-black tracking-tight text-slate-100 font-mono">
-                          {typeof balance !== "undefined"
-                            ? balance
-                            : "9897.1741350"}
+                  {/* LEFT CARD: Balance + Crowdfund + Simulation Button (NEON EFEKTLİ) */}
+                  <div className="relative group p-6 rounded-2xl bg-[#030712] border border-slate-900 hover:border-cyan-500/40 transition-all duration-500 shadow-2xl flex flex-col justify-between">
+                    <div className="absolute inset-0 bg-cyan-500/10 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+
+                    <div className="relative z-10 space-y-6">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 group-hover:text-cyan-400/70 transition-colors duration-300 block mb-2">
+                          Total Wallet Assets
                         </span>
-                        <span className="text-sm font-bold text-cyan-400 font-mono">
-                          XLM
-                        </span>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-3xl font-black tracking-tight text-slate-100 group-hover:text-white transition-colors duration-300 font-mono drop-shadow-md">
+                            {typeof balance !== "undefined"
+                              ? balance
+                              : "9897.1741350"}
+                          </span>
+                          <span className="text-sm font-bold text-cyan-400 group-hover:text-cyan-300 group-hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.8)] transition-all duration-300 font-mono">
+                            XLM
+                          </span>
+                        </div>
                       </div>
                     </div>
 
@@ -1346,22 +1351,28 @@ function Header({
                     </div>
                   </div>
 
-                  {/* RIGHT CARD: Instant Network Transaction Fee */}
-                  <div className="p-6 rounded-2xl bg-[#030712] border border-slate-900 shadow-2xl flex flex-col justify-between min-h-[220px]">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
-                          Instant Network Transaction Fee (Base Fee)
+                  {/* RIGHT CARD: Instant Network Transaction Fee (NEON EFEKTLİ) */}
+                  <div className="relative group p-6 rounded-2xl bg-[#030712] border border-slate-900 hover:border-cyan-500/40 transition-all duration-500 shadow-2xl flex flex-col min-h-[220px]">
+                    <div className="absolute inset-0 bg-cyan-500/10 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+
+                    <div className="relative z-10 flex flex-col justify-between flex-1">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 group-hover:text-cyan-400/70 transition-colors duration-300 block mb-2">
+                            Instant Network Transaction Fee (Base Fee)
+                          </span>
+                        </div>
+
+                        {/* "Lİve" Statu Badge */}
+                        <span
+                          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-950 border border-slate-900 group-hover:border-slate-700 transition-colors duration-300 text-[10px] font-bold ${gasConfigs[gasMode].statusColor} tracking-wide uppercase shadow-inner`}
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${gasConfigs[gasMode].pingColor} ${gasMode === "HIGH" ? "" : "animate-pulse shadow-[0_0_8px_currentColor]"}`}
+                          ></span>
+                          {gasConfigs[gasMode].statusText}
                         </span>
                       </div>
-                      <span
-                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-950 border border-slate-900 text-[10px] font-bold ${gasConfigs[gasMode].statusColor} tracking-wide uppercase`}
-                      >
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${gasConfigs[gasMode].pingColor} ${gasMode === "HIGH" ? "" : "animate-pulse"}`}
-                        ></span>
-                        {gasConfigs[gasMode].statusText}
-                      </span>
                     </div>
 
                     <div className="flex items-baseline gap-2 my-2">
@@ -1519,23 +1530,44 @@ function Header({
                 </div>
               </div>
             )}
-
             {/* TRANSFER (MULTI-ASSET) CONTENT */}
             {activeTab === "transfer" && (
               <div
-                className={`p-6 md:p-8 rounded-2xl border animate-in fade-in zoom-in-95 duration-300 relative bg-[#030712] border-slate-900 shadow-2xl text-slate-300 font-sans`}
+                className={`relative group flex flex-col p-6 md:p-8 rounded-xl transition-all duration-500: shadow-2xl font-sans animate-in fade-in zoom-in-95 duration-300 h-full
+                  ${
+                    darkMode
+                      ? "bg-[#090d16] border border-emerald-900/30 hover:border-emerald-500/50 text-slate-300"
+                      : "bg-black border border-emerald-100 hover:border-emerald-400/60 text-slate-700"
+                  }`}
               >
-                {/* TITLE AREA */}
-                <div className="flex items-center gap-2 mb-6">
-                  <Send size={22} className="text-cyan-400" />
-                  <div>
-                    <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 tracking-wide">
-                      Stellar Multi-Asset Transfer Engine
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      Execute multi-asset operations on the Stellar Ledger with
-                      built-in Soroban compliance filters.
-                    </p>
+                <div
+                  className={`absolute inset-0 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none
+                    ${darkMode ? "bg-emerald-500/5" : "bg-emerald-500/10"}`}
+                ></div>
+
+                <div className="relative z-10">
+                  {/* TITLE AREA */}
+                  <div className="flex items-center gap-2 mb-6">
+                    <Send
+                      size={22}
+                      className={`transition-all duration-300
+  ${
+    darkMode
+      ? "text-cyan-400 group-hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]"
+      : "text-cyan-600 group-hover:drop-shadow-[0_0_6px_rgba(8,145,178,0.4)]"
+  }`}
+                    />
+                    <div>
+                      <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 tracking-wide">
+                        Stellar Multi-Asset Transfer Engine
+                      </h3>
+                      <p
+                        className={`text-xs mt-0.5 transition-colors duration-300 ${darkMode ? "text-slate-400" : "text-slate-500"}`}
+                      >
+                        Execute multi-asset operations on the Stellar Ledger
+                        with built-in Soroban compliance filters.
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -2039,22 +2071,47 @@ function Header({
             {/* HISTORY */}
             {activeTab === "history" && (
               <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
+                {/* TRANSACTION HISTORY MAIN PANEL */}
                 <div
-                  className={`p-8 rounded-2xl border border-slate-800 bg-[#030712] shadow-2xl text-slate-100 font-sans relative"}`}
+                  className={`relative group flex flex-col  p-8 rounded-xl transition-all duration-500 shadow-2xl font-sans
+                    ${
+                      darkMode
+                        ? "bg-[#090d16] border border-emerald-900/30 hover:border-emerald-500/50 text-slate-300"
+                        : "bg-black border border-emerald-100 hover:border-emerald-400/60 text-slate-700"
+                    }`}
                 >
-                  {/* Top Section: Header and Search Bar */}
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                    {/* Left Corner: Headline Only */}
-                    <h3 className="text-xl font-bold flex items-center gap-2">
-                      <History size={22} className="text-cyan-400" />
-                      Transaction History
-                    </h3>
+                  <div
+                    className={`absolute inset-0 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none
+                      ${darkMode ? "bg-emerald-500/5" : "bg-emerald-500/10"}`}
+                  ></div>
+
+                  <div className="relative z-10">
+                    {/* Top Section: Header and Search Bar */}
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                      {/* Left Corner: Headline Only */}
+                      <h3 className="text-xl font-bold flex items-center gap-2">
+                        <History
+                          size={22}
+                          className={`transition-all duration-300
+                            ${
+                              darkMode
+                                ? "text-cyan-400 group-hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]"
+                                : "text-cyan-600 group-hover:drop-shadow-[0_0_6px_rgba(8,145,178,0.4)]"
+                            }`}
+                        />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 tracking-wide">
+                          Transaction History
+                        </span>
+                      </h3>
+                    </div>
 
                     {/* Right Corner: LIVE Badge and Search Bar (Stacked) */}
                     <div className="flex flex-col items-end gap-2 w-full sm:w-auto">
-                      {/* Live Network Effect (Placed on Top of Search) */}
-                      <span className="flex items-center gap-1.5 px-2 py-1 rounded bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-mono text-emerald-422 font-bold uppercase tracking-widest h-fit w-fit">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                      <span className="flex items-center gap-1.5 px-2 py-1 rounded bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-mono text-emerald-400 font-bold uppercase tracking-widest h-fit w-fit whitespace-nowrap">
+                        <span className="relative flex h-1.5 w-1.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                        </span>
                         Transaction Live
                       </span>
 
@@ -2157,11 +2214,34 @@ function Header({
 
             {/* CONTACTS */}
             {activeTab === "contacts" && (
-              <div className="w-full max-w-5xl mx-auto space-y-6 text-slate-300 font-sans p-6 rounded-2xl bg-[#030712] border border-slate-900 shadow-2xl animate-in fade-in zoom-in-95 duration-300 dark:bg-[#030712] dark:text-slate-300">
-                {/* Header */}
-                <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 tracking-wide flex items-center gap-2">
-                  <BookUser size={22} className="text-cyan-400" /> Address Book
-                </h3>
+              <div
+                className={`w-full max-w-5xl mx-auto relative group p-6 rounded-xl transition-all duration-500: shadow-2xl font-sans animate-in fade-in zoom-in-95 duration-300
+                  ${
+                    darkMode
+                      ? "bg-[#090d16] border border-emerald-900/30 hover:border-emerald-500/50 text-slate-300"
+                      : "bg-black border border-emerald-100 hover:border-emerald-400/60 text-slate-700"
+                  }`}
+              >
+                <div
+                  className={`absolute inset-0 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none
+                    ${darkMode ? "bg-emerald-500/5" : "bg-emerald-500/10"}`}
+                ></div>
+
+                <div className="relative z-10 space-y-6">
+                  {/* Header */}
+                  <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 tracking-wide flex items-center gap-2">
+                    <BookUser
+                      size={22}
+                      className={`transition-all duration-300
+                        ${
+                          darkMode
+                            ? "text-cyan-400 group-hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]"
+                            : "text-cyan-600 group-hover:drop-shadow-[0_0_6px_rgba(8,145,178,0.4)]"
+                        }`}
+                    />
+                    Address Book
+                  </h3>
+                </div>
 
                 {/* Form Area */}
                 <form
@@ -2253,29 +2333,49 @@ function Header({
 
             {/* RECEIVE */}
             {activeTab === "receive" && (
-              <div className="w-full max-w-2xl mx-auto space-y-6 text-slate-300 font-sans p-6 rounded-2xl bg-[#030712] border border-slate-900 shadow-2xl relative overflow-hidden animate-in fade-in duration-300 dark:bg-[#030712] dark:text-slate-300">
-                {/* Network Badge */}
-                <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-amber-950/40 text-amber-400 border border-amber-900/50 px-2.5 py-1 rounded-md text-[9px] font-mono font-bold uppercase tracking-widest select-none animate-pulse">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                  ⚠️ Testnet Only
+              <div
+                className={`w-full max-w-xl mx-auto relative group p-6 rounded-xl transition-all duration-500: shadow-2xl font-sans animate-in fade-in duration-300
+                  ${
+                    darkMode
+                      ? "bg-[#090d16] border border-emerald-900/30 hover:border-emerald-500/50 text-slate-300"
+                      : "bg-black border border-emerald-100 hover:border-emerald-400/60 text-slate-700"
+                  }`}
+              >
+                <div
+                  className={`absolute inset-0 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none
+                    ${darkMode ? "bg-emerald-500/5" : "bg-emerald-500/10"}`}
+                ></div>
+
+                <div
+                  className={`absolute top-4 right-4 flex items-center gap-1.5 border px-2.5 py-1 rounded-md text-[9px] font-mono font-bold uppercase tracking-widest select-none animate-pulse z-30
+                    ${
+                      darkMode
+                        ? "bg-amber-950/40 text-amber-400 border-amber-900/50"
+                        : "bg-amber-50 text-amber-700 border-amber-200"
+                    }`}
+                >
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${darkMode ? "bg-amber-500" : "bg-amber-600"}`}
+                  ></span>
+                  ⚠️ Test Network Only
                 </div>
 
                 {/* Header Icon & Title */}
                 <div className="text-center mt-2">
                   <div className="flex justify-center mb-3 text-cyan-400">
-                    <QrCode className="w-8 h-8" />
+                    <QrCode className="w-6 h-6" />
                   </div>
                   <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 tracking-wide">
                     Account QR Code
                   </h3>
-                  <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
+                  <p className="text-xs text-slate-400  max-w-xs mx-auto  mt-1 pb-6">
                     Scan this QR code to quickly receive Stellar Testnet assets.
                   </p>
                 </div>
 
                 {/* QR Code Frame */}
                 <div className="text-center">
-                  <div className="bg-white p-4 rounded-2xl inline-block shadow-xl border border-slate-200">
+                  <div className="bg-white p-4 rounded-2xl inline-block shadow-xl border border-slate-100">
                     {connected && pubKey ? (
                       <QRCodeSVG
                         value={
@@ -2302,7 +2402,7 @@ function Header({
                 </div>
 
                 {/* PUBLIC KEY DISPLAY SLOT */}
-                <div className="w-full max-w-md mx-auto space-y-1.5">
+                <div className="w-full max-w-md mx-auto space-y-1.5 mt-4">
                   <label className="text-[9px] font-bold uppercase tracking-wider text-slate-500 block text-left pl-1">
                     Your Public Key (Address)
                   </label>
@@ -2386,12 +2486,27 @@ function Header({
                 </div>
               </div>
             )}
+
             {/* SECURITY AUDIT & JURY VERIFICATION MATRIX */}
             {activeTab === "security" && (
               <div className="w-full max-w-5xl mx-auto space-y-6 text-slate-300 font-sans p-6 pb-32 rounded-2xl bg-[#030712] border border-slate-900 shadow-2xl animate-in fade-in zoom-in-95 duration-300">
                 {/* Top Header and Scan Button */}
                 <div className="border-b border-slate-900 pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <div>
+                  <div className="flex items-center gap-3">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="28"
+                      height="28"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-cyan-400 shrink-0"
+                    >
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    </svg>
                     <h2 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 tracking-wide">
                       Level 2 Security Audit & Jury Verification Matrix
                     </h2>
@@ -2404,7 +2519,7 @@ function Header({
                     type="button"
                     onClick={runSecurityScan}
                     disabled={isScanning}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${isScanning ? "bg-cyan-950/20 text-cyan-400 border-cyan-900 animate-pulse" : "bg-cyan-500 text-slate-950 hover:bg-cyan-400 shadow-lg shadow-cyan-500/10"}`}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${isScanning ? "bg-cyan-950/20 text-cyan-400 border-cyan-900 animate-pulse" : "bg-blue-500 text-slate-950 hover:bg-cyan-400 shadow-lg shadow-cyan-500/10"}`}
                   >
                     {isScanning
                       ? "Scanning Ledger..."
@@ -2413,8 +2528,8 @@ function Header({
                 </div>
 
                 {/* Automated Code and Extension Audit Trail */}
-                <div className="p-4 rounded-xl bg-slate-950 border border-slate-900">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-2.5">
+                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-300 block mb-2.5">
                     🛡️ Automated Code & Extension Audit Trail
                   </span>
                   <div className="space-y-1.5 max-h-[120px] overflow-y-auto pr-1 font-mono text-[11px] scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent hover:scrollbar-thumb-cyan-500/30 transition-colors">
@@ -2436,35 +2551,68 @@ function Header({
                   </div>
                 </div>
 
-                {/* Live Transaction Monitor & Wallet Error Triggers */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex items-center gap-2">
                   <div className="p-4 rounded-xl bg-[#090d16] border border-slate-900 flex flex-col justify-between space-y-3">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                      Live Transaction Monitor
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <div className="relative flex h-2 w-2 shrink-0">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
+                      </div>
+
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.4)]">
+                        Live Transaction Monitor
+                      </span>
+                    </div>
                     <div className="flex-1 flex items-center">
+                      {/* 1. IDLE STATE – Stable and Calm*/}
                       {juryTxStatus === "IDLE" && (
-                        <div className="px-3 py-2 w-full rounded-lg bg-slate-950 border border-slate-900 text-xs font-mono text-slate-400 flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-slate-500"></span>{" "}
-                          Status: IDLE
+                        <div className="px-3 py-2 w-full rounded-lg bg-slate-950 border border-slate-800/50 text-xs font-mono text-slate-400 flex items-center gap-3 transition-all duration-300">
+                          <span className="w-2.5 h-2.5 rounded-full bg-slate-600"></span>
+                          <span>
+                            Status: <span className="font-bold">IDLE</span>
+                          </span>
                         </div>
                       )}
+
+                      {/* 2. PENDING STATUS – Cyan Neon and Pulse Effect */}
                       {juryTxStatus === "PENDING" && (
-                        <div className="px-3 py-2 w-full rounded-lg bg-cyan-950/40 border border-cyan-800/50 text-xs font-mono text-cyan-400 flex items-center gap-2 animate-pulse">
-                          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>{" "}
-                          Status: PENDING...
+                        <div className="px-3 py-2 w-full rounded-lg bg-cyan-950/40 border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.2)] text-xs font-mono text-cyan-400 flex items-center gap-3 transition-all duration-300">
+                          <div className="relative flex h-2.5 w-2.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.8)]"></span>
+                          </div>
+                          <span>
+                            Status:{" "}
+                            <span className="font-bold animate-pulse">
+                              PENDING...
+                            </span>
+                          </span>
                         </div>
                       )}
+
+                      {/* 3. SUCCESS STATUS – Emerald Green Neon and Slight Ping */}
                       {juryTxStatus === "SUCCESS" && (
-                        <div className="px-3 py-2 w-full rounded-lg bg-emerald-950/40 border border-emerald-800/50 text-xs font-mono text-emerald-400 flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-emerald-400"></span>{" "}
-                          Status: SUCCESS
+                        <div className="px-3 py-2 w-full rounded-lg bg-emerald-950/40 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.15)] text-xs font-mono text-emerald-400 flex items-center gap-3 transition-all duration-300">
+                          <div className="relative flex h-2.5 w-2.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-40"></span>
+                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
+                          </div>
+                          <span>
+                            Status: <span className="font-bold">SUCCESS</span>
+                          </span>
                         </div>
                       )}
+
+                      {/* 4. FAILED STATUS – Red Emergency Neon Light and Intense Ping*/}
                       {juryTxStatus === "FAILED" && (
-                        <div className="px-3 py-2 w-full rounded-lg bg-rose-950/40 border border-rose-800/50 text-xs font-mono text-rose-400 flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-rose-400"></span>{" "}
-                          Status: FAILED
+                        <div className="px-3 py-2 w-full rounded-lg bg-rose-950/40 border border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.15)] text-xs font-mono text-rose-400 flex items-center gap-3 transition-all duration-300">
+                          <div className="relative flex h-2.5 w-2.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]"></span>
+                          </div>
+                          <span>
+                            Status: <span className="font-bold">FAILED</span>
+                          </span>
                         </div>
                       )}
                     </div>
@@ -2537,9 +2685,14 @@ function Header({
                         <h3 className="text-xs font-bold text-cyan-400 uppercase tracking-wider">
                           🤖 Soroban Contract Method Interface
                         </h3>
-                        <span className="text-[9px] font-mono bg-cyan-950 border border-cyan-800 text-cyan-400 px-2 py-0.5 rounded font-bold">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-cyan-950/40 border border-cyan-800 rounded text-[10px] font-mono font-bold text-cyan-400 whitespace-nowrap">
+                          {/* Işık Kısmı */}
+                          <div className="relative flex h-2 w-2 shrink-0">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-800 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
+                          </div>
                           Testnet Active
-                        </span>
+                        </div>
                       </div>
                       <p className="text-[11px] text-slate-400">
                         Contract ID:{" "}
@@ -2775,15 +2928,13 @@ function Header({
                   </p>
                 </div>
 
-                {/* SENİN BİLEŞENLERİNİN ENTEGRE EDİLDİĞİ YER */}
+                {/* The location where the main components are integrated */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Geri Bildirim Gönderme Bileşeni */}
-                  <SendFeedback
-                    pubKey={pubKey}
-                    // Eğer gerekiyorsa diğer propları da buraya yazabilirsin, örn: fbData={fbData}
-                  />
+                  {/* Feedback Submission Component
+                   */}
+                  <SendFeedback pubKey={pubKey} />
 
-                  {/* Geri Bildirim Çekme Bileşeni */}
+                  {/* Feedback Retrieval Component */}
                   <FetchFeedback />
                 </div>
               </div>
