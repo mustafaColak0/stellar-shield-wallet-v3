@@ -108,7 +108,9 @@ A real-time payment address sharing layout that auto-generates a high-contrast v
 
 4. Level 2 Security Audit & Soroban Interaction Matrix
 The centralized simulation sandbox showing automated code scans, cryptographic binding logs, a custom transaction monitor, and live exception/abort test handlers:
-<img width="1918" height="870" alt="security audit 2" src="https://github.com/user-attachments/assets/e595a182-4b41-4496-b91a-4dd7bd9d838b" />
+<img width="1918" height="862" alt="security_autdit_empty" src="https://github.com/user-attachments/assets/27a5100c-71e1-406b-84c2-b7d95b3084dd" />
+<img width="1901" height="871" alt="security_audit_txhash" src="https://github.com/user-attachments/assets/86622544-abbf-4756-9bdd-ba9c58012077" />
+
 
 
 
