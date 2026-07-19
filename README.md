@@ -11,12 +11,11 @@ Stellar Shield Wallet is a modern, fast, and user-friendly Web3 wallet and trans
 
 
 
-**Live Demo (Vercel):** [🚀 Click Here to Open Live App]([BURAYA_VERCEL_LINKINI_YAZISTIR])
-**Demo Video (1-2 Mins Preview):** [🎥 Watch Demo Video]([BURAYA_YOUTUBE_VEYA_LOOM_LINKINI_YAZISTIR])
-**Smart Contract ID (Testnet):** `[BURAYA_CAXUS_ILE_BASLAYAN_KONTRAT_ID_YAZ]`
+> **Live Demo (Vercel):** [🚀 Click Here to Open Live App]([BURAYA_VERCEL_LINKINI_YAZISTIR])
+> **Demo Video (1-2 Mins Preview):** [🎥 Watch Demo Video]([BURAYA_YOUTUBE_VEYA_LOOM_LINKINI_YAZISTIR])
 
 > 💡 **Want to see the full, uncut workflow?** > If you would like to watch the complete step-by-step wallet connection, multi-asset transfer processes, and live network confirmations in full detail, you can watch our comprehensive video here:  
-> 👉  **[Click Here to Watch the Full Detailed Project Demo Video](https://drive.google.com/file/d/1II4ByR4UaOZgnzGMrpXjZFrx0AV5reQe/view)**
+>  👉  **[Click Here to Watch the Full Detailed Project Demo Video](https://drive.google.com/file/d/1II4ByR4UaOZgnzGMrpXjZFrx0AV5reQe/view)**
 
 ---
 
