@@ -37,7 +37,7 @@ Stellar Shield Wallet is a modern, fast, and user-friendly Web3 wallet and trans
 * 📈 **Live Asset Flow Chart (Recharts):** An interactive dynamic Area Chart enabling users to track asset fluctuations and balance changes immediately after transfers.
 * 📇 **Integrated Address Book:** Save frequently used addresses, secure vaults, or jury test wallets to initiate accurate transfers with a single click.
 * 🔍 **Instant Search & Filtering:** Case-insensitive, real-time query filter within the Transaction History tab using wallet addresses or Transaction Hashes (Tx Hash).
-* 🔲 **Dynamic QR Code Engine:** Generates a custom QR code matching the connected user's Public Key for error-free, quick peer-to-peer payment requests.
+* 🔲 **Advanced Dynamic QR Code Engine:** A production-ready payment request layout that auto-generates high-contrast QR codes dynamically updated based on the target Public Key, specific transaction IDs, and exact asset amounts for error-free peer-to-peer billing.
 * 📏 **Pixel-Perfect Responsive Layout:** Fully optimized with tailored layout spacing, component padding, and precise pixel dimensions (`px dimensions`) leveraging Tailwind CSS animations (`animate-in fade-in slide-in-from-bottom-2`) to ensure absolute layout stability and cross-device smoothness.
 
 ---
@@ -153,7 +153,7 @@ Proof of fully functional GitHub Actions automated workflow execution. The pipel
 
 ### 🌐 Phase 2: Mobile Ecosystem & Deep Linking (Medium-Term)
 *   **WalletConnect v2 & Deep Linking Architecture:** Expand the Multi-Wallet panel by integrating native WalletConnect infrastructure, letting mobile users trigger instant biometric transaction sign requests on **LOBSTR**, **Vibrant**, or **xbull mobile**.
-*   **Dynamic QR Intent Protocol (SEP-0007):** Upgrade the QR Code Engine to generate dynamic, compliant `stellar:` URI payment intents, embedding asset types, exact amounts, and memo hashes natively into the matrix.
+*   **Ecosystem Multi-Currency Auto-Conversion QR:** Upgrade the dynamic engine to support cross-asset paths, allowing users to scan a single QR and automatically swap between XLM, USDC, and EURC via Stellar Liquidity Pools during the payment process.
 
 ### 🛡️ Phase 3: Advanced Compliance & Security AI (Long-Term)
 *   **Real-Time Decentralized Phishing Registry:** Connect the native Security Audit detector to open-source Stellar phishing APIs and blacklist databases to throw high-severity UI alerts before broadcasting transactions to flagged malicious endpoints.
