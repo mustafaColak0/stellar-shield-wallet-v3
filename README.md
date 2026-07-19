@@ -10,6 +10,11 @@ Stellar Shield Wallet is a modern, fast, and user-friendly Web3 wallet and trans
 👉 <img width="800" height="360" alt="videoconnet-ezgif com-video-to-gif-converter" src="https://github.com/user-attachments/assets/13163f64-ba36-4f00-900b-1c237b1b2109" />
 
 
+
+**Live Demo (Vercel):** [🚀 Click Here to Open Live App]([BURAYA_VERCEL_LINKINI_YAZISTIR])
+**Demo Video (1-2 Mins Preview):** [🎥 Watch Demo Video]([BURAYA_YOUTUBE_VEYA_LOOM_LINKINI_YAZISTIR])
+**Smart Contract ID (Testnet):** `[BURAYA_CAXUS_ILE_BASLAYAN_KONTRAT_ID_YAZ]`
+
 > 💡 **Want to see the full, uncut workflow?** > If you would like to watch the complete step-by-step wallet connection, multi-asset transfer processes, and live network confirmations in full detail, you can watch our comprehensive video here:  
 > 👉  **[Click Here to Watch the Full Detailed Project Demo Video](https://drive.google.com/file/d/1II4ByR4UaOZgnzGMrpXjZFrx0AV5reQe/view)**
 
@@ -39,13 +44,14 @@ Stellar Shield Wallet is a modern, fast, and user-friendly Web3 wallet and trans
 ## ⛓️ Smart Contract Deployment Details (Jury Verification)
 
 * **Target Contract Address (Testnet):** `CAXUSWZ5LFT4FITJIMYAX4FVL57ZM2LVRDW233PF7YXLJYIQCVZLV43H` 
-* **Verifiable Transaction Hash (Successful Contract Call):** `4aadcca6a500d354ac6b9e419404f0ecbc6456f887117e3e64024f6b5f2696e4`
-* **Explorer Link:** [View Successful Deposit Transaction on Stellar Expert](https://stellar.expert/explorer/testnet/tx/4aadcca6a500d354ac6b9e419404f0ecbc6456f887117e3e64024f6b5f2696e4)
+* **Verifiable Transaction Hash (Successful Contract Call):** `b62e2b4998e021bb266b2c7b679f4e91358ea5aa0865c1278b2cf8922cb4231f`
+* **Explorer Link:** [View Successful Deposit Transaction on Stellar Expert](https://stellar.expert/explorer/testnet/tx/b62e2b4998e021bb266b2c7b679f4e91358ea5aa0865c1278b2cf8922cb4231f)
 
 > 🛡️ **Jury Note on Verification:** 
-> The dynamic deposit flow uses a security-oriented mock boundary. As seen in the transaction explorer logs, executing the `deposit()` action dynamically triggers and translates into a cryptographically signed `send_feedback` operation emitting the exact payload payload (e.g., `"Simulated deposit of 52 XLM!"`) directly to the target Soroban contract state.
+> The dynamic deposit flow uses a security-oriented mock boundary. As seen in the transaction explorer logs, executing the `deposit()` action dynamically triggers and translates into a cryptographically signed `send_feedback` operation emitting the exact payload payload (e.g., `"Simulated deposit of 5 XLM!"`) directly to the target Soroban contract state.
 
-<img width="1918" height="806" alt="txhash" src="https://github.com/user-attachments/assets/8c096363-76ce-461b-bb3a-f820e67f9689" />
+<img width="1917" height="802" alt="tx_hash_success" src="https://github.com/user-attachments/assets/313fd2e4-56fa-491e-97ef-92f2f10d4abc" />
+
 
 
 ---
@@ -126,7 +132,11 @@ A real-time query-filtered interface mapped out with clean responsive constraint
 
 8. Automated CI/CD Pipeline & Smart Contract Unit Tests (Level 3 Core Requirement)
 Proof of fully functional GitHub Actions automated workflow execution. The pipeline compiles the repository, triggers isolated Soroban unit testing routines, checks cross-device frontend builds, and finishes with a 100% success rate:
-<img width="1875" height="602" alt="workflow" src="https://github.com/user-attachments/assets/b46407cb-0fe0-41c4-8698-9702a263ac40" />
+<img width="1875" height="602" alt="workflow" src="https://github.com/user-attachments/assets/3de56faa-7be8-45c5-abf6-2e3b5d953842" />
+
+
+9. Smart Contract Unit Test Execution Output (3/3 Passed)
+<img width="1145" height="228" alt="test-results" src="https://github.com/user-attachments/assets/18375f06-869c-45d9-85c2-23d3c7e60794" />
 
 
 
@@ -146,6 +156,8 @@ Proof of fully functional GitHub Actions automated workflow execution. The pipel
 *   **Real-Time Decentralized Phishing Registry:** Connect the native Security Audit detector to open-source Stellar phishing APIs and blacklist databases to throw high-severity UI alerts before broadcasting transactions to flagged malicious endpoints.
 *   **Automated Fee-Bump Enabler:** Implement a smart transaction relayer that automatically attaches fee-bumps to critical Soroban contract interactions during heavy Testnet/Mainnet network congestion states.
 
+###  📦 Production-Ready Smart Contract Bindings: 
+*   **Automated generation of JavaScript/TypeScript bindings from the Soroban Rust contract using Stellar CLI, ensuring a robust, type-safe architecture for frontend deployment.
 --
 
 🧬 Tech Stack
