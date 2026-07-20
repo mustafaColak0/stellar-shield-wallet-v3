@@ -2406,7 +2406,7 @@ function Header({
                                 if (typeof setWalletBalance === "function") {
                                   setWalletBalance((prev) => {
                                     const currentNum = Number(prev) || 0;
-                                    // Bakiye düşülecek miktardan büyük veya eşitse düş, yoksa sıfırla (eksiye düşmesin)
+                                    // If the balance is greater than or equal to the amount to be deducted, deduct it; otherwise, set it to zero (so that it does not go into the red)
                                     return currentNum >= depositAmount
                                       ? currentNum - depositAmount
                                       : 0;
@@ -2592,9 +2592,7 @@ function Header({
 
                     {/* Bottom Section: Cyber Table View */}
                     <div className="bg-[#090d16] border border-slate-800/80 rounded-xl overflow-hidden shadow-inner w-full">
-                      {/* 🚨 MOBILE SCROLL FIX: Wraps the table and forces swipe scroll instead of squeezing */}
                       <div className="w-full overflow-x-auto scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
-                        {/* 🚨 min-w-[768px] ensures columns never crush each other on small screens */}
                         <table className="w-full text-left border-collapse min-w-[768px]">
                           <thead>
                             <tr className="border-b border-slate-900 text-[10px] uppercase font-bold text-slate-400 font-mono tracking-wider bg-slate-950/80">
@@ -3030,7 +3028,6 @@ function Header({
                   </div>
                 </div>
 
-                {/* ÜST ÜSTE BİNEN ESKİ DIV BURASIYDI: flex-col ve md:flex-row ile düzelttik */}
                 <div className="flex flex-col md:flex-row items-stretch gap-4 w-full">
                   {/* Live Transaction Monitor */}
                   <div className="p-4 rounded-xl bg-[#090d16] border border-slate-900 flex flex-col justify-between space-y-3 flex-1 w-full">
