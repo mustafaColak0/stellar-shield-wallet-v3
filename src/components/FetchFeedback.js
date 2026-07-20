@@ -17,7 +17,7 @@ export const FetchFeedback = () => {
       } else if (res) {
         _setFbData(res);
       } else {
-        _setFbData("Geri bildirim bulunamadı.");
+        _setFbData("No feedback found.");
       }
 
       // Reset the screen and input after 4 seconds
@@ -26,8 +26,8 @@ export const FetchFeedback = () => {
         _setFbData("");
       }, 4000);
     } catch (error) {
-      console.error("Arayüz hatası:", error);
-      _setFbData("İşlem başarısız oldu.");
+      console.error("User interface error:", error);
+      _setFbData("The transaction failed.");
 
       setTimeout(() => {
         _setFbData("");

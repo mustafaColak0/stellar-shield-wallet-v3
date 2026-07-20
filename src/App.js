@@ -8,7 +8,7 @@ import { FetchFeedback } from "./components/FetchFeedback";
 const pubKeyData = createContext();
 
 function App() {
-  // GEREKLİ TÜM STATE'LERİ BURAYA EKLİYORUZ:
+  // ALL REQUIRED STATUSES
   const [pubKey, _setPubKey] = useState("");
   const [connected, setConnected] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
