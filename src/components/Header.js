@@ -2159,9 +2159,20 @@ function Header({
                     <div className="w-full max-w-md p-6 rounded-2xl bg-[#0f172a] border border-slate-800 text-slate-200 shadow-2xl">
                       {/* Başlık */}
                       <div className="flex items-start gap-3 mb-5">
-                        <span className="text-xl text-amber-500 shrink-0 mt-0.5">
-                          ⚠️
-                        </span>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="28"
+                          height="28"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="text-cyan-400 shrink-0 drop-shadow-[0_0_8px_rgba(34,211,238,0.4)]"
+                        >
+                          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        </svg>
                         <div>
                           <h4 className="text-lg font-bold text-amber-500 leading-tight">
                             Security and Transaction Confirmation
@@ -3359,9 +3370,26 @@ function Header({
       {typeof showSecurityCheck !== "undefined" && showSecurityCheck && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
           <div className="w-full max-w-md p-6 rounded-2xl bg-[#0f172a] border border-slate-800 text-slate-200 shadow-2xl">
-            {/* Başlık */}
-            <div className="flex items-start gap-3 mb-5">
-              <span className="text-xl text-amber-500 shrink-0 mt-0.5">⚠️</span>
+            {/* Title */}
+            <div className="flex items-center gap-3 mb-5">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="26"
+                height="26"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-amber-500 shrink-0"
+              >
+                {/*The Outer Perimeter of the Shield */}
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                {/* The Exclamation Mark Inside */}
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
               <div>
                 <h4 className="text-lg font-bold text-amber-500 leading-tight">
                   Security and Transaction Confirmation
