@@ -2917,10 +2917,10 @@ function Header({
 
             {/* SECURITY AUDIT & JURY VERIFICATION MATRIX */}
             {activeTab === "security" && (
-              <div className="w-full max-w-5xl mx-auto space-y-6 text-slate-300 font-sans p-6 pb-32 rounded-2xl bg-[#030712] border border-slate-900 shadow-2xl animate-in fade-in zoom-in-95 duration-300">
+              <div className="w-full max-w-5xl mx-auto space-y-6 text-slate-300 font-sans p-4 sm:p-6 pb-32 rounded-2xl bg-[#030712] border border-slate-900 shadow-2xl animate-in fade-in zoom-in-95 duration-300">
                 {/* Top Header and Scan Button */}
-                <div className="border-b border-slate-900 pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <div className="flex items-center gap-3">
+                <div className="border-b border-slate-900 pb-4 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                  <div className="flex items-start gap-3 w-full lg:w-auto">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="28"
@@ -2931,23 +2931,30 @@ function Header({
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      className="text-cyan-400 shrink-0"
+                      className="text-cyan-400 shrink-0 mt-1"
                     >
                       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                     </svg>
-                    <h2 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 tracking-wide">
-                      Level 2 Security Audit & Jury Verification Matrix
-                    </h2>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Mandatory Level 2 Evaluation: Trigger wallet exception
-                      handlers and run core smart contract scans.
-                    </p>
+                    {/* Metinleri dikeyde toplamak için flex-col verdik */}
+                    <div className="flex flex-col min-w-0">
+                      <h2 className="text-lg sm:text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 tracking-wide break-words">
+                        Level 2 Security Audit & Jury Verification Matrix
+                      </h2>
+                      <p className="text-xs text-slate-400 mt-1 break-words">
+                        Mandatory Level 2 Evaluation: Trigger wallet exception
+                        handlers and run core smart contract scans.
+                      </p>
+                    </div>
                   </div>
                   <button
                     type="button"
                     onClick={runSecurityScan}
                     disabled={isScanning}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${isScanning ? "bg-cyan-950/20 text-cyan-400 border-cyan-900 animate-pulse" : "bg-blue-500 text-slate-950 hover:bg-cyan-400 shadow-lg shadow-cyan-500/10"}`}
+                    className={`w-full lg:w-auto px-4 py-2.5 rounded-xl text-xs font-bold transition-all border shrink-0 ${
+                      isScanning
+                        ? "bg-cyan-950/20 text-cyan-400 border-cyan-900 animate-pulse"
+                        : "bg-blue-500 text-slate-950 hover:bg-cyan-400 shadow-lg shadow-cyan-500/10"
+                    }`}
                   >
                     {isScanning
                       ? "Scanning Ledger..."
@@ -2967,11 +2974,17 @@ function Header({
                         className="flex items-start gap-2 animate-in fade-in slide-in-from-top-1 duration-200"
                       >
                         <span
-                          className={`text-[9px] px-1.5 py-0.2 rounded font-bold shrink-0 ${log.type === "SUCCESS" ? "bg-emerald-950 text-emerald-400 border border-emerald-900/30" : log.type === "WARNING" ? "bg-amber-950 text-amber-400 border border-amber-900/30" : "bg-blue-950 text-blue-400 border border-blue-900/30"}`}
+                          className={`text-[9px] px-1.5 py-0.5 rounded font-bold shrink-0 ${
+                            log.type === "SUCCESS"
+                              ? "bg-emerald-950 text-emerald-400 border border-emerald-900/30"
+                              : log.type === "WARNING"
+                                ? "bg-amber-950 text-amber-400 border border-amber-900/30"
+                                : "bg-blue-950 text-blue-400 border border-blue-900/30"
+                          }`}
                         >
                           {log.type}
                         </span>
-                        <span className="text-slate-400 truncate">
+                        <span className="text-slate-400 break-all">
                           {log.msg}
                         </span>
                       </div>
@@ -2979,24 +2992,24 @@ function Header({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <div className="p-4 rounded-xl bg-[#090d16] border border-slate-900 flex flex-col justify-between space-y-3">
+                {/* ÜST ÜSTE BİNEN ESKİ DIV BURASIYDI: flex-col ve md:flex-row ile düzelttik */}
+                <div className="flex flex-col md:flex-row items-stretch gap-4 w-full">
+                  {/* Live Transaction Monitor */}
+                  <div className="p-4 rounded-xl bg-[#090d16] border border-slate-900 flex flex-col justify-between space-y-3 flex-1 w-full">
                     <div className="flex items-center gap-2">
                       <div className="relative flex h-2 w-2 shrink-0">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
                       </div>
-
                       <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.4)]">
                         Live Transaction Monitor
                       </span>
                     </div>
-                    <div className="flex-1 flex items-center">
-                      {/* 1. IDLE STATE – It is only visible when there is no record of any achievements and the status is IDLE */}
+                    <div className="flex-1 flex items-center w-full mt-2">
                       {juryTxStatus === "IDLE" &&
                         !(typeof txHash !== "undefined" && txHash) &&
                         !(typeof realTxHash !== "undefined" && realTxHash) && (
-                          <div className="px-3 py-2 w-full rounded-lg bg-slate-950 border border-slate-800/50 text-xs font-mono text-slate-400 flex items-center gap-3 transition-all duration-300">
+                          <div className="px-3 py-2 w-full rounded-lg bg-slate-950 border border-slate-800/50 text-xs font-mono text-slate-400 flex items-center gap-3">
                             <span className="w-2.5 h-2.5 rounded-full bg-slate-600"></span>
                             <span>
                               Status: <span className="font-bold">IDLE</span>
@@ -3004,11 +3017,10 @@ function Header({
                           </div>
                         )}
 
-                      {/* 2. PENDING STATUS – Whilst the transaction is in progress */}
                       {juryTxStatus === "PENDING" &&
                         !(typeof txHash !== "undefined" && txHash) &&
                         !(typeof realTxHash !== "undefined" && realTxHash) && (
-                          <div className="px-3 py-2 w-full rounded-lg bg-cyan-950/40 border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.2)] text-xs font-mono text-cyan-400 flex items-center gap-3 transition-all duration-300">
+                          <div className="px-3 py-2 w-full rounded-lg bg-cyan-950/40 border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.2)] text-xs font-mono text-cyan-400 flex items-center gap-3">
                             <div className="relative flex h-2.5 w-2.5">
                               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
                               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.8)]"></span>
@@ -3022,11 +3034,10 @@ function Header({
                           </div>
                         )}
 
-                      {/* 3. SUCCESS STATUS – It is FORCED to activate when the status is SUCCESS OR as soon as the Tx Hash is generated below */}
                       {(juryTxStatus === "SUCCESS" ||
                         (typeof txHash !== "undefined" && txHash) ||
                         (typeof realTxHash !== "undefined" && realTxHash)) && (
-                        <div className="px-3 py-2 w-full rounded-lg bg-emerald-950/40 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.15)] text-xs font-mono text-emerald-400 flex items-center gap-3 transition-all duration-300">
+                        <div className="px-3 py-2 w-full rounded-lg bg-emerald-950/40 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.15)] text-xs font-mono text-emerald-400 flex items-center gap-3">
                           <div className="relative flex h-2.5 w-2.5">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-40"></span>
                             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
@@ -3040,11 +3051,10 @@ function Header({
                         </div>
                       )}
 
-                      {/* 4. FAILED STATUS – Only visible in the event of an error and when there is no hash */}
                       {juryTxStatus === "FAILED" &&
                         !(typeof txHash !== "undefined" && txHash) &&
                         !(typeof realTxHash !== "undefined" && realTxHash) && (
-                          <div className="px-3 py-2 w-full rounded-lg bg-rose-950/40 border border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.15)] text-xs font-mono text-rose-400 flex items-center gap-3 transition-all duration-300">
+                          <div className="px-3 py-2 w-full rounded-lg bg-rose-950/40 border border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.15)] text-xs font-mono text-rose-400 flex items-center gap-3">
                             <div className="relative flex h-2.5 w-2.5">
                               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
                               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]"></span>
@@ -3057,16 +3067,17 @@ function Header({
                     </div>
                   </div>
 
-                  <div className="p-4 rounded-xl bg-[#090d16] border border-slate-900 md:col-span-2 space-y-3">
+                  {/* Exception Handlers Box */}
+                  <div className="p-4 rounded-xl bg-[#090d16] border border-slate-900 flex-2 w-full space-y-3">
                     <span className="text-[10px] font-bold text-amber-500 uppercase block">
                       ⚠️ Trigger Wallet Exception Handlers:
                     </span>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <button
                         type="button"
                         disabled={juryTxStatus === "PENDING"}
                         onClick={() => simulateJuryErrors("WALLET_NOT_FOUND")}
-                        className="text-[10px] p-2.5 rounded-lg bg-slate-950 border border-slate-900 hover:border-rose-500/50 transition-all font-semibold text-center group"
+                        className="text-[10px] p-2.5 rounded-lg bg-slate-950 border border-slate-900 hover:border-rose-500/50 transition-all font-semibold text-center group w-full"
                       >
                         <div className="text-rose-400 font-bold mb-0.5 group-hover:text-rose-300">
                           1. Wallet 404
@@ -3079,7 +3090,7 @@ function Header({
                         type="button"
                         disabled={juryTxStatus === "PENDING"}
                         onClick={() => simulateJuryErrors("USER_REJECTED")}
-                        className="text-[10px] p-2.5 rounded-lg bg-slate-950 border border-slate-900 hover:border-amber-500/50 transition-all font-semibold text-center group"
+                        className="text-[10px] p-2.5 rounded-lg bg-slate-950 border border-slate-900 hover:border-amber-500/50 transition-all font-semibold text-center group w-full"
                       >
                         <div className="text-amber-400 font-bold mb-0.5 group-hover:text-amber-300">
                           2. Reject 401
@@ -3094,7 +3105,7 @@ function Header({
                         onClick={() =>
                           simulateJuryErrors("INSUFFICIENT_BALANCE")
                         }
-                        className="text-[10px] p-2.5 rounded-lg bg-slate-950 border border-slate-900 hover:border-red-500/50 transition-all font-semibold text-center group"
+                        className="text-[10px] p-2.5 rounded-lg bg-slate-950 border border-slate-900 hover:border-red-500/50 transition-all font-semibold text-center group w-full"
                       >
                         <div className="text-red-400 font-bold mb-0.5 group-hover:text-red-300">
                           3. Balance 402
@@ -3106,6 +3117,7 @@ function Header({
                     </div>
                   </div>
                 </div>
+
                 {/* Error Detail Window */}
                 {jurySorobanError && juryTxStatus === "FAILED" && (
                   <div className="p-3 bg-slate-950 border border-rose-950 text-rose-400 rounded-xl text-xs font-mono break-all whitespace-pre-wrap animate-in fade-in slide-in-from-bottom-2">
@@ -3115,17 +3127,16 @@ function Header({
 
                 <hr className="border-slate-900" />
 
-                {/* Soroban Method Interface & Live Event Stream (Equal Size Grid) */}
+                {/* Soroban Method Interface & Live Event Stream */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Left Card: Soroban Contract Method Interface */}
-                  <div className="p-5 rounded-xl bg-[#090d16] border border-slate-900 flex flex-col justify-between h-[250px]">
+                  <div className="p-5 rounded-xl bg-[#090d16] border border-slate-900 flex flex-col justify-between min-h-[260px] md:h-[250px] w-full">
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-xs font-bold text-cyan-400 uppercase tracking-wider">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="text-xs font-bold text-cyan-400 uppercase tracking-wider truncate">
                           🤖 Soroban Contract Method Interface
                         </h3>
-                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-cyan-950/40 border border-cyan-800 rounded text-[10px] font-mono font-bold text-cyan-400 whitespace-nowrap">
-                          {/* Lighting Section */}
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-cyan-950/40 border border-cyan-800 rounded text-[10px] font-mono font-bold text-cyan-400 whitespace-nowrap shrink-0">
                           <div className="relative flex h-2 w-2 shrink-0">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-800 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
@@ -3133,7 +3144,7 @@ function Header({
                           Testnet Active
                         </div>
                       </div>
-                      <p className="text-[11px] text-slate-400">
+                      <p className="text-[11px] text-slate-400 break-all">
                         Contract ID:{" "}
                         <code className="text-blue-400 font-mono text-[10px] bg-slate-950 px-1.5 py-0.5 rounded">
                           {sorobanContractId || "CC...JURYTEST2026CROWDFUNDING"}
@@ -3142,7 +3153,7 @@ function Header({
 
                       {/* Advanced Live Crowdfunding Progress Dashboard */}
                       <div className="p-3 rounded-xl bg-slate-950 border border-slate-900 space-y-2">
-                        <div className="flex justify-between items-center">
+                        <div className="flex justify-between items-center gap-4">
                           <div>
                             <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500">
                               Crowdfunding Progress
