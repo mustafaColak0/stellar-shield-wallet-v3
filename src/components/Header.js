@@ -2498,7 +2498,7 @@ function Header({
             )}
             {/* HISTORY */}
             {activeTab === "history" && (
-              <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300 p-2 sm:p-0">
+              <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300 p-2 sm:p-0 max-h-[80vh] md:max-h-none overflow-y-auto scrollbar-thin">
                 {/* TRANSACTION HISTORY MAIN PANEL */}
                 <div
                   className={`relative group flex flex-col p-4 sm:p-6 md:p-8 rounded-xl transition-all duration-500 shadow-2xl font-sans w-full overflow-hidden
