@@ -1795,38 +1795,68 @@ function Header({
                         <label className="text-[10px] font-bold text-cyan-400/80 uppercase tracking-wider block mb-1.5">
                           Asset to Send
                         </label>
+
                         <div className="relative">
-                          <select
-                            value={selectedAsset}
-                            onChange={(e) =>
-                              setSelectedAsset &&
-                              setSelectedAsset(e.target.value)
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setIsAssetDropdownOpen(!isAssetDropdownOpen)
                             }
-                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-xs font-mono font-bold focus:outline-none focus:border-cyan-500 text-slate-100 appearance-none cursor-pointer"
+                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-xs font-mono font-bold focus:outline-none focus:border-cyan-500 text-slate-100 flex justify-between items-center cursor-pointer transition-all"
                           >
-                            <option
-                              value="XLM"
-                              className="bg-[#030712] text-slate-100"
-                            >
-                              XLM (Stellar Lumens)
-                            </option>
-                            <option
-                              value="USDC"
-                              className="bg-[#030712] text-slate-100"
-                            >
-                              USDC (USD Coin)
-                            </option>
-                            <option
-                              value="EURC"
-                              className="bg-[#030712] text-slate-100"
-                            >
-                              EURC (Euro Coin)
-                            </option>
-                          </select>
-                          <ChevronDown
-                            size={16}
-                            className="absolute right-4 top-4 text-slate-400 pointer-events-none"
-                          />
+                            <span>
+                              {selectedAsset === "XLM" &&
+                                "XLM (Stellar Lumens)"}
+                              {selectedAsset === "USDC" && "USDC (USD Coin)"}
+                              {selectedAsset === "EURC" && "EURC (Euro Coin)"}
+                            </span>
+                            <ChevronDown
+                              size={16}
+                              className={`text-slate-400 transition-transform duration-200 ${
+                                isAssetDropdownOpen ? "rotate-180" : ""
+                              }`}
+                            />
+                          </button>
+
+                          {isAssetDropdownOpen && (
+                            <div className="absolute left-0 top-full mt-1.5 w-full z-50 bg-[#090d16] border border-slate-800 rounded-xl shadow-2xl overflow-hidden divide-y divide-slate-900/40">
+                              {/* XLM Option */}
+                              <div
+                                onClick={() => {
+                                  setSelectedAsset && setSelectedAsset("XLM");
+                                  setIsAssetDropdownOpen(false);
+                                }}
+                                className={`px-4 py-3 text-xs font-mono cursor-pointer transition-colors
+              ${selectedAsset === "XLM" ? "bg-cyan-500/10 text-cyan-400 font-bold" : "text-slate-300 hover:bg-slate-950 hover:text-slate-100"}`}
+                              >
+                                XLM (Stellar Lumens)
+                              </div>
+
+                              {/* USDC Option */}
+                              <div
+                                onClick={() => {
+                                  setSelectedAsset && setSelectedAsset("USDC");
+                                  setIsAssetDropdownOpen(false);
+                                }}
+                                className={`px-4 py-3 text-xs font-mono cursor-pointer transition-colors
+              ${selectedAsset === "USDC" ? "bg-cyan-500/10 text-cyan-400 font-bold" : "text-slate-300 hover:bg-slate-950 hover:text-slate-100"}`}
+                              >
+                                USDC (USD Coin)
+                              </div>
+
+                              {/* EURC Option */}
+                              <div
+                                onClick={() => {
+                                  setSelectedAsset && setSelectedAsset("EURC");
+                                  setIsAssetDropdownOpen(false);
+                                }}
+                                className={`px-4 py-3 text-xs font-mono cursor-pointer transition-colors
+              ${selectedAsset === "EURC" ? "bg-cyan-500/10 text-cyan-400 font-bold" : "text-slate-300 hover:bg-slate-950 hover:text-slate-100"}`}
+                              >
+                                EURC (Euro Coin)
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
 
