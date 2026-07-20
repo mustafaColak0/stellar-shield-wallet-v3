@@ -285,6 +285,7 @@ function Header({
   const [isSecurityChecked, setIsSecurityChecked] = useState(false);
   const [showSecurityCheck, setShowSecurityCheck] = useState(false);
   const [isAuthMatrixModalOpen, setIsAuthMatrixModalOpen] = useState(false);
+  const [isAssetDropdownOpen, setIsAssetDropdownOpen] = useState(false);
   const [balanceData, setBalanceData] = useState([]);
   if (typeof window !== "undefined") {
     window.setBalanceData = setBalanceData;
