@@ -10,8 +10,14 @@ Stellar Shield Wallet is a modern, fast, and user-friendly Web3 wallet and trans
 👉 <img width="800" height="360" alt="videoconnet-ezgif com-video-to-gif-converter" src="https://github.com/user-attachments/assets/13163f64-ba36-4f00-900b-1c237b1b2109" />
 
 
+
+---
+
+> **Live Demo (Vercel):** [🚀 Click Here to Open Live App]([BURAYA_VERCEL_LINKINI_YAZISTIR])
+> **Demo Video (1-2 Mins Preview):** [🎥 Watch Demo Video]([BURAYA_YOUTUBE_VEYA_LOOM_LINKINI_YAZISTIR])
+
 > 💡 **Want to see the full, uncut workflow?** > If you would like to watch the complete step-by-step wallet connection, multi-asset transfer processes, and live network confirmations in full detail, you can watch our comprehensive video here:  
-> 👉  **[Click Here to Watch the Full Detailed Project Demo Video](https://drive.google.com/file/d/1II4ByR4UaOZgnzGMrpXjZFrx0AV5reQe/view)**
+>  👉  **[Click Here to Watch the Full Detailed Project Demo Video](https://drive.google.com/file/d/1II4ByR4UaOZgnzGMrpXjZFrx0AV5reQe/view)**
 
 ---
 
@@ -31,7 +37,7 @@ Stellar Shield Wallet is a modern, fast, and user-friendly Web3 wallet and trans
 * 📈 **Live Asset Flow Chart (Recharts):** An interactive dynamic Area Chart enabling users to track asset fluctuations and balance changes immediately after transfers.
 * 📇 **Integrated Address Book:** Save frequently used addresses, secure vaults, or jury test wallets to initiate accurate transfers with a single click.
 * 🔍 **Instant Search & Filtering:** Case-insensitive, real-time query filter within the Transaction History tab using wallet addresses or Transaction Hashes (Tx Hash).
-* 🔲 **Dynamic QR Code Engine:** Generates a custom QR code matching the connected user's Public Key for error-free, quick peer-to-peer payment requests.
+* 🔲 **Advanced Dynamic QR Code Engine:** A production-ready payment request layout that auto-generates high-contrast QR codes dynamically updated based on the target Public Key, specific transaction IDs, and exact asset amounts for error-free peer-to-peer billing.
 * 📏 **Pixel-Perfect Responsive Layout:** Fully optimized with tailored layout spacing, component padding, and precise pixel dimensions (`px dimensions`) leveraging Tailwind CSS animations (`animate-in fade-in slide-in-from-bottom-2`) to ensure absolute layout stability and cross-device smoothness.
 
 ---
@@ -39,13 +45,14 @@ Stellar Shield Wallet is a modern, fast, and user-friendly Web3 wallet and trans
 ## ⛓️ Smart Contract Deployment Details (Jury Verification)
 
 * **Target Contract Address (Testnet):** `CAXUSWZ5LFT4FITJIMYAX4FVL57ZM2LVRDW233PF7YXLJYIQCVZLV43H` 
-* **Verifiable Transaction Hash (Successful Contract Call):** `4aadcca6a500d354ac6b9e419404f0ecbc6456f887117e3e64024f6b5f2696e4`
-* **Explorer Link:** [View Successful Deposit Transaction on Stellar Expert](https://stellar.expert/explorer/testnet/tx/4aadcca6a500d354ac6b9e419404f0ecbc6456f887117e3e64024f6b5f2696e4)
+* **Verifiable Transaction Hash (Successful Contract Call):** `b62e2b4998e021bb266b2c7b679f4e91358ea5aa0865c1278b2cf8922cb4231f`
+* **Explorer Link:** [View Successful Deposit Transaction on Stellar Expert](https://stellar.expert/explorer/testnet/tx/b62e2b4998e021bb266b2c7b679f4e91358ea5aa0865c1278b2cf8922cb4231f)
 
 > 🛡️ **Jury Note on Verification:** 
-> The dynamic deposit flow uses a security-oriented mock boundary. As seen in the transaction explorer logs, executing the `deposit()` action dynamically triggers and translates into a cryptographically signed `send_feedback` operation emitting the exact payload payload (e.g., `"Simulated deposit of 52 XLM!"`) directly to the target Soroban contract state.
+> The dynamic deposit flow uses a security-oriented mock boundary. As seen in the transaction explorer logs, executing the `deposit()` action dynamically triggers and translates into a cryptographically signed `send_feedback` operation emitting the exact payload payload (e.g., `"Simulated deposit of 5 XLM!"`) directly to the target Soroban contract state.
 
-<img width="1918" height="806" alt="txhash" src="https://github.com/user-attachments/assets/8c096363-76ce-461b-bb3a-f820e67f9689" />
+<img width="1917" height="802" alt="tx_hash_success" src="https://github.com/user-attachments/assets/313fd2e4-56fa-491e-97ef-92f2f10d4abc" />
+
 
 
 ---
@@ -101,14 +108,16 @@ A real-time payment address sharing layout that auto-generates a high-contrast v
 
 4. Level 2 Security Audit & Soroban Interaction Matrix
 The centralized simulation sandbox showing automated code scans, cryptographic binding logs, a custom transaction monitor, and live exception/abort test handlers:
-<img width="1918" height="870" alt="security audit 2" src="https://github.com/user-attachments/assets/e595a182-4b41-4496-b91a-4dd7bd9d838b" />
+<img width="1918" height="862" alt="security_autdit_empty" src="https://github.com/user-attachments/assets/27a5100c-71e1-406b-84c2-b7d95b3084dd" />
+
+
 
 
 
 5. Soroban Contract Interface & Emitted Event Timeline
 The core Smart Contract execution window containing real-time crowdfunding progress bars, a direct `deposit()` execution method, and an isolated live ledger contract event stream listing verifiable asset badges:
 <img width="886" height="700" alt="security_audit_deposit" src="https://github.com/user-attachments/assets/edbbb585-91fc-4e0b-93b5-b70b9ad23c14" />
-<img width="992" height="687" alt="txhash_looking" src="https://github.com/user-attachments/assets/ea06a536-072c-4ae0-84eb-ba35f3c97ac0" />
+<img width="1901" height="871" alt="security_audit_txhash" src="https://github.com/user-attachments/assets/86622544-abbf-4756-9bdd-ba9c58012077" />
 
 
 
@@ -126,7 +135,11 @@ A real-time query-filtered interface mapped out with clean responsive constraint
 
 8. Automated CI/CD Pipeline & Smart Contract Unit Tests (Level 3 Core Requirement)
 Proof of fully functional GitHub Actions automated workflow execution. The pipeline compiles the repository, triggers isolated Soroban unit testing routines, checks cross-device frontend builds, and finishes with a 100% success rate:
-<img width="1875" height="602" alt="workflow" src="https://github.com/user-attachments/assets/b46407cb-0fe0-41c4-8698-9702a263ac40" />
+<img width="1875" height="602" alt="workflow" src="https://github.com/user-attachments/assets/3de56faa-7be8-45c5-abf6-2e3b5d953842" />
+
+
+9. Smart Contract Unit Test Execution Output (3/3 Passed)
+<img width="1145" height="228" alt="test-results" src="https://github.com/user-attachments/assets/18375f06-869c-45d9-85c2-23d3c7e60794" />
 
 
 
@@ -140,12 +153,14 @@ Proof of fully functional GitHub Actions automated workflow execution. The pipel
 
 ### 🌐 Phase 2: Mobile Ecosystem & Deep Linking (Medium-Term)
 *   **WalletConnect v2 & Deep Linking Architecture:** Expand the Multi-Wallet panel by integrating native WalletConnect infrastructure, letting mobile users trigger instant biometric transaction sign requests on **LOBSTR**, **Vibrant**, or **xbull mobile**.
-*   **Dynamic QR Intent Protocol (SEP-0007):** Upgrade the QR Code Engine to generate dynamic, compliant `stellar:` URI payment intents, embedding asset types, exact amounts, and memo hashes natively into the matrix.
+*   **Ecosystem Multi-Currency Auto-Conversion QR:** Upgrade the dynamic engine to support cross-asset paths, allowing users to scan a single QR and automatically swap between XLM, USDC, and EURC via Stellar Liquidity Pools during the payment process.
 
 ### 🛡️ Phase 3: Advanced Compliance & Security AI (Long-Term)
 *   **Real-Time Decentralized Phishing Registry:** Connect the native Security Audit detector to open-source Stellar phishing APIs and blacklist databases to throw high-severity UI alerts before broadcasting transactions to flagged malicious endpoints.
 *   **Automated Fee-Bump Enabler:** Implement a smart transaction relayer that automatically attaches fee-bumps to critical Soroban contract interactions during heavy Testnet/Mainnet network congestion states.
 
+###  📦 Production-Ready Smart Contract Bindings: 
+*   **Automated generation of JavaScript/TypeScript bindings from the Soroban Rust contract using Stellar CLI, ensuring a robust, type-safe architecture for frontend deployment.
 --
 
 🧬 Tech Stack
