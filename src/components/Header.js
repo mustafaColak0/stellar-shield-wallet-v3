@@ -2498,142 +2498,149 @@ function Header({
             )}
             {/* HISTORY */}
             {activeTab === "history" && (
-              <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
+              <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300 p-2 sm:p-0">
                 {/* TRANSACTION HISTORY MAIN PANEL */}
                 <div
-                  className={`relative group flex flex-col  p-8 rounded-xl transition-all duration-500 shadow-2xl font-sans
-                    ${
-                      darkMode
-                        ? "bg-[#090d16] border border-emerald-900/30 hover:border-emerald-500/50 text-slate-300"
-                        : "bg-black border border-emerald-100 hover:border-emerald-400/60 text-slate-700"
-                    }`}
+                  className={`relative group flex flex-col p-4 sm:p-6 md:p-8 rounded-xl transition-all duration-500 shadow-2xl font-sans w-full overflow-hidden
+        ${
+          darkMode
+            ? "bg-[#090d16] border border-emerald-900/30 hover:border-emerald-500/50 text-slate-300"
+            : "bg-black border border-emerald-100 hover:border-emerald-400/60 text-slate-700"
+        }`}
                 >
                   <div
                     className={`absolute inset-0 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none
-                      ${darkMode ? "bg-emerald-500/5" : "bg-emerald-500/10"}`}
+          ${darkMode ? "bg-emerald-500/5" : "bg-emerald-500/10"}`}
                   ></div>
 
-                  <div className="relative z-10">
-                    {/* Top Section: Header and Search Bar */}
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                      {/* Left Corner: Headline Only */}
-                      <h3 className="text-xl font-bold flex items-center gap-2">
+                  <div className="relative z-10 w-full space-y-4">
+                    {/* Top Section: Header, Badge and Search Bar Unified */}
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-2">
+                      {/* Left Corner: Headline */}
+                      <h3 className="text-lg sm:text-xl font-bold flex items-center gap-2 shrink-0">
                         <History
                           size={22}
-                          className={`transition-all duration-300
-                            ${
-                              darkMode
-                                ? "text-cyan-400 group-hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]"
-                                : "text-cyan-600 group-hover:drop-shadow-[0_0_6px_rgba(8,145,178,0.4)]"
-                            }`}
+                          className={`transition-all duration-300 shrink-0
+                ${
+                  darkMode
+                    ? "text-cyan-400 group-hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]"
+                    : "text-cyan-600 group-hover:drop-shadow-[0_0_6px_rgba(8,145,178,0.4)]"
+                }`}
                         />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 tracking-wide">
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 tracking-wide break-words">
                           Transaction History
                         </span>
                       </h3>
-                    </div>
 
-                    {/* Right Corner: LIVE Badge and Search Bar (Stacked) */}
-                    <div className="flex flex-col items-end gap-2 w-full sm:w-auto">
-                      <span className="flex items-center gap-1.5 px-2 py-1 rounded bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-mono text-emerald-400 font-bold uppercase tracking-widest h-fit w-fit whitespace-nowrap">
-                        <span className="relative flex h-1.5 w-1.5">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                      {/* Right Corner: LIVE Badge and Search Bar (Stacked beautifully) */}
+                      <div className="flex flex-col items-start md:items-end gap-2.5 w-full md:w-auto">
+                        <span className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-mono text-emerald-400 font-bold uppercase tracking-widest h-fit w-fit whitespace-nowrap">
+                          <span className="relative flex h-1.5 w-1.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                          </span>
+                          Transaction Live
                         </span>
-                        Transaction Live
-                      </span>
 
-                      {/* Search Bar */}
-                      <div className="relative w-full sm:w-64">
-                        <Search
-                          size={16}
-                          className="absolute left-3 top-2.5 text-slate-400"
-                        />
-                        <input
-                          type="text"
-                          placeholder="Search address or hash..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-4 py-2 text-xs focus:outline-none focus:border-cyan-500 text-slate-200 transition-colors"
-                        />
+                        {/* Search Bar - Full width on mobile, 64 (256px) on desktop */}
+                        <div className="relative w-full md:w-64">
+                          <Search
+                            size={16}
+                            className="absolute left-3 top-2.5 text-slate-400"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Search address or hash..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-4 py-2 text-xs focus:outline-none focus:border-cyan-500 text-slate-200 transition-colors"
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Bottom Section: Cyber Table View (Content Padded) */}
-                  <div className="bg-[#090d16] border border-slate-800/80 rounded-xl overflow-hidden shadow-inner">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse">
-                        <thead>
-                          <tr className="border-b border-slate-900 text-[10px] uppercase font-bold text-slate-400 font-mono tracking-wider bg-slate-950/80">
-                            <th className="p-4">Transaction ID / Hash</th>
-                            <th className="p-4">Target Address</th>
-                            <th className="p-4">Amount / Asset</th>
-                            <th className="p-4">Time</th>
-                            <th className="p-4 text-right">Network Summary</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-800/50 text-[11px] font-mono">
-                          {filteredTransactions.length === 0 ? (
-                            <tr>
-                              <td
-                                colSpan="5"
-                                className="p-8 text-center text-slate-400 bg-slate-950/30"
-                              >
-                                No data found or no transactions yet.
-                              </td>
+                    {/* Bottom Section: Cyber Table View */}
+                    <div className="bg-[#090d16] border border-slate-800/80 rounded-xl overflow-hidden shadow-inner w-full">
+                      {/* 🚨 MOBILE SCROLL FIX: Wraps the table and forces swipe scroll instead of squeezing */}
+                      <div className="w-full overflow-x-auto scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+                        {/* 🚨 min-w-[768px] ensures columns never crush each other on small screens */}
+                        <table className="w-full text-left border-collapse min-w-[768px]">
+                          <thead>
+                            <tr className="border-b border-slate-900 text-[10px] uppercase font-bold text-slate-400 font-mono tracking-wider bg-slate-950/80">
+                              <th className="p-4 w-[22%]">
+                                Transaction ID / Hash
+                              </th>
+                              <th className="p-4 w-[28%]">Target Address</th>
+                              <th className="p-4 w-[20%]">Amount / Asset</th>
+                              <th className="p-4 w-[15%]">Time</th>
+                              <th className="p-4 text-right w-[15%]">
+                                Network Summary
+                              </th>
                             </tr>
-                          ) : (
-                            filteredTransactions.map((tx) => (
-                              <tr
-                                key={tx.id}
-                                className="hover:bg-slate-800/40 transition-colors group"
-                              >
-                                {/* Hash Copying Column */}
-                                <td className="p-4 text-cyan-400 font-bold max-w-[120px] truncate">
-                                  <span
-                                    className="cursor-pointer border-b border-dashed border-cyan-400/30 hover:border-cyan-400 transition-colors"
-                                    onClick={() => copyToClipboard(tx.hash)}
-                                    title="Click to copy"
-                                  >
-                                    {tx.hash.slice(0, 8)}...{tx.hash.slice(-6)}
-                                  </span>
-                                </td>
-
-                                {/* Address Column */}
+                          </thead>
+                          <tbody className="divide-y divide-slate-800/50 text-[11px] font-mono">
+                            {filteredTransactions.length === 0 ? (
+                              <tr>
                                 <td
-                                  className="p-4 text-slate-300 max-w-[180px] truncate"
-                                  title={tx.to}
+                                  colSpan="5"
+                                  className="p-8 text-center text-slate-400 bg-slate-950/30"
                                 >
-                                  {tx.to.slice(0, 10)}...{tx.to.slice(-8)}
-                                </td>
-
-                                {/* Amount Column (Red/Rose for outgoing transactions) */}
-                                <td className="p-4 font-bold text-rose-400">
-                                  - {tx.amount} {tx.asset}
-                                </td>
-
-                                {/* Time Column */}
-                                <td className="p-4 text-slate-400">
-                                  {tx.date}
-                                </td>
-
-                                {/* Stellar Expert Button Column */}
-                                <td className="p-4 text-right">
-                                  <a
-                                    href={`https://stellar.expert/explorer/testnet/tx/${tx.hash}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="inline-block px-2 py-1 bg-slate-900 border border-slate-700 hover:border-cyan-500/50 text-slate-400 hover:text-cyan-400 rounded text-[10px] transition-all"
-                                  >
-                                    Stellar Expert
-                                  </a>
+                                  No data found or no transactions yet.
                                 </td>
                               </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
+                            ) : (
+                              filteredTransactions.map((tx) => (
+                                <tr
+                                  key={tx.id}
+                                  className="hover:bg-slate-800/40 transition-colors group"
+                                >
+                                  {/* Hash Copying Column */}
+                                  <td className="p-4 text-cyan-400 font-bold whitespace-nowrap">
+                                    <span
+                                      className="cursor-pointer border-b border-dashed border-cyan-400/30 hover:border-cyan-400 transition-colors"
+                                      onClick={() => copyToClipboard(tx.hash)}
+                                      title="Click to copy"
+                                    >
+                                      {tx.hash.slice(0, 8)}...
+                                      {tx.hash.slice(-6)}
+                                    </span>
+                                  </td>
+
+                                  {/* Address Column */}
+                                  <td
+                                    className="p-4 text-slate-300 whitespace-nowrap"
+                                    title={tx.to}
+                                  >
+                                    {tx.to.slice(0, 12)}...{tx.to.slice(-10)}
+                                  </td>
+
+                                  {/* Amount Column */}
+                                  <td className="p-4 font-bold text-rose-400 whitespace-nowrap">
+                                    - {tx.amount} {tx.asset}
+                                  </td>
+
+                                  {/* Time Column */}
+                                  <td className="p-4 text-slate-400 whitespace-nowrap">
+                                    {tx.date}
+                                  </td>
+
+                                  {/* Stellar Expert Button Column */}
+                                  <td className="p-4 text-right whitespace-nowrap">
+                                    <a
+                                      href={`https://stellar.expert/explorer/testnet/tx/${tx.hash}`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="inline-block px-2.5 py-1 bg-slate-900 border border-slate-700 hover:border-cyan-500/50 text-slate-400 hover:text-cyan-400 rounded text-[10px] transition-all"
+                                    >
+                                      Stellar Expert
+                                    </a>
+                                  </td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
                 </div>
