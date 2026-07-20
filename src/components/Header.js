@@ -2783,7 +2783,7 @@ function Header({
                     }`}
                 >
                   <span
-                    className={`w-1.5 h-1.5 rounded-full ${darkMode ? "bg-amber-500" : "bg-amber-600"}`}
+                    className={`w-1.5 h-1.5 rounded-full ${darkMode ? "bg-amber-500" : "bg-amber-60 -mt-4 sm:mt-0 mb-2 sm:mb-0"}`}
                   ></span>
                   ⚠️ Test Network Only
                 </div>
