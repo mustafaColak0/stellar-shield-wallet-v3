@@ -136,7 +136,7 @@ async function sendFeedback(caller, feedbackText) {
   }
 }
 
-async function fetchFeedback(caller) {
+async function fetchFeedback(caller, id = 1) {
   try {
     // 1. We are preparing the account details and the contract object
     const sourceAccount = await server.getAccount(caller);
@@ -145,6 +145,8 @@ async function fetchFeedback(caller) {
     // 2. As we’re only going to be reading, we’re constructing a simple transaction (tx)
     const builder = new TransactionBuilder(sourceAccount, TX_PARAMS);
     builder.setTimeout(TimeoutInfinite);
+
+    const parsedId = Number(id) || 1;
 
     // We are calling the "get_feedback" function in the contract
     builder.addOperation(
