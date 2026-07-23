@@ -140,7 +140,7 @@ export const handleTrueSorobanDeposit = async (
       .addOperation(
         Operation.invokeContractFunction({
           contract: contractId,
-          function: "send_feedback",
+          function: "create_feedback",
           args: [
             nativeToScVal(`Simulated deposit of ${amount} XLM!`, {
               type: "string",
