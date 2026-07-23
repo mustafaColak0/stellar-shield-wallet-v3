@@ -12,10 +12,8 @@ export const FetchFeedback = () => {
       const res = await fetchFeedback(pubKey, fbId);
 
       // We check the output on the console (it was returning an array) and print it to the screen
-      if (Array.isArray(res) && res.length > 0) {
-        _setFbData(res.join(", "));
-      } else if (res) {
-        _setFbData(res);
+      if (res) {
+        _setFbData("Your feedback has been successfully processed");
       } else {
         _setFbData("No feedback found.");
       }
