@@ -51,7 +51,8 @@ Stellar Shield Wallet is a modern, fast, and user-friendly Web3 wallet and trans
 > 🛡️ **Jury Note on Verification:** 
 > The dynamic deposit flow uses a security-oriented mock boundary. As seen in the transaction explorer logs, executing the `deposit()` action dynamically triggers and translates into a cryptographically signed `send_feedback` operation emitting the exact payload payload (e.g., `"Simulated deposit of 5 XLM!"`) directly to the target Soroban contract state.
 
-<img width="1917" height="802" alt="tx_hash_success" src="https://github.com/user-attachments/assets/313fd2e4-56fa-491e-97ef-92f2f10d4abc" />
+<img width="1886" height="796" alt="tx_hash_succes" src="https://github.com/user-attachments/assets/0adf65eb-9787-48ce-80e8-341c252290e5" />
+
 
 
 
