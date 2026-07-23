@@ -48,7 +48,6 @@ Stellar Shield Wallet is a modern, fast, and user-friendly Web3 wallet and trans
 * **Target Contract Address (Testnet):** `CDQUFGNQGT3CYQYNM4DUNZRLBARAXWNGJQW466OYZOODPHLXT2Z3AXMI` 
 * **Verifiable Transaction Hash (Successful Contract Call):** `b62e2b4998e021bb266b2c7b679f4e91358ea5aa0865c1278b2cf8922cb4231f`
 * **Explorer Link:** [View Successful Deposit Transaction on Stellar Expert](https://stellar.expert/explorer/testnet/tx/b62e2b4998e021bb266b2c7b679f4e91358ea5aa0865c1278b2cf8922cb4231f)
-
 > 🛡️ **Jury Note on Verification:** 
 > The dynamic deposit flow uses a security-oriented mock boundary. As seen in the transaction explorer logs, executing the `deposit()` action dynamically triggers and translates into a cryptographically signed `send_feedback` operation emitting the exact payload payload (e.g., `"Simulated deposit of 5 XLM!"`) directly to the target Soroban contract state.
 
