@@ -142,6 +142,16 @@ Proof of fully functional GitHub Actions automated workflow execution. The pipel
 9. Smart Contract Unit Test Execution Output (3/3 Passed)
 <img width="1145" height="228" alt="test-results" src="https://github.com/user-attachments/assets/18375f06-869c-45d9-85c2-23d3c7e60794" />
 
+### 10. Soroban Smart Contract Feedback Matrix (Level 3 Architecture)
+
+A feedback and status verification module integrated with smart contracts running live on the Soroban Testnet network:
+- **Create Feedback:** Enables users to record data anonymously and securely on the Stellar network via the `create_feedback` function.
+- **Encrypted Status Query (Check Feedback):** Retrieves data from the smart contract (`fetchFeedback`) in real time and verifies its status by performing an ID-based query.
+- **TX Hash & Log Tracking:** The unique transaction hash and network validation statuses for all transactions are displayed in real time on the interface.
+
+<img width="1918" height="862" alt="feedback" src="https://github.com/user-attachments/assets/a6f19c87-54cb-49e4-810f-6ad74224ec7d" />
+
+
 
 
 --
