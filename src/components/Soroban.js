@@ -120,7 +120,7 @@ async function sendFeedback(caller, feedbackText) {
   try {
     const args = [nativeToScVal(feedbackText)];
 
-    const result = await contractInt(caller, "send_feedback", args);
+    const result = await contractInt(caller, "create_feedback", args);
     console.log("Feedback has been sent successfully!");
     return result;
   } catch (error) {
@@ -147,7 +147,9 @@ async function fetchFeedback(caller) {
     builder.setTimeout(TimeoutInfinite);
 
     // We are calling the "get_feedback" function in the contract
-    builder.addOperation(contract.call("get_feedback"));
+    builder.addOperation(
+      contract.call("fetch_feedback", nativeToScVal(id, { type: "u32" })),
+    );
     const tx = builder.build();
 
     const simulation = await server.simulateTransaction(tx);
