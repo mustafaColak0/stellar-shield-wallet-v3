@@ -150,6 +150,7 @@ A feedback and status verification module integrated with smart contracts runnin
 - **TX Hash & Log Tracking:** The unique transaction hash and network validation statuses for all transactions are displayed in real time on the interface.
 
 <img width="1918" height="862" alt="feedback" src="https://github.com/user-attachments/assets/a6f19c87-54cb-49e4-810f-6ad74224ec7d" />
+<img width="1918" height="731" alt="create_feedback" src="https://github.com/user-attachments/assets/bdc24cb9-a625-4501-aedf-163ae454b917" />
 
 
 
