@@ -23,7 +23,7 @@ const RPC_URL = "https://soroban-testnet.stellar.org:443";
 const NETWORK_PASSPHRASE = Networks.TESTNET; // "Test Stellar Network ; September 2015"
 
 const CONTRACT_ADDRESS =
-  "CAXUSWZ5LFT4FITJIMYAX4FVL57ZM2LVRDW233PF7YXLJYIQCVZLV43H";
+  "CDQUFGNQGT3CYQYNM4DUNZRLBARAXWNGJQW466OYZOODPHLXT2Z3AXMI";
 
 const server = new StellarRpc.Server(RPC_URL);
 

@@ -133,7 +133,7 @@ export const handleTrueSorobanDeposit = async (
 
     // 4. Target Soroban Smart Contract ID
     const contractId =
-      "CAXUSWZ5LFT4FITJIMYAX4FVL57ZM2LVRDW233PF7YXLJYIQCVZLV43H";
+      "CDQUFGNQGT3CYQYNM4DUNZRLBARAXWNGJQW466OYZOODPHLXT2Z3AXMI";
 
     // 5. Construct the initial transaction structure
     const tx = new TransactionBuilder(account, { fee: "10000" })
@@ -333,7 +333,7 @@ function Header({
   const [juryTxStatus, setJuryTxStatus] = useState("IDLE");
   const [jurySorobanError, setJurySorobanError] = useState("");
   const [sorobanContractId, setSorobanContractId] = useState(
-    "CAXUSWZ5LFT4FITJIMYAX4FVL57ZM2LVRDW233PF7YXLJYIQCVZLV43H",
+    "CDQUFGNQGT3CYQYNM4DUNZRLBARAXWNGJQW466OYZOODPHLXT2Z3AXMI",
   );
   const [totalRaised, setTotalRaised] = useState(1240);
   const [fundAmount, setFundAmount] = useState("");
@@ -983,7 +983,7 @@ function Header({
     }
 
     const myRealContractId =
-      "CAXUSWZ5LFT4FITJIMYAX4FVL57ZM2LVRDW233PF7YXLJYIQCVZLV43H";
+      "CDQUFGNQGT3CYQYNM4DUNZRLBARAXWNGJQW466OYZOODPHLXT2Z3AXMI";
 
     if (typeof setAmount === "function") setAmount(fundAmount);
     if (typeof setDestination === "function") setDestination(myRealContractId);
@@ -1059,7 +1059,7 @@ function Header({
         const newHistoryTx = {
           id: Date.now(),
           date: new Date().toLocaleString("tr-TR"),
-          to: "CAXUSWZ5LFT4FITJIMYAX4FVL57ZM2LVRDW233PF7YXLJYIQCVZLV43H",
+          to: "CDQUFGNQGT3CYQYNM4DUNZRLBARAXWNGJQW466OYZOODPHLXT2Z3AXMI",
           amount: addedAmount.toString(),
           asset: "XLM",
           hash:
@@ -3457,7 +3457,7 @@ function Header({
                 </span>
                 <span className="font-mono text-[11px] text-cyan-400 break-all block">
                   {destination ||
-                    "CAXUSWZ5LFT4FITJIMYAX4FVL57ZM2LVRDW233PF7YXLJYIQCVZLV43H"}
+                    "CDQUFGNQGT3CYQYNM4DUNZRLBARAXWNGJQW466OYZOODPHLXT2Z3AXMI"}
                 </span>
               </div>
             </div>
@@ -3518,7 +3518,7 @@ function Header({
 
                   const currentDest =
                     destination ||
-                    "CAXUSWZ5LFT4FITJIMYAX4FVL57ZM2LVRDW233PF7YXLJYIQCVZLV43H";
+                    "CDQUFGNQGT3CYQYNM4DUNZRLBARAXWNGJQW466OYZOODPHLXT2Z3AXMI";
 
                   // ROUTE SEGMENTATION: Soroban Contract Deposit Workflow
                   if (
