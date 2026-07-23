@@ -45,7 +45,7 @@ Stellar Shield Wallet is a modern, fast, and user-friendly Web3 wallet and trans
 
 ## ⛓️ Smart Contract Deployment Details (Jury Verification)
 
-* **Target Contract Address (Testnet):** `CAXUSWZ5LFT4FITJIMYAX4FVL57ZM2LVRDW233PF7YXLJYIQCVZLV43H` 
+* **Target Contract Address (Testnet):** `CDQUFGNQGT3CYQYNM4DUNZRLBARAXWNGJQW466OYZOODPHLXT2Z3AXMI` 
 * **Verifiable Transaction Hash (Successful Contract Call):** `b62e2b4998e021bb266b2c7b679f4e91358ea5aa0865c1278b2cf8922cb4231f`
 * **Explorer Link:** [View Successful Deposit Transaction on Stellar Expert](https://stellar.expert/explorer/testnet/tx/b62e2b4998e021bb266b2c7b679f4e91358ea5aa0865c1278b2cf8922cb4231f)
 
