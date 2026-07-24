@@ -137,7 +137,8 @@ A real-time query-filtered interface mapped out with clean responsive constraint
 8. Automated CI/CD Pipeline & Smart Contract Unit Tests (Level 3 Core Requirement)
 Proof of fully functional GitHub Actions automated workflow execution. The pipeline compiles the repository, triggers isolated Soroban unit testing routines, checks cross-device frontend builds, and finishes with a 100% success rate:
 <img width="1915" height="896" alt="ci-summary" src="https://github.com/user-attachments/assets/49a560da-c1fa-477c-8d0b-0b3f7d0e538a" />
-<img width="1918" height="838" alt="ci-detail" src="https://github.com/user-attachments/assets/49f26083-f3b0-411e-9b1e-a0402bce497e" />
+<img width="1905" height="853" alt="ci-detail" src="https://github.com/user-attachments/assets/22223c04-5952-4c9a-9cdf-762abb7086bd" />
+
 
 
 
