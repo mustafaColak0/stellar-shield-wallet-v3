@@ -1,4 +1,4 @@
-# 🌌 Stellar Shield Wallet
+<img width="1915" height="896" alt="ci-summary" src="https://github.com/user-attachments/assets/22ef17e9-5c2e-4759-8f94-106eb06dc2cf" /># 🌌 Stellar Shield Wallet
 
 Stellar Shield Wallet is a modern, fast, and user-friendly Web3 wallet and transaction interface that integrates seamlessly with Soroban smart contracts. The project is designed to manage financial workflows on the Stellar network in the most transparent and secure manner.
 
@@ -136,11 +136,14 @@ A real-time query-filtered interface mapped out with clean responsive constraint
 
 8. Automated CI/CD Pipeline & Smart Contract Unit Tests (Level 3 Core Requirement)
 Proof of fully functional GitHub Actions automated workflow execution. The pipeline compiles the repository, triggers isolated Soroban unit testing routines, checks cross-device frontend builds, and finishes with a 100% success rate:
-<img width="1875" height="602" alt="workflow" src="https://github.com/user-attachments/assets/3de56faa-7be8-45c5-abf6-2e3b5d953842" />
+<img width="1915" height="896" alt="ci-summary" src="https://github.com/user-attachments/assets/49a560da-c1fa-477c-8d0b-0b3f7d0e538a" />
+<img width="1918" height="838" alt="ci-detail" src="https://github.com/user-attachments/assets/49f26083-f3b0-411e-9b1e-a0402bce497e" />
+
 
 
 9. Smart Contract Unit Test Execution Output (3/3 Passed)
 <img width="1145" height="228" alt="test-results" src="https://github.com/user-attachments/assets/18375f06-869c-45d9-85c2-23d3c7e60794" />
+
 
 ### 10. Soroban Smart Contract Feedback Matrix (Level 3 Architecture)
 
