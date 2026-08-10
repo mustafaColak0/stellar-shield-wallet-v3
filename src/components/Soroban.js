@@ -5,14 +5,10 @@ import {
   TransactionBuilder,
   Networks,
   BASE_FEE,
-  nativeToScVal,
-  scValToNative,
   TimeoutInfinite,
   rpc as StellarRpc,
-  fromXDR,
-  parseTransactionXDR,
-  FeeBumpTransactionBuilder,
-  Transaction,
+  nativeToScVal,
+  scValToNative,
 } from "@stellar/stellar-sdk";
 
 import { userSignTransaction } from "./Freighter";
@@ -20,8 +16,7 @@ import { userSignTransaction } from "./Freighter";
 /* ================= Config ================= */
 
 const RPC_URL = "https://soroban-testnet.stellar.org:443";
-const NETWORK_PASSPHRASE = Networks.TESTNET; // "Test Stellar Network ; September 2015"
-
+const NETWORK_PASSPHRASE = Networks.TESTNET;
 const CONTRACT_ADDRESS =
   "CDQUFGNQGT3CYQYNM4DUNZRLBARAXWNGJQW466OYZOODPHLXT2Z3AXMI";
 
@@ -32,145 +27,96 @@ const TX_PARAMS = {
   networkPassphrase: NETWORK_PASSPHRASE,
 };
 
-/* ================= Core Contract Interaction ================= */
-
-async function contractInt(caller, fnName, values) {
-  // 1 Load account
-  const sourceAccount = await server.getAccount(caller);
-  const contract = new Contract(CONTRACT_ADDRESS);
-
-  // 2 Build tx
-  const builder = new TransactionBuilder(sourceAccount, TX_PARAMS);
-
-  // Sets a strict time-out for testnet transactionsuz
-  builder.setTimeout(TimeoutInfinite);
-
-  // Let’s add the values securely
-  if (Array.isArray(values)) {
-    builder.addOperation(contract.call(fnName, ...values));
-  } else if (values !== undefined && values !== null) {
-    builder.addOperation(contract.call(fnName, values));
-  } else {
-    builder.addOperation(contract.call(fnName));
-  }
-
-  // We are building the process
-  const tx = builder.build();
-
-  // Prepare transaction (Soroban simulation and gas allocation)
-  const preparedResult = await server.prepareTransaction(tx);
-
-  const finalTx = preparedResult.innerTransaction
-    ? preparedResult.innerTransaction
-    : preparedResult;
-
-  const xdr = finalTx.toXDR();
-
-  // Sign with the Freighter wallet
-  const signed = await userSignTransaction(xdr, caller);
-
-  // Convert signed data to a plain string (XDR)
-  const finalSignedXdr =
-    typeof signed === "object" && signed.signedTxXdr
-      ? signed.signedTxXdr
-      : signed;
-
-  let send;
-  if (typeof server.sendTransaction === "function") {
-    //We pass it directly as a string or in the format expected by the library
-    send = await server
-      .sendTransaction(
-        typeof finalSignedXdr === "string"
-          ? TransactionBuilder.fromXDR(finalSignedXdr, NETWORK_PASSPHRASE)
-          : finalSignedXdr,
-      )
-      .catch(async (err) => {
-        return await server.sendTransaction(finalSignedXdr);
-      });
-  }
-
-  console.log(
-    "The transaction has been successfully sent to the network:",
-    send,
-  );
-  return send;
-
-  for (let i = 0; i < 10; i++) {
-    const res = await server.getTransaction(send.hash);
-
-    if (res.status === "SUCCESS") {
-      if (res.returnValue) {
-        return scValToNative(res.returnValue);
-      }
-      return null;
-    }
-
-    if (res.status === "FAILED") {
-      throw new Error("Transaction failed");
-    }
-
-    await new Promise((r) => setTimeout(r, 1000));
-  }
-
-  throw new Error("Transaction timeout");
-}
-
 /* ================= Contract Functions ================= */
-async function sendFeedback(caller, feedbackText) {
+
+export async function sendFeedback(caller, feedbackText) {
   try {
-    const args = [nativeToScVal(feedbackText)];
+    const sourceAccount = await server.getAccount(caller);
+    const contract = new Contract(CONTRACT_ADDRESS);
 
-    const result = await contractInt(caller, "create_feedback", args);
-    console.log("Feedback has been sent successfully!");
-    return result;
+    const builder = new TransactionBuilder(sourceAccount, TX_PARAMS);
+    builder.setTimeout(TimeoutInfinite);
+
+    const textString = String(feedbackText || "");
+
+    // 💡 KRİTİK NOKTA 1: Native değer dönüştürülüyor
+    const textScVal = nativeToScVal(textString);
+
+    // 💡 KRİTİK NOKTA 2: Bad Union Switch hatasını engelleyen DİZİ (Array) kullanımı
+    builder.addOperation(contract.call("create_feedback", textScVal));
+
+    const tx = builder.build();
+    const preparedTx = await server.prepareTransaction(tx);
+    const xdrData = preparedTx.toXDR();
+
+    const signed = await userSignTransaction(xdrData, caller);
+
+    const finalSignedXdr =
+      typeof signed === "object" && signed.signedTxXdr
+        ? signed.signedTxXdr
+        : signed;
+
+    const send = await server.sendTransaction(
+      typeof finalSignedXdr === "string"
+        ? TransactionBuilder.fromXDR(finalSignedXdr, NETWORK_PASSPHRASE)
+        : finalSignedXdr,
+    );
+
+    return send;
   } catch (error) {
-    if (error.message && error.message.includes("switch: 4")) {
-      console.log(
-        "The wallet issue has been successfully resolved; the process is continuing...",
-      );
-      return { status: "PENDING" };
-    }
-
-    console.error("sendFeedback actual error:", error);
+    console.error("sendFeedback error:", error);
     throw error;
   }
 }
 
-async function fetchFeedback(caller, id = 1) {
+export async function fetchFeedback(caller, id = 1) {
   try {
-    // 1. We are preparing the account details and the contract object
     const sourceAccount = await server.getAccount(caller);
     const contract = new Contract(CONTRACT_ADDRESS);
 
-    // 2. As we’re only going to be reading, we’re constructing a simple transaction (tx)
     const builder = new TransactionBuilder(sourceAccount, TX_PARAMS);
     builder.setTimeout(TimeoutInfinite);
 
     const parsedId = Number(id) || 1;
 
-    // We are calling the "get_feedback" function in the contract
-    builder.addOperation(
-      contract.call("fetch_feedback", nativeToScVal(id, { type: "u32" })),
-    );
+    // 💡 KRİTİK NOKTA:
+    // Contract tarafındaki feedback ID değeri u32 olarak bekleniyorsa
+    // integer tipini açıkça belirtmemiz gerekir.
+    const idScVal = nativeToScVal(parsedId, {
+      type: "u32",
+    });
+
+    // 💡 Parametre dizi olarak gönderiliyor
+    builder.addOperation(contract.call("fetch_feedback", idScVal));
+
     const tx = builder.build();
+
+    console.log("Fetching feedback from Soroban contract. ID:", parsedId);
 
     const simulation = await server.simulateTransaction(tx);
 
     if (StellarRpc.Api.isSimulationSuccess(simulation)) {
+      if (!simulation.result?.retval) {
+        console.warn(
+          "Feedback simulation succeeded but no return value was received.",
+        );
+
+        return null;
+      }
+
       const result = scValToNative(simulation.result.retval);
-      console.log("Feedback has been successfully retrieved:", result);
+
+      console.log("✅ Feedback simulation successful:", result);
+
       return result;
-    } else {
-      throw new Error(
-        "The simulation failed or there is a lack of authorisation.",
-      );
     }
+
+    console.error("❌ Soroban fetch_feedback simulation failed:", simulation);
+
+    throw new Error(simulation?.error || "Simulation failed");
   } catch (error) {
-    console.error("fetchFeedback failed:", error);
+    console.error("fetchFeedback error:", error);
+
     throw error;
   }
 }
-
-/* ================= Exports ================= */
-
-export { sendFeedback, fetchFeedback };

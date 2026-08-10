@@ -125,68 +125,228 @@ export const handleTrueSorobanDeposit = async (
     }
 
     // 3. Connect to Horizon (for account) and Soroban RPC (for simulation)
+    // 3. Connect to Horizon (for account) and Soroban RPC (for simulation)
     const horizonServer = new Horizon.Server(
       "https://horizon-testnet.stellar.org",
     );
+
     const rpcServer = new rpc.Server("https://soroban-testnet.stellar.org");
-    const account = await horizonServer.loadAccount(userPublicKey);
 
     // 4. Target Soroban Smart Contract ID
     const contractId =
       "CDQUFGNQGT3CYQYNM4DUNZRLBARAXWNGJQW466OYZOODPHLXT2Z3AXMI";
 
-    // 5. Construct the initial transaction structure
-    const tx = new TransactionBuilder(account, { fee: "10000" })
-      .addOperation(
-        Operation.invokeContractFunction({
-          contract: contractId,
-          function: "create_feedback",
-          args: [
-            nativeToScVal(`Simulated deposit of ${amount} XLM!`, {
-              type: "string",
-            }),
-          ],
-        }),
-      )
-      .setTimeout(180)
-      .setNetworkPassphrase(Networks.TESTNET)
-      .build();
+    let submission = null;
+    let confirmedTransaction = null;
 
-    // 6. SIMULATION: Prepare the transaction with Soroban RPC
-    console.log("Simulating transaction on Soroban RPC...");
-    const preparedTx = await rpcServer.prepareTransaction(tx);
+    // Sequence protection:
+    // We create the transaction using the same Soroban RPC
+    // that will later receive and confirm the transaction.
+    for (let attempt = 0; attempt < 2; attempt++) {
+      // Always get the latest account sequence directly from Soroban RPC.
+      const account = await rpcServer.getAccount(userPublicKey);
 
-    // 7. Request cryptographic signature from Freighter
-    let signedTxXdr;
-    try {
-      signedTxXdr = await signTransaction(preparedTx.toXDR(), {
-        network: "TESTNET",
-        address: userPublicKey,
-      });
-    } catch (signErr) {
-      console.warn("Freighter signature cancelled by user:", signErr);
-      return { success: false, cancelled: true };
-    }
+      console.log(
+        `Soroban transaction attempt ${attempt + 1}/2 - Current sequence:`,
+        account.sequenceNumber(),
+      );
 
-    if (!signedTxXdr) {
-      if (typeof setSorobanError === "function") {
-        setSorobanError("Transaction signature rejected by the user.");
+      // 5. Construct the initial transaction structure
+      const tx = new TransactionBuilder(account, { fee: "10000" })
+        .addOperation(
+          Operation.invokeContractFunction({
+            contract: contractId,
+            function: "create_feedback",
+            args: [
+              nativeToScVal(`Simulated deposit of ${amount} XLM!`, {
+                type: "string",
+              }),
+            ],
+          }),
+        )
+        .setTimeout(180)
+        .setNetworkPassphrase(Networks.TESTNET)
+        .build();
+
+      // 6. SIMULATION: Prepare the transaction with Soroban RPC
+      console.log("Simulating transaction on Soroban RPC...");
+
+      const preparedTx = await rpcServer.prepareTransaction(tx);
+
+      // 7. Request cryptographic signature from Freighter
+      let signedTxXdr;
+
+      try {
+        signedTxXdr = await signTransaction(preparedTx.toXDR(), {
+          network: "TESTNET",
+          address: userPublicKey,
+        });
+      } catch (signErr) {
+        console.warn("Freighter signature cancelled by user:", signErr);
+
+        return {
+          success: false,
+          cancelled: true,
+        };
       }
-      return { success: false, cancelled: true };
-    }
 
-    // 8. Submit the fully signed transaction directly to the Soroban RPC
-    console.log("Submitting transaction to network...");
-    const finalTx = TransactionBuilder.fromXDR(signedTxXdr, Networks.TESTNET);
-    const submission = await rpcServer.sendTransaction(finalTx);
+      if (!signedTxXdr) {
+        if (typeof setSorobanError === "function") {
+          setSorobanError("Transaction signature rejected by the user.");
+        }
 
-    if (submission.status === "ERROR") {
+        return {
+          success: false,
+          cancelled: true,
+        };
+      }
+
+      // 8. Submit the fully signed transaction directly to the Soroban RPC
+      console.log("Submitting transaction to network...");
+
+      // Convert the signed XDR returned by Freighter
+      // back into a Stellar Transaction object.
+      const finalTx = TransactionBuilder.fromXDR(signedTxXdr, Networks.TESTNET);
+
+      // Stellar Core may temporarily return TRY_AGAIN_LATER.
+      // In this situation, resend the SAME signed transaction instead of
+      // immediately creating a new sequence number.
+      let submitRetryCount = 0;
+      let shouldRebuildTransaction = false;
+
+      while (submitRetryCount < 6) {
+        submission = await rpcServer.sendTransaction(finalTx);
+
+        // Transaction successfully entered the network queue.
+        if (
+          submission.status === "PENDING" ||
+          submission.status === "DUPLICATE"
+        ) {
+          break;
+        }
+
+        // Another transaction from the same wallet may still be in memory.
+        // Wait and retry the SAME signed transaction.
+        if (submission.status === "TRY_AGAIN_LATER") {
+          submitRetryCount++;
+
+          console.warn(
+            `Soroban network busy. Retrying transaction (${submitRetryCount}/6)...`,
+          );
+
+          if (submitRetryCount >= 6) {
+            break;
+          }
+
+          await new Promise((resolve) => setTimeout(resolve, 4000));
+
+          continue;
+        }
+
+        // If a stale sequence is detected, fetch the account again
+        // and rebuild the transaction once.
+        if (submission.status === "ERROR") {
+          const submissionError = JSON.stringify(
+            submission.errorResult || submission.errorResultXdr || {},
+          );
+
+          const isBadSequence =
+            submissionError.includes("txBadSeq") ||
+            submissionError.includes("txBAD_SEQ") ||
+            submissionError.includes('"value":-5');
+
+          if (isBadSequence && attempt === 0) {
+            console.warn(
+              "⚠️ txBadSeq detected. Waiting for the previous transaction to leave the network queue...",
+            );
+
+            if (typeof setSorobanError === "function") {
+              setSorobanError(
+                "Synchronizing the latest Stellar account sequence...",
+              );
+            }
+
+            await new Promise((resolve) => setTimeout(resolve, 8000));
+
+            shouldRebuildTransaction = true;
+            break;
+          }
+
+          throw new Error(
+            "Soroban Execution Error: " +
+              JSON.stringify(
+                submission.errorResult || submission.errorResultXdr || {},
+              ),
+          );
+        }
+
+        throw new Error(
+          `Unexpected Soroban submission status: ${submission.status}`,
+        );
+      }
+
+      if (shouldRebuildTransaction) {
+        continue;
+      }
+
+      // If Stellar remained busy after all retries, stop safely.
+      if (
+        !submission ||
+        (submission.status !== "PENDING" && submission.status !== "DUPLICATE")
+      ) {
+        throw new Error(
+          "Stellar network is temporarily busy. Please try the transaction again in a few seconds.",
+        );
+      }
+
+      console.log(
+        "Transaction submitted. Waiting for final ledger confirmation...",
+        submission.hash,
+      );
+
+      // IMPORTANT:
+      // sendTransaction only submits the transaction.
+      // We wait here until Stellar confirms it in a ledger.
+      for (let check = 0; check < 30; check++) {
+        const txResult = await rpcServer.getTransaction(submission.hash);
+
+        if (txResult.status === "SUCCESS") {
+          confirmedTransaction = txResult;
+
+          console.log("✅ Transaction confirmed on Stellar ledger!");
+
+          break;
+        }
+
+        if (txResult.status === "FAILED") {
+          throw new Error(
+            "Soroban transaction reached the ledger but execution failed.",
+          );
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+
+      if (confirmedTransaction) {
+        break;
+      }
+
       throw new Error(
-        "Soroban Execution Error: " + JSON.stringify(submission.errorResult),
+        "Transaction confirmation timed out. Stellar RPC did not confirm the transaction in time.",
       );
     }
 
+    // Transaction must be confirmed before the UI is updated.
+    if (
+      !submission ||
+      !confirmedTransaction ||
+      confirmedTransaction.status !== "SUCCESS"
+    ) {
+      throw new Error("Soroban transaction could not be confirmed.");
+    }
+
     console.log("Soroban Call Submitted! Tx Hash:", submission.hash);
+
     if (typeof setRealTxHash === "function") {
       setRealTxHash(submission.hash);
     }
@@ -206,9 +366,11 @@ export const handleTrueSorobanDeposit = async (
 
         // We are checking the text on the labels around the box (to capture the word ‘AMOUNT’)
         const parentText = (inp.parentElement?.textContent || "").toUpperCase();
+
         const grandParentText = (
           inp.parentElement?.parentElement?.textContent || ""
         ).toUpperCase();
+
         const combinedText = parentText + " " + grandParentText;
 
         if (
@@ -226,12 +388,19 @@ export const handleTrueSorobanDeposit = async (
           inp.value = "";
 
           // Clear React’s background memory
-          if (inp._valueTracker) inp._valueTracker.setValue("");
-          if (inp.__reactValueTracker) inp.__reactValueTracker.setValue("");
+          if (inp._valueTracker) {
+            inp._valueTracker.setValue("");
+          }
+
+          if (inp.__reactValueTracker) {
+            inp.__reactValueTracker.setValue("");
+          }
 
           // We are triggering change events
           inp.dispatchEvent(new Event("input", { bubbles: true }));
+
           inp.dispatchEvent(new Event("change", { bubbles: true }));
+
           inp.dispatchEvent(new Event("blur", { bubbles: true }));
         }
       });
@@ -239,12 +408,17 @@ export const handleTrueSorobanDeposit = async (
       console.warn("Transfer Engine DOM cleaning error:", domErr);
     }
 
-    return { success: true, cancelled: false, hash: submission.hash };
+    return {
+      success: true,
+      cancelled: false,
+      hash: submission.hash,
+    };
   } catch (error) {
     console.error("Soroban Matrix Error:", error);
 
     // Safety measure: If there is a wallet rejection that has been overlooked, catch it from the error message
     const errStr = error.toString().toLowerCase();
+
     const isUserCancellation =
       errStr.includes("declined") ||
       errStr.includes("cancel") ||
@@ -257,6 +431,7 @@ export const handleTrueSorobanDeposit = async (
           : error.message || "Transaction failed.",
       );
     }
+
     return {
       success: false,
       cancelled: isUserCancellation,
