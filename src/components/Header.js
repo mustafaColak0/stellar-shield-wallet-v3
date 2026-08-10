@@ -51,6 +51,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
+//import LiveAnalyticsPanel from "./LiveAnalyticsPanel";
 
 const securityAlerts = [
   {
@@ -3580,6 +3581,10 @@ function Header({
                   {/* Feedback Retrieval Component */}
                   <FetchFeedback />
                 </div>
+                {/*<div className="w-full pt-4 border-t border-slate-900">
+                  <LiveAnalyticsPanel />
+                </div>
+                */}
               </div>
             )}
           </div>
