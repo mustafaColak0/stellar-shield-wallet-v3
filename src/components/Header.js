@@ -143,12 +143,13 @@ export const handleTrueSorobanDeposit = async (
     // Sequence protection:
     // We create the transaction using the same Soroban RPC
     // that will later receive and confirm the transaction.
+    const MAX_BUILD_ATTEMPTS = 4;
     for (let attempt = 0; attempt < 2; attempt++) {
       // Always get the latest account sequence directly from Soroban RPC.
       const account = await rpcServer.getAccount(userPublicKey);
 
       console.log(
-        `Soroban transaction attempt ${attempt + 1}/2 - Current sequence:`,
+        `Soroban transaction attempt ${attempt + 1}/${MAX_BUILD_ATTEMPTS} - Current sequence:`,
         account.sequenceNumber(),
       );
 
@@ -251,34 +252,32 @@ export const handleTrueSorobanDeposit = async (
             submission.errorResult || submission.errorResultXdr || {},
           );
 
-          const isBadSequence =
-            submissionError.includes("txBadSeq") ||
-            submissionError.includes("txBAD_SEQ") ||
-            submissionError.includes('"value":-5');
-
-          if (isBadSequence && attempt === 0) {
-            console.warn(
-              "⚠️ txBadSeq detected. Waiting for the previous transaction to leave the network queue...",
-            );
-
-            if (typeof setSorobanError === "function") {
-              setSorobanError(
-                "Synchronizing the latest Stellar account sequence...",
+          if (isBadSequence) {
+            // Son deneme değilse güncel sequence'i tekrar alıp
+            // transaction'ı baştan oluştur.
+            if (attempt < MAX_BUILD_ATTEMPTS - 1) {
+              console.warn(
+                `⚠️ txBadSeq detected. Rebuilding transaction with fresh sequence (${attempt + 1}/${MAX_BUILD_ATTEMPTS})...`,
               );
+
+              if (typeof setSorobanError === "function") {
+                setSorobanError(
+                  "Synchronizing the latest Stellar account sequence...",
+                );
+              }
+
+              // Önceki transaction'ın ledger/network durumunun
+              // oturması için kısa süre bekle.
+              await new Promise((resolve) => setTimeout(resolve, 6000));
+
+              shouldRebuildTransaction = true;
+              break;
             }
 
-            await new Promise((resolve) => setTimeout(resolve, 8000));
-
-            shouldRebuildTransaction = true;
-            break;
+            throw new Error(
+              "Stellar account sequence remained out of sync after multiple rebuild attempts.",
+            );
           }
-
-          throw new Error(
-            "Soroban Execution Error: " +
-              JSON.stringify(
-                submission.errorResult || submission.errorResultXdr || {},
-              ),
-          );
         }
 
         throw new Error(
