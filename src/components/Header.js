@@ -247,14 +247,21 @@ export const handleTrueSorobanDeposit = async (
 
         // If a stale sequence is detected, fetch the account again
         // and rebuild the transaction once.
+        // If a stale sequence is detected, fetch the account again
+        // and rebuild the transaction with a fresh sequence.
         if (submission.status === "ERROR") {
           const submissionError = JSON.stringify(
             submission.errorResult || submission.errorResultXdr || {},
           );
 
+          // Stellar bad-sequence error detection
+          const isBadSequence =
+            submissionError.includes("txBadSeq") ||
+            submissionError.includes("txBAD_SEQ") ||
+            submissionError.includes('"value":-5');
+
           if (isBadSequence) {
-            // Son deneme değilse güncel sequence'i tekrar alıp
-            // transaction'ı baştan oluştur.
+            // Son deneme değilse güncel sequence ile transaction'ı yeniden oluştur.
             if (attempt < MAX_BUILD_ATTEMPTS - 1) {
               console.warn(
                 `⚠️ txBadSeq detected. Rebuilding transaction with fresh sequence (${attempt + 1}/${MAX_BUILD_ATTEMPTS})...`,
@@ -266,11 +273,14 @@ export const handleTrueSorobanDeposit = async (
                 );
               }
 
-              // Önceki transaction'ın ledger/network durumunun
-              // oturması için kısa süre bekle.
+              // Önceki transaction'ın network queue'dan çıkmasını bekle.
               await new Promise((resolve) => setTimeout(resolve, 6000));
 
               shouldRebuildTransaction = true;
+
+              // while döngüsünden çık.
+              // Aşağıdaki continue ile outer for tekrar başlayacak
+              // ve rpcServer.getAccount() fresh sequence alacak.
               break;
             }
 
@@ -278,18 +288,33 @@ export const handleTrueSorobanDeposit = async (
               "Stellar account sequence remained out of sync after multiple rebuild attempts.",
             );
           }
+
+          // txBadSeq dışındaki gerçek Soroban hataları
+          throw new Error(
+            "Soroban Execution Error: " +
+              JSON.stringify(
+                submission.errorResult || submission.errorResultXdr || {},
+              ),
+          );
         }
 
+        // Beklenmeyen başka bir submission status geldiyse dur.
         throw new Error(
           `Unexpected Soroban submission status: ${submission.status}`,
         );
       }
 
+      // ============================================================
+      // WHILE LOOP BİTTİ
+      // ============================================================
+
+      // txBadSeq nedeniyle transaction yeniden oluşturulacaksa
+      // outer for döngüsünün başına dön.
       if (shouldRebuildTransaction) {
         continue;
       }
 
-      // If Stellar remained busy after all retries, stop safely.
+      // Transaction network queue'ya gerçekten alınmış olmalı.
       if (
         !submission ||
         (submission.status !== "PENDING" && submission.status !== "DUPLICATE")
@@ -304,55 +329,62 @@ export const handleTrueSorobanDeposit = async (
         submission.hash,
       );
 
-      // IMPORTANT:
-      // sendTransaction only submits the transaction.
-      // We wait here until Stellar confirms it in a ledger.
-      // Wait for final ledger confirmation.
-      // A transaction may temporarily return NOT_FOUND while
-      // Stellar RPC is catching up with the latest ledger.
-      for (let check = 0; check < 60; check++) {
-        try {
-          const txResult = await rpcServer.getTransaction(submission.hash);
+      // ============================================================
+      // FINAL LEDGER CONFIRMATION
+      // ============================================================
 
-          console.log(
-            `⏳ Confirmation check ${check + 1}/60:`,
-            txResult.status,
+      // Stellar RPC transaction'ı ilk sorgularda NOT_FOUND döndürebilir.
+      // Bu yüzden maksimum yaklaşık 120 saniye bekliyoruz.
+      for (let check = 0; check < 60; check++) {
+        let txResult;
+
+        try {
+          txResult = await rpcServer.getTransaction(submission.hash);
+        } catch (pollError) {
+          // Sadece geçici RPC/network hatalarını burada yakala.
+          console.warn(
+            `⚠️ Confirmation RPC check ${check + 1}/60 failed temporarily:`,
+            pollError,
           );
 
-          if (txResult.status === "SUCCESS") {
-            confirmedTransaction = txResult;
+          await new Promise((resolve) => setTimeout(resolve, 2000));
 
-            console.log(
-              "✅ Transaction confirmed on Stellar ledger!",
-              submission.hash,
-            );
-
-            break;
-          }
-
-          if (txResult.status === "FAILED") {
-            throw new Error(
-              "Soroban transaction reached the ledger but execution failed.",
-            );
-          }
-
-          // NOT_FOUND is temporary here.
-          // Keep waiting instead of treating it as failure.
-        } catch (pollError) {
-          console.warn("⚠️ Temporary RPC confirmation check error:", pollError);
+          continue;
         }
 
-        // 60 × 2 seconds = max ~120 sec confirmation window
+        console.log(`⏳ Confirmation check ${check + 1}/60:`, txResult.status);
+
+        // Ledger confirmation başarılı
+        if (txResult.status === "SUCCESS") {
+          confirmedTransaction = txResult;
+
+          console.log(
+            "✅ Transaction confirmed on Stellar ledger!",
+            submission.hash,
+          );
+
+          break;
+        }
+
+        // Ledger'a girdi ancak contract execution başarısız
+        if (txResult.status === "FAILED") {
+          throw new Error(
+            "Soroban transaction reached the ledger but execution failed.",
+          );
+        }
+
+        // NOT_FOUND / henüz işlenmedi
+        // biraz bekleyip tekrar kontrol et.
         await new Promise((resolve) => setTimeout(resolve, 2000));
       }
 
+      // Başarı geldiyse outer build loop'tan çık.
       if (confirmedTransaction) {
         break;
       }
 
-      // Transaction was submitted successfully, but RPC confirmation
-      // did not arrive inside our local waiting window.
-      // Do NOT classify this as wallet rejection.
+      // Transaction RPC'ye gönderildi fakat
+      // bizim bekleme süremiz içinde final confirmation gelmedi.
       console.warn(
         "⏳ Transaction submitted but final confirmation is delayed:",
         submission.hash,
