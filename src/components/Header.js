@@ -307,33 +307,69 @@ export const handleTrueSorobanDeposit = async (
       // IMPORTANT:
       // sendTransaction only submits the transaction.
       // We wait here until Stellar confirms it in a ledger.
-      for (let check = 0; check < 30; check++) {
-        const txResult = await rpcServer.getTransaction(submission.hash);
+      // Wait for final ledger confirmation.
+      // A transaction may temporarily return NOT_FOUND while
+      // Stellar RPC is catching up with the latest ledger.
+      for (let check = 0; check < 60; check++) {
+        try {
+          const txResult = await rpcServer.getTransaction(submission.hash);
 
-        if (txResult.status === "SUCCESS") {
-          confirmedTransaction = txResult;
-
-          console.log("✅ Transaction confirmed on Stellar ledger!");
-
-          break;
-        }
-
-        if (txResult.status === "FAILED") {
-          throw new Error(
-            "Soroban transaction reached the ledger but execution failed.",
+          console.log(
+            `⏳ Confirmation check ${check + 1}/60:`,
+            txResult.status,
           );
+
+          if (txResult.status === "SUCCESS") {
+            confirmedTransaction = txResult;
+
+            console.log(
+              "✅ Transaction confirmed on Stellar ledger!",
+              submission.hash,
+            );
+
+            break;
+          }
+
+          if (txResult.status === "FAILED") {
+            throw new Error(
+              "Soroban transaction reached the ledger but execution failed.",
+            );
+          }
+
+          // NOT_FOUND is temporary here.
+          // Keep waiting instead of treating it as failure.
+        } catch (pollError) {
+          console.warn("⚠️ Temporary RPC confirmation check error:", pollError);
         }
 
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        // 60 × 2 seconds = max ~120 sec confirmation window
+        await new Promise((resolve) => setTimeout(resolve, 2000));
       }
 
       if (confirmedTransaction) {
         break;
       }
 
-      throw new Error(
-        "Transaction confirmation timed out. Stellar RPC did not confirm the transaction in time.",
+      // Transaction was submitted successfully, but RPC confirmation
+      // did not arrive inside our local waiting window.
+      // Do NOT classify this as wallet rejection.
+      console.warn(
+        "⏳ Transaction submitted but final confirmation is delayed:",
+        submission.hash,
       );
+
+      if (typeof setSorobanError === "function") {
+        setSorobanError(
+          `Transaction submitted. Final confirmation is delayed. Tx Hash: ${submission.hash}`,
+        );
+      }
+
+      return {
+        success: false,
+        cancelled: false,
+        pending: true,
+        hash: submission.hash,
+      };
     }
 
     // Transaction must be confirmed before the UI is updated.
@@ -3802,11 +3838,26 @@ function Header({
                       );
 
                       // If the wallet has been cancelled or the operation was unsuccessful, terminate the function here!
-                      if (!result || !result.success || result.cancelled) {
-                        console.log(
-                          "🚫 Wallet signature rejected or transaction failed. Chart and balance feed PAUSED.",
-                        );
-                        return; // The following prevents the balance reduction and chart codes from working.
+                      if (!result || !result.success) {
+                        if (result?.pending) {
+                          console.warn(
+                            "⏳ Transaction submitted, but ledger confirmation is still pending:",
+                            result.hash,
+                          );
+                        } else if (result?.cancelled) {
+                          console.warn(
+                            "🚫 Wallet signature was cancelled by the user.",
+                          );
+                        } else {
+                          console.error(
+                            "❌ Soroban transaction failed.",
+                            result?.error,
+                          );
+                        }
+
+                        // Başarılı ledger confirmation olmadan
+                        // balance/chart/history güncellenmez.
+                        return;
                       }
 
                       // CODE THAT UPDATES THE LIVE STREAM PANEL ON THE RIGHT
