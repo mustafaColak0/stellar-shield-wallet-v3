@@ -569,6 +569,65 @@ function Header({
     },
   };
 
+  // ============================================================
+  // REAL STELLAR BALANCE SYNC
+  // Soroban işlemlerinde girilen "depositAmount" bakiyeden
+  // düşülmez. İşlem sonrası gerçek Testnet bakiyesi tekrar okunur.
+  // ============================================================
+  const syncRealBalanceToChart = async () => {
+    try {
+      const realBalance = await getBalance();
+      const numericBalance = Number(realBalance);
+
+      if (!Number.isFinite(numericBalance)) {
+        console.warn("Real balance could not be parsed:", realBalance);
+        return;
+      }
+
+      // Ana bakiye gerçek Testnet bakiyesi olur.
+      setBalance(realBalance);
+
+      if (typeof setWalletAsset === "function") {
+        setWalletAsset(numericBalance);
+      }
+
+      const nowTime = new Date().toLocaleTimeString("tr-TR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
+
+      // Grafiğe yalnızca ağdan gerçekten okunan bakiye eklenir.
+      setBalanceData((prev) => {
+        const current = Array.isArray(prev) ? prev : [];
+        const lastBalance = Number(current[current.length - 1]?.balance);
+
+        // Aynı bakiye ise gereksiz nokta oluşturma.
+        if (
+          Number.isFinite(lastBalance) &&
+          Math.abs(lastBalance - numericBalance) < 0.0000001
+        ) {
+          return current;
+        }
+
+        return [
+          ...current,
+          {
+            time: nowTime,
+            name: nowTime,
+            balance: numericBalance,
+            source: "stellar-testnet",
+            isRealBalance: true,
+          },
+        ];
+      });
+
+      console.log("✅ Real Stellar balance synced:", numericBalance);
+    } catch (error) {
+      console.error("❌ Real balance sync failed:", error);
+    }
+  };
+
   const handleAssetChange = (assetName) => {
     setSelectedAsset(assetName);
     if (assetName === "XLM") {
@@ -2510,10 +2569,12 @@ function Header({
                                 hash: currentTxHash,
                                 txHash: currentTxHash,
                                 transactionHash: currentTxHash,
-                                type: "Soroban Deposit",
-                                action: "Deposit",
-                                category: "Deposit",
-                                description: "Soroban Contract Deposit",
+                                type: "Soroban Contract Call",
+                                action: "create_feedback",
+                                category: "Soroban Interaction",
+                                description: `Simulated deposit input: ${depositAmount} XLM`,
+                                isSorobanInteraction: true,
+                                isSimulatedAmount: true,
                                 amount: depositAmount,
                                 value: depositAmount,
                                 asset: "XLM",
@@ -2820,8 +2881,19 @@ function Header({
                                   </td>
 
                                   {/* Amount Column */}
-                                  <td className="p-4 font-bold text-rose-400 whitespace-nowrap">
-                                    - {tx.amount} {tx.asset}
+                                  <td className="p-4 font-bold whitespace-nowrap">
+                                    {tx.isSorobanInteraction ? (
+                                      <span className="text-cyan-400">
+                                        {tx.amount} {tx.asset}{" "}
+                                        <span className="text-[9px] text-slate-500">
+                                          (Simulated Input)
+                                        </span>
+                                      </span>
+                                    ) : (
+                                      <span className="text-rose-400">
+                                        - {tx.amount} {tx.asset}
+                                      </span>
+                                    )}
                                   </td>
 
                                   {/* Time Column */}
@@ -3767,20 +3839,7 @@ function Header({
                       return; // We also prevent it from flowing downwards in the event of a fault.
                     }
 
-                    // BALANCE REDUCTION TRANSACTIONS
-                    if (typeof setWalletBalance === "function") {
-                      setWalletBalance((prev) =>
-                        prev > depositAmount ? prev - depositAmount : prev,
-                      );
-                    }
-                    if (typeof setBalance === "function") {
-                      setBalance((prev) => {
-                        const p = parseFloat(prev);
-                        return !isNaN(p)
-                          ? (p - depositAmount).toFixed(4)
-                          : prev;
-                      });
-                    }
+                    await syncRealBalanceToChart();
 
                     // GLOBAL PERSISTENT MEMORY (LOCKs DATA WHEN SWITCHING TABs)
                     if (typeof window !== "undefined") {
@@ -3853,23 +3912,29 @@ function Header({
                       txHash: String(currentTxHash),
                       tx_hash: String(currentTxHash),
                       transactionHash: String(currentTxHash),
-                      type: "Soroban Deposit",
-                      action: "Deposit",
-                      category: "Deposit",
-                      description: "Soroban Contract Deposit",
-                      memo: "Soroban Deposit",
-                      memo_type: "none",
+
+                      type: "Soroban Contract Call",
+                      action: "create_feedback",
+                      category: "Soroban Interaction",
+                      description: `Simulated deposit input: ${depositAmount} XLM`,
+                      memo: "Soroban create_feedback",
+
+                      isSorobanInteraction: true,
+                      isSimulatedAmount: true,
+
                       amount: depositAmount,
                       value: depositAmount,
                       asset: "XLM",
                       assetCode: "XLM",
                       token: "XLM",
                       symbol: "XLM",
+
                       destination: String(currentDest),
                       address: String(currentDest),
                       to: String(currentDest),
                       from: String(pubKey || "Wallet Account"),
                       sender: String(pubKey || "Wallet Account"),
+
                       status: "SUCCESS",
                       statusText: "Success",
                       date: new Date().toLocaleTimeString("tr-TR"),
@@ -3893,45 +3958,6 @@ function Header({
                     if (typeof setActiveTab === "function")
                       setActiveTab("dashboard");
 
-                    // GRAPHICS PROTECTION BLOCK
-                    const targetUpdater =
-                      typeof setBalanceData === "function"
-                        ? setBalanceData
-                        : typeof window !== "undefined" &&
-                            typeof window.setBalanceData === "function"
-                          ? window.setBalanceData
-                          : null;
-                    if (targetUpdater) {
-                      targetUpdater((prev) => {
-                        let baseVal = 9881.1957; // Initial value fully synchronised with the add-on
-                        if (prev && prev.length > 0) {
-                          const oneMinAgo = prev.find(
-                            (item) => item.name === "1 dk önce",
-                          );
-                          baseVal = oneMinAgo
-                            ? parseFloat(oneMinAgo.balance)
-                            : parseFloat(
-                                prev[prev.length - 1]?.balance || 9881.1957,
-                              );
-                        }
-                        const nowTime = new Date().toLocaleTimeString("tr-TR", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          second: "2-digit",
-                        });
-                        return [
-                          ...prev,
-                          {
-                            name: nowTime,
-                            time: nowTime,
-                            balance: Number(
-                              (baseVal - depositAmount).toFixed(4),
-                            ),
-                          },
-                        ];
-                      });
-                    }
-
                     // SEAMLESS SYNCHRONISATION
                     if (
                       typeof window !== "undefined" &&
@@ -3948,13 +3974,6 @@ function Header({
                               : 0;
                           const livePercent = window.sorobanPercent || 100;
                           const livePercentStr = livePercent.toFixed(1);
-
-                          // Live balance calculation engine (Initial plug-in value – investments made)
-                          const totalDeposited =
-                            (window.sorobanFundedAmount || 1240) - 1240;
-                          const dynamicLiveBalance = 9881.1957 - totalDeposited;
-                          const dynamicLiveBalanceStr =
-                            dynamicLiveBalance.toFixed(4);
 
                           // AMENDMENTS TO THE HEADINGS OF THE CONTRACT
                           document
@@ -4032,16 +4051,6 @@ function Header({
                                 return;
 
                               const txt = (el.textContent || "").trim();
-
-                              // FULLY ALIGN THE MAIN WALLET TEXT WITH THE GRAPHIC
-                              if (
-                                txt.includes("9471.1966") ||
-                                txt.includes("9881.1957") ||
-                                txt.includes("9621.1966") ||
-                                txt === "9471.1966 XLM"
-                              ) {
-                                el.textContent = `${dynamicLiveBalanceStr} XLM`;
-                              }
 
                               // CAPTURING THE VALUE FROM THE FUND
                               const isFundedNumber = /^\d{4}(\s*XLM)?$/.test(
