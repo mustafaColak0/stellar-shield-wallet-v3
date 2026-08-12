@@ -7,6 +7,10 @@ import {
   Radio,
   ExternalLink,
   RefreshCw,
+  MessageSquare,
+  ThumbsUp,
+  ThumbsDown,
+  Send,
 } from "lucide-react";
 import {
   TransactionBuilder,
@@ -26,6 +30,25 @@ const EVENT_LOOKBACK_LEDGERS = 5000;
 const EVENT_PAGE_LIMIT = 200;
 const MAX_EVENT_PAGES = 10;
 const MAX_VISIBLE_LOGS = 50;
+
+const STORAGE_KEY = "live_panel_local_feedbacks_v1";
+
+const DEFAULT_FEEDBACKS = [
+  {
+    id: 1,
+    wallet: "GAQVXWJ6QWNV...CCULBY4UN4",
+    type: "POSITIVE",
+    comment: "Arayüz hızı ve ağ senkronizasyonu harika çalışıyor!",
+    date: "5 dk önce",
+  },
+  {
+    id: 2,
+    wallet: "CDQUFGNQGT3C...LXT2Z3AXMI",
+    type: "NEGATIVE",
+    comment: "Ağ yoğunluğuna bağlı olarak latency zaman zaman yükselebiliyor.",
+    date: "25 dk önce",
+  },
+];
 
 // ============================================================
 // RPC & HELPER UTILS
@@ -87,7 +110,6 @@ function formatRelativeTime(dateString) {
   return `${days} day${days === 1 ? "" : "s"} ago`;
 }
 
-// Limiting parallel RPC requests to prevent rate-limit (HTTP 429) errors
 async function mapWithConcurrencyLimit(items, limit, fn) {
   const results = [];
   const executing = new Set();
@@ -108,7 +130,7 @@ async function mapWithConcurrencyLimit(items, limit, fn) {
 // COMPONENT
 // ============================================================
 
-export default function LiveAnalyticsPanel() {
+export default function LiveAnalyticsPanel({ activeWalletAddress }) {
   const [userLogs, setUserLogs] = useState([]);
   const [latency, setLatency] = useState(null);
   const [rpcHealthy, setRpcHealthy] = useState(false);
@@ -117,8 +139,32 @@ export default function LiveAnalyticsPanel() {
   const [errorMessage, setErrorMessage] = useState("");
   const [lastUpdated, setLastUpdated] = useState(null);
 
+  // YORUM STATE'İ (localStorage destekli)
+  const [feedbacks, setFeedbacks] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved) : DEFAULT_FEEDBACKS;
+    } catch (e) {
+      console.warn("localStorage okuma hatası:", e);
+      return DEFAULT_FEEDBACKS;
+    }
+  });
+
+  const [newComment, setNewComment] = useState("");
+  const [feedbackType, setFeedbackType] = useState("POSITIVE");
+  const [feedbackFilter, setFeedbackFilter] = useState("ALL");
+
   const walletCache = useRef(new Map());
   const refreshingRef = useRef(false);
+
+  // Yorumlar değiştikçe otomatik olarak yerel hafızaya kaydet
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(feedbacks));
+    } catch (e) {
+      console.warn("localStorage yazma hatası:", e);
+    }
+  }, [feedbacks]);
 
   // ----------------------------------------------------------
   // COMPUTED STATS
@@ -142,6 +188,12 @@ export default function LiveAnalyticsPanel() {
       return new Date(log.timestamp) >= todayStart;
     }).length;
   }, [userLogs]);
+
+  const filteredFeedbacks = useMemo(() => {
+    if (feedbackFilter === "POSITIVE") return feedbacks.filter((f) => f.type === "POSITIVE");
+    if (feedbackFilter === "NEGATIVE") return feedbacks.filter((f) => f.type === "NEGATIVE");
+    return feedbacks;
+  }, [feedbacks, feedbackFilter]);
 
   // ----------------------------------------------------------
   // RESOLVE SOURCE WALLET
@@ -259,7 +311,6 @@ export default function LiveAnalyticsPanel() {
 
       const visibleEvents = feedbackEvents.slice(0, MAX_VISIBLE_LOGS);
 
-      // Process wallet resolutions concurrently (Max 5 requests at a time)
       const logs = await mapWithConcurrencyLimit(visibleEvents, 5, async (event) => {
         const sourceWallet = await resolveSourceWallet(event.txHash, signal);
         const payload = decodeScVal(event.value);
@@ -322,6 +373,28 @@ export default function LiveAnalyticsPanel() {
   }, [fetchLiveAnalytics]);
 
   // ----------------------------------------------------------
+  // HANDLERS FOR FEEDBACK (Sadece Yerel State + LocalStorage)
+  // ----------------------------------------------------------
+
+  const handleAddComment = (e) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+
+    const walletToUse = activeWalletAddress || "GAQVXWJ6QWNV...CCULBY4UN4";
+
+    const item = {
+      id: Date.now(),
+      wallet: shortenWallet(walletToUse),
+      type: feedbackType,
+      comment: newComment.trim(),
+      date: "Just now",
+    };
+
+    setFeedbacks((prev) => [item, ...prev]);
+    setNewComment("");
+  };
+
+  // ----------------------------------------------------------
   // RENDER UI
   // ----------------------------------------------------------
 
@@ -356,7 +429,7 @@ export default function LiveAnalyticsPanel() {
             type="button"
             onClick={() => fetchLiveAnalytics()}
             disabled={isRefreshing}
-            className="p-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-300 rounded-lg border border-slate-700 text-xs flex items-center gap-1.5 transition-all"
+            className="p-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-300 rounded-lg border border-slate-700 text-xs flex items-center gap-1.5 transition-all cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
             <span>Sync Network</span>
@@ -547,6 +620,145 @@ export default function LiveAnalyticsPanel() {
                 ))}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* ============================================================ */}
+      {/* CANLI TOPLULUK GERİ BİLDİRİM & YORUM TABLOSU (LOCALSTORAGE) */}
+      {/* ============================================================ */}
+      <div className="mt-8 border border-slate-800 rounded-xl overflow-hidden bg-slate-950/60 p-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-cyan-400" />
+            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-200">
+              Community Feedback & Wallet Reviews
+            </h3>
+          </div>
+
+          <div className="flex gap-1.5 bg-slate-900 p-1 rounded-lg border border-slate-800 text-xs font-mono">
+            <button
+              type="button"
+              onClick={() => setFeedbackFilter("ALL")}
+              className={`px-2.5 py-1 rounded transition-all cursor-pointer ${
+                feedbackFilter === "ALL"
+                  ? "bg-cyan-500/20 text-cyan-400 font-bold"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              All
+            </button>
+            <button
+              type="button"
+              onClick={() => setFeedbackFilter("POSITIVE")}
+              className={`px-2.5 py-1 rounded transition-all cursor-pointer ${
+                feedbackFilter === "POSITIVE"
+                  ? "bg-emerald-500/20 text-emerald-400 font-bold"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              👍 Positive
+            </button>
+            <button
+              type="button"
+              onClick={() => setFeedbackFilter("NEGATIVE")}
+              className={`px-2.5 py-1 rounded transition-all cursor-pointer ${
+                feedbackFilter === "NEGATIVE"
+                  ? "bg-rose-500/20 text-rose-400 font-bold"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              👎 Negative
+            </button>
+          </div>
+        </div>
+
+        {/* Yorum Ekleme Formu */}
+        <form onSubmit={handleAddComment} className="my-5 p-4 bg-slate-900/80 border border-slate-800 rounded-xl">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <span className="text-xs font-mono text-slate-400">
+              Author Wallet:{" "}
+              <strong className="text-slate-200">
+                {activeWalletAddress ? shortenWallet(activeWalletAddress) : "GAQV...4UN4"}
+              </strong>
+            </span>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setFeedbackType("POSITIVE")}
+                className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
+                  feedbackType === "POSITIVE"
+                    ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400 font-semibold"
+                    : "border-slate-800 text-slate-500 hover:text-slate-300"
+                }`}
+              >
+                <ThumbsUp className="w-3 h-3" /> Positive
+              </button>
+              <button
+                type="button"
+                onClick={() => setFeedbackType("NEGATIVE")}
+                className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
+                  feedbackType === "NEGATIVE"
+                    ? "bg-rose-500/20 border-rose-500/40 text-rose-400 font-semibold"
+                    : "border-slate-800 text-slate-500 hover:text-slate-300"
+                }`}
+              >
+                <ThumbsDown className="w-3 h-3" /> Negative
+              </button>
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Leave feedback with your wallet address..."
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 focus:outline-none focus:border-cyan-500"
+            />
+            <button
+              type="submit"
+              className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-4 py-2 rounded-lg text-xs flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
+            >
+              <Send className="w-3.5 h-3.5" /> Submit
+            </button>
+          </div>
+        </form>
+
+        {/* Yorumlar Akış Tablosu */}
+        <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+          {filteredFeedbacks.length === 0 ? (
+            <div className="text-center py-6 text-xs text-slate-500 font-mono">
+              No comments found in this category.
+            </div>
+          ) : (
+            filteredFeedbacks.map((fb) => (
+              <div
+                key={fb.id}
+                className="p-3 bg-slate-900/50 border border-slate-800/80 rounded-xl flex items-start justify-between gap-4 text-xs font-mono hover:border-slate-700/60 transition-all"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-cyan-400">{fb.wallet}</span>
+                    <span className="text-[10px] text-slate-500">{fb.date}</span>
+                  </div>
+                  <p className="text-slate-300 font-sans leading-relaxed">{fb.comment}</p>
+                </div>
+
+                <div className="shrink-0">
+                  {fb.type === "POSITIVE" ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-sans">
+                      <ThumbsUp className="w-3 h-3" /> Positive
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[10px] font-sans">
+                      <ThumbsDown className="w-3 h-3" /> Negative
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>
