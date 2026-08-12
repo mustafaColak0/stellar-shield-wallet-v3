@@ -144,7 +144,8 @@ export const handleTrueSorobanDeposit = async (
     // We create the transaction using the same Soroban RPC
     // that will later receive and confirm the transaction.
     const MAX_BUILD_ATTEMPTS = 4;
-    for (let attempt = 0; attempt < 2; attempt++) {
+
+    for (let attempt = 0; attempt < MAX_BUILD_ATTEMPTS; attempt++) {
       // Always get the latest account sequence directly from Soroban RPC.
       const account = await rpcServer.getAccount(userPublicKey);
 
@@ -1327,7 +1328,7 @@ function Header({
       );
 
       const result = await handleTrueSorobanDeposit(
-        pubKey || connectedAddress || "",
+        pubKey || "",
         addedAmount,
         typeof setRealTxHash === "function" ? setRealTxHash : undefined,
         typeof setSorobanError === "function" ? setSorobanError : undefined,
@@ -1408,56 +1409,13 @@ function Header({
         }
 
         // 4. Reduce the main balance
-        const parsedBalance = parseFloat(balance);
-        let currentBal = parsedBalance;
-        if (!isNaN(parsedBalance)) {
-          currentBal = parsedBalance - addedAmount;
-          setBalance(currentBal.toFixed(4));
-          if (typeof setWalletAsset === "function") {
-            setWalletAsset((prev) => prev - addedAmount);
-          }
-        }
+        // ============================================================
+        // REAL STELLAR BALANCE SYNC
+        // Soroban create_feedback does NOT transfer the entered XLM.
+        // Only the actual network balance / transaction fee is reflected.
+        // ============================================================
 
-        // 5.The flow cycle that adds the new standard drop point to the graph
-        let crossTabLoop = 0;
-        const forceUiInterval = setInterval(() => {
-          crossTabLoop++;
-
-          setJuryTxStatus("SUCCESS");
-          if (typeof setTxStatus === "function") setTxStatus("SUCCESS");
-
-          if (!isNaN(parsedBalance)) {
-            setBalance(currentBal.toFixed(4));
-            if (typeof setBalanceData === "function") {
-              setBalanceData((prev) => {
-                if (!prev || prev.length === 0) return prev;
-                const alreadyAdded = prev.some(
-                  (item) => item.time === nowStr && item.isSorobanDrop,
-                );
-                if (alreadyAdded) return prev;
-                return [
-                  ...prev,
-                  { time: nowStr, balance: currentBal, isSorobanDrop: true },
-                ];
-              });
-            }
-          }
-
-          // We are constantly forcing the DOM to remain clean
-          try {
-            document.querySelectorAll("input").forEach((inp) => {
-              if (inp.value == addedAmount || inp.value === "255") {
-                inp.value = "";
-                if (inp._valueTracker) inp._valueTracker.setValue("");
-                if (inp.__reactValueTracker)
-                  inp.__reactValueTracker.setValue("");
-                inp.dispatchEvent(new Event("input", { bubbles: true }));
-              }
-            });
-          } catch (e) {}
-
-          if (crossTabLoop > 100) clearInterval(forceUiInterval);
-        }, 40);
+        await syncRealBalanceToChart();
 
         // Reset all possible React states
         setFundAmount("");
