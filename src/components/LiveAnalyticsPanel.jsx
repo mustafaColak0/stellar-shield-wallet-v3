@@ -395,12 +395,12 @@ export default function LiveAnalyticsPanel() {
             </span>
             <span
               className={`text-xs font-medium ${
-                verifiedUsersCount >= 10 ? "text-emerald-400" : "text-amber-400"
+                verifiedUsersCount >= 20 ? "text-emerald-400" : "text-amber-400"
               }`}
             >
-              {verifiedUsersCount >= 10
-                ? "10+ target reached ✓"
-                : `${verifiedUsersCount}/10 target`}
+              {verifiedUsersCount >= 20
+                ? "20+ target reached ✓"
+                : `${verifiedUsersCount}/20 target`}
             </span>
           </div>
           <div className="mt-2 text-[11px] text-slate-400">
