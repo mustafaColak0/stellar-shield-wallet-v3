@@ -4022,19 +4022,24 @@ function Header({
                       timestamp: Date.now(),
                     };
 
-                    if (typeof window !== "undefined") {
-                      window.sorobanTxList = window.sorobanTxList || [];
-                      window.sorobanTxList.unshift(newSorobanTx);
-                    }
+                    // ============================================================
+                    // ADD SOROBAN TX WITHOUT OVERWRITING EXISTING XLM HISTORY
+                    // ============================================================
 
-                    try {
-                      if (typeof setTransactionHistory === "function")
-                        setTransactionHistory(window.sorobanTxList);
-                    } catch (e) {}
-                    try {
-                      if (typeof setTransactions === "function")
-                        setTransactions(window.sorobanTxList);
-                    } catch (e) {}
+                    if (typeof setTransactions === "function") {
+                      setTransactions((prev) => {
+                        const currentHistory = Array.isArray(prev) ? prev : [];
+
+                        // Prevent the same Soroban transaction from being added twice.
+                        const filteredHistory = currentHistory.filter(
+                          (tx) =>
+                            String(tx?.hash || tx?.id || "") !==
+                            String(newSorobanTx.hash || newSorobanTx.id),
+                        );
+
+                        return [newSorobanTx, ...filteredHistory];
+                      });
+                    }
 
                     if (typeof setActiveTab === "function")
                       setActiveTab("dashboard");
