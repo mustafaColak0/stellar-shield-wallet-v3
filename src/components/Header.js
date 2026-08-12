@@ -1463,7 +1463,10 @@ function Header({
 
   return (
     <div
-      className={`min-h-screen w-full transition-colors duration-300 ${darkMode ? "bg-slate-950 text-slate-100" : "bg-slate-50 text-slate-900"} flex flex-col md:flex-row overflow-x-hidden md:overflow-hidden`}
+      translate="no"
+      className={`notranslate min-h-screen w-full transition-colors duration-300 ${
+        darkMode ? "bg-slate-950 text-slate-100" : "bg-slate-50 text-slate-900"
+      } flex flex-col md:flex-row overflow-x-hidden md:overflow-hidden`}
     >
       {/* SIDEBAR */}
       <div
@@ -2065,11 +2068,12 @@ function Header({
                             }
                             className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-xs font-mono font-bold focus:outline-none focus:border-cyan-500 text-slate-100 flex justify-between items-center cursor-pointer transition-all"
                           >
-                            <span>
-                              {selectedAsset === "XLM" &&
-                                "XLM (Stellar Lumens)"}
-                              {selectedAsset === "USDC" && "USDC (USD Coin)"}
-                              {selectedAsset === "EURC" && "EURC (Euro Coin)"}
+                            <span translate="no">
+                              {{
+                                XLM: "XLM (Stellar Lumens)",
+                                USDC: "USDC (USD Coin)",
+                                EURC: "EURC (Euro Coin)",
+                              }[selectedAsset] || "XLM (Stellar Lumens)"}
                             </span>
                             <ChevronDown
                               size={16}
@@ -2080,7 +2084,10 @@ function Header({
                           </button>
 
                           {isAssetDropdownOpen && (
-                            <div className="absolute left-0 top-full mt-1.5 w-full z-50 bg-[#090d16] border border-slate-800 rounded-xl shadow-2xl overflow-hidden divide-y divide-slate-900/40">
+                            <div
+                              translate="no"
+                              className="absolute left-0 top-full mt-1.5 w-full z-50 bg-[#090d16] border border-slate-800 rounded-xl shadow-2xl overflow-hidden divide-y divide-slate-900/40"
+                            >
                               {/* XLM Option */}
                               <div
                                 onClick={() => {
