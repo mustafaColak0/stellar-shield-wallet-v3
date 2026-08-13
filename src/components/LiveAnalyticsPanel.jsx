@@ -31,24 +31,7 @@ const EVENT_PAGE_LIMIT = 200;
 const MAX_EVENT_PAGES = 10;
 const MAX_VISIBLE_LOGS = 50;
 
-const STORAGE_KEY = "live_panel_local_feedbacks_v1";
-
-const DEFAULT_FEEDBACKS = [
-  {
-    id: 1,
-    wallet: "GAQVXWJ6QWNV...CCULBY4UN4",
-    type: "POSITIVE",
-    comment: "Arayüz hızı ve ağ senkronizasyonu harika çalışıyor!",
-    date: "5 dk önce",
-  },
-  {
-    id: 2,
-    wallet: "CDQUFGNQGT3C...LXT2Z3AXMI",
-    type: "NEGATIVE",
-    comment: "Ağ yoğunluğuna bağlı olarak latency zaman zaman yükselebiliyor.",
-    date: "25 dk önce",
-  },
-];
+const DEFAULT_FEEDBACKS = [];
 
 // ============================================================
 // RPC & HELPER UTILS
@@ -139,16 +122,21 @@ export default function LiveAnalyticsPanel({ activeWalletAddress }) {
   const [errorMessage, setErrorMessage] = useState("");
   const [lastUpdated, setLastUpdated] = useState(null);
 
-  // YORUM STATE'İ (localStorage destekli)
-  const [feedbacks, setFeedbacks] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : DEFAULT_FEEDBACKS;
-    } catch (e) {
-      console.warn("localStorage okuma hatası:", e);
-      return DEFAULT_FEEDBACKS;
-    }
-  });
+const feedbacks = useMemo(() => {
+  return userLogs
+    .filter((log) => log.action === "create_feedback")
+    .map((log) => ({
+      id: log.eventId,
+      wallet: log.wallet,
+      fullWallet: log.fullWallet,
+      type: "POSITIVE",
+      comment:
+        typeof log.payload === "string" && log.payload.trim() !== ""
+          ? log.payload
+          : "On-Chain Interaction Executed Successfully! 🚀",
+      date: log.time,
+    }));
+}, [userLogs]);
 
   const [newComment, setNewComment] = useState("");
   const [feedbackType, setFeedbackType] = useState("POSITIVE");
@@ -156,15 +144,6 @@ export default function LiveAnalyticsPanel({ activeWalletAddress }) {
 
   const walletCache = useRef(new Map());
   const refreshingRef = useRef(false);
-
-  // Yorumlar değiştikçe otomatik olarak yerel hafızaya kaydet
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(feedbacks));
-    } catch (e) {
-      console.warn("localStorage yazma hatası:", e);
-    }
-  }, [feedbacks]);
 
   // ----------------------------------------------------------
   // COMPUTED STATS
@@ -376,23 +355,15 @@ export default function LiveAnalyticsPanel({ activeWalletAddress }) {
   // HANDLERS FOR FEEDBACK (Sadece Yerel State + LocalStorage)
   // ----------------------------------------------------------
 
-  const handleAddComment = (e) => {
-    e.preventDefault();
-    if (!newComment.trim()) return;
+const handleAddComment = (e) => {
+  e.preventDefault();
+  if (!newComment.trim()) return;
 
-    const walletToUse = activeWalletAddress || "GAQVXWJ6QWNV...CCULBY4UN4";
-
-    const item = {
-      id: Date.now(),
-      wallet: shortenWallet(walletToUse),
-      type: feedbackType,
-      comment: newComment.trim(),
-      date: "Just now",
-    };
-
-    setFeedbacks((prev) => [item, ...prev]);
-    setNewComment("");
-  };
+  alert(
+    "To display your feedback across all browsers/users, the comment must be signed and submitted on-chain via your Soroban Wallet!"
+  );
+  setNewComment("");
+};
 
   // ----------------------------------------------------------
   // RENDER UI
