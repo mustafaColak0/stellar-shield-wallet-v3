@@ -26,7 +26,7 @@ import {
 const RPC_URL = "https://soroban-testnet.stellar.org";
 const CONTRACT_ID = "CDQUFGNQGT3CYQYNM4DUNZRLBARAXWNGJQW466OYZOODPHLXT2Z3AXMI";
 const REFRESH_INTERVAL = 10000;
-const EVENT_LOOKBACK_LEDGERS = 300000;
+const EVENT_LOOKBACK_LEDGERS = 20000;
 const EVENT_PAGE_LIMIT = 200;
 const MAX_EVENT_PAGES = 10;
 const MAX_VISIBLE_LOGS = 50;
@@ -274,7 +274,7 @@ const feedbacks = useMemo(() => {
 
       setRpcHealthy(true);
       const latestLedger = latestLedgerResponse.sequence;
-      const startLedger = Math.max(1, latestLedger - EVENT_LOOKBACK_LEDGERS);
+     const startLedger = Math.max(latestLedger - EVENT_LOOKBACK_LEDGERS, latestLedger - 120000);
 
       const allEvents = await fetchContractEvents(startLedger, signal);
 
