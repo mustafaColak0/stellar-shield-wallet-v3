@@ -26,9 +26,8 @@ import {
 const RPC_URL = "https://soroban-testnet.stellar.org";
 const CONTRACT_ID = "CDQUFGNQGT3CYQYNM4DUNZRLBARAXWNGJQW466OYZOODPHLXT2Z3AXMI";
 const REFRESH_INTERVAL = 10000;
-// Testnet RPC'leri çok geniş ledger aralıklarında boş yanıt verebilir.
-// 30,000 ledger (~2-3 günlük veri) en güvenli ve hızlı aralıktır.
-const EVENT_LOOKBACK_LEDGERS = 30000; 
+// Testnet RPC sunucularının yanıt verebildiği en ideal ledger aralığı
+const EVENT_LOOKBACK_LEDGERS = 40000; 
 const EVENT_PAGE_LIMIT = 200;
 const MAX_EVENT_PAGES = 10;
 const MAX_VISIBLE_LOGS = 50;
@@ -122,20 +121,26 @@ export default function LiveAnalyticsPanel({ activeWalletAddress }) {
   const [errorMessage, setErrorMessage] = useState("");
   const [lastUpdated, setLastUpdated] = useState(null);
 
+  // FIXED: create_feedback filtresi esnetildi, gelen veriler doğrudan aktarılıyor.
   const feedbacks = useMemo(() => {
-    return userLogs
-      .filter((log) => log.action === "create_feedback")
-      .map((log) => ({
+    return userLogs.map((log) => {
+      let commentText = "On-Chain Interaction Executed Successfully! 🚀";
+      
+      if (typeof log.payload === "string" && log.payload.trim() !== "") {
+        commentText = log.payload;
+      } else if (log.payload && typeof log.payload === "object") {
+        commentText = JSON.stringify(log.payload);
+      }
+
+      return {
         id: log.eventId,
         wallet: log.wallet,
         fullWallet: log.fullWallet,
         type: "POSITIVE",
-        comment:
-          typeof log.payload === "string" && log.payload.trim() !== ""
-            ? log.payload
-            : "On-Chain Interaction Executed Successfully! 🚀",
+        comment: commentText,
         date: log.time,
-      }));
+      };
+    });
   }, [userLogs]);
 
   const [newComment, setNewComment] = useState("");
@@ -215,7 +220,7 @@ export default function LiveAnalyticsPanel({ activeWalletAddress }) {
   }, []);
 
   // ----------------------------------------------------------
-  // FETCH CONTRACT EVENTS (GÜVENDEN GEÇİRİLMİŞ & ESNEK)
+  // FETCH CONTRACT EVENTS
   // ----------------------------------------------------------
 
   const fetchContractEvents = useCallback(async (startLedger, signal) => {
@@ -223,8 +228,6 @@ export default function LiveAnalyticsPanel({ activeWalletAddress }) {
     let cursor = null;
 
     for (let page = 0; page < MAX_EVENT_PAGES; page++) {
-      // Contract ID filtresi ile event'leri çekiyoruz.
-      // RPC tarafındaki topic uyuşmazlığı riskini sıfırlamak için filtresiz çekip istemicide süzüyoruz.
       const params = {
         filters: [
           {
@@ -233,11 +236,10 @@ export default function LiveAnalyticsPanel({ activeWalletAddress }) {
           },
         ],
         pagination: { limit: EVENT_PAGE_LIMIT },
+        startLedger: startLedger,
       };
 
-      if (!cursor) {
-        params.startLedger = startLedger;
-      } else {
+      if (cursor) {
         params.pagination.cursor = cursor;
       }
 
@@ -272,32 +274,35 @@ export default function LiveAnalyticsPanel({ activeWalletAddress }) {
       const latestLedgerResponse = await rpcRequest("getLatestLedger", null, signal);
       const endTime = performance.now();
 
-      const measuredLatency = Math.max(0, Math.round(endTime - startTime));
-      setLatency(measuredLatency);
+      setLatency(Math.max(0, Math.round(endTime - startTime)));
 
       if (!latestLedgerResponse || typeof latestLedgerResponse.sequence !== "number") {
         throw new Error("Latest Stellar ledger could not be retrieved.");
       }
 
       setRpcHealthy(true);
-      const latestLedger = latestLedgerResponse.sequence;
-      const startLedger = Math.max(1, latestLedger - EVENT_LOOKBACK_LEDGERS);
+const latestLedger = latestLedgerResponse.sequence;
 
-      const allEvents = await fetchContractEvents(startLedger, signal);
+      // 1. Dün gece saat 23:00'ün zaman damgasını hesapla
+      const targetTime = new Date();
+      targetTime.setDate(targetTime.getDate() - 1); // Düne git
+      targetTime.setHours(23, 0, 0, 0); // Saat 23:00:00
 
-      // Event filtreleme mantığını esnetiyoruz (hem string hem symbol eşleşmesi için)
-      const feedbackEvents = allEvents.filter((event) => {
-        if (!Array.isArray(event.topic) || event.topic.length === 0) return false;
-        
-        // Topic değerini çöz
-        const rawTopic = decodeScVal(event.topic[0]);
-        if (!rawTopic) return false;
+      // 2. Şu an ile dün 23:00 arasındaki saniye farkını bul
+      const diffInSeconds = Math.floor((Date.now() - targetTime.getTime()) / 1000);
 
-        const topicStr = String(rawTopic).toLowerCase();
-        
-        // "fb_live", "feedback", ya da kontratınızdaki ilgili her türlü topic ismini kapsar
-        return topicStr.includes("fb_live") || topicStr.includes("feedback") || topicStr.includes("live");
-      });
+      // 3. Stellar'da 1 ledger ≈ 5 saniyedir. Kaç ledger geriye gideceğimizi hesapla:
+      const neededLedgers = Math.ceil(diffInSeconds / 5);
+
+      // 4. Güvenlik marjı ekleyerek başlangıç ledger'ını bul
+      const safeStartLedger = Math.max(1, latestLedger - (neededLedgers + 2000));
+
+      console.log(`⏰ Dün 23:00 hedeflendi. Taranacak Ledger Aralığı: ${safeStartLedger} -> ${latestLedger}`);
+
+      // ❌ EKSİK OLAN SATIR BURASIYDI: Event'leri RPC'den çekiyoruz
+      const allEvents = await fetchContractEvents(safeStartLedger, signal);
+
+      const feedbackEvents = allEvents.filter((event) => event && event.id);
 
       feedbackEvents.sort((a, b) => {
         return new Date(b.ledgerClosedAt).getTime() - new Date(a.ledgerClosedAt).getTime();
@@ -308,32 +313,34 @@ export default function LiveAnalyticsPanel({ activeWalletAddress }) {
       const logs = await mapWithConcurrencyLimit(visibleEvents, 5, async (event) => {
         const sourceWallet = await resolveSourceWallet(event.txHash, signal);
         const payload = decodeScVal(event.value);
-        const feedbackId = event.topic?.[1] ? decodeScVal(event.topic[1]) : null;
+        
+        let detectedAction = "contract_interaction";
+        if (Array.isArray(event.topic) && event.topic.length > 0) {
+          const rawTopic = decodeScVal(event.topic[0]);
+          if (typeof rawTopic === "string" && rawTopic.trim() !== "") {
+            detectedAction = rawTopic;
+          }
+        }
 
-        const isDepositDemo =
-          typeof payload === "string" && payload.startsWith("Simulated deposit of ");
+        const feedbackId = event.topic?.[1] ? decodeScVal(event.topic[1]) : null;
 
         return {
           eventId: event.id,
           fullWallet: sourceWallet,
           wallet: shortenWallet(sourceWallet),
-          action: isDepositDemo ? "soroban_demo" : "create_feedback",
+          action: detectedAction,
           status: "Confirmed",
           timestamp: event.ledgerClosedAt,
           time: formatRelativeTime(event.ledgerClosedAt),
           txHash: event.txHash,
           feedbackId,
           ledger: event.ledger,
-          payload,
+          payload: typeof payload === "object" ? JSON.stringify(payload) : payload,
           contractId: event.contractId,
         };
       });
 
-      const uniqueLogs = Array.from(
-        new Map(logs.map((log) => [log.eventId, log])).values()
-      );
-
-      setUserLogs(uniqueLogs);
+      setUserLogs(logs);
       setLastUpdated(new Date());
     } catch (error) {
       if (error.name === "AbortError") return;
