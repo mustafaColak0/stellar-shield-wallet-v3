@@ -26,7 +26,9 @@ import {
 const RPC_URL = "https://soroban-testnet.stellar.org";
 const CONTRACT_ID = "CDQUFGNQGT3CYQYNM4DUNZRLBARAXWNGJQW466OYZOODPHLXT2Z3AXMI";
 const REFRESH_INTERVAL = 10000;
-const EVENT_LOOKBACK_LEDGERS = 110000;
+// Testnet RPC'leri çok geniş ledger aralıklarında boş yanıt verebilir.
+// 30,000 ledger (~2-3 günlük veri) en güvenli ve hızlı aralıktır.
+const EVENT_LOOKBACK_LEDGERS = 30000; 
 const EVENT_PAGE_LIMIT = 200;
 const MAX_EVENT_PAGES = 10;
 const MAX_VISIBLE_LOGS = 50;
@@ -213,23 +215,21 @@ export default function LiveAnalyticsPanel({ activeWalletAddress }) {
   }, []);
 
   // ----------------------------------------------------------
-  // FETCH CONTRACT EVENTS
+  // FETCH CONTRACT EVENTS (GÜVENDEN GEÇİRİLMİŞ & ESNEK)
   // ----------------------------------------------------------
 
   const fetchContractEvents = useCallback(async (startLedger, signal) => {
     let collectedEvents = [];
     let cursor = null;
 
-    // fb_live topic'ini scVal XDR formatına dönüştürerek filtreleme yapıyoruz
-    const fbLiveTopicXdr = xdr.ScVal.scvSymbol("fb_live").toXDR("base64");
-
     for (let page = 0; page < MAX_EVENT_PAGES; page++) {
+      // Contract ID filtresi ile event'leri çekiyoruz.
+      // RPC tarafındaki topic uyuşmazlığı riskini sıfırlamak için filtresiz çekip istemicide süzüyoruz.
       const params = {
         filters: [
           {
             type: "contract",
             contractIds: [CONTRACT_ID],
-            topics: [[fbLiveTopicXdr]], // Doğrudan fb_live event'lerini hedefle
           },
         ],
         pagination: { limit: EVENT_PAGE_LIMIT },
@@ -281,17 +281,22 @@ export default function LiveAnalyticsPanel({ activeWalletAddress }) {
 
       setRpcHealthy(true);
       const latestLedger = latestLedgerResponse.sequence;
-      
-      // Dinamik Güvenli Aralık: RPC'nin patlamaması için Math.max garantisi
-      const maxLookback = EVENT_LOOKBACK_LEDGERS; 
-      const startLedger = Math.max(1, latestLedger - maxLookback);
+      const startLedger = Math.max(1, latestLedger - EVENT_LOOKBACK_LEDGERS);
 
       const allEvents = await fetchContractEvents(startLedger, signal);
 
+      // Event filtreleme mantığını esnetiyoruz (hem string hem symbol eşleşmesi için)
       const feedbackEvents = allEvents.filter((event) => {
         if (!Array.isArray(event.topic) || event.topic.length === 0) return false;
-        const eventName = decodeScVal(event.topic[0]);
-        return eventName === "fb_live";
+        
+        // Topic değerini çöz
+        const rawTopic = decodeScVal(event.topic[0]);
+        if (!rawTopic) return false;
+
+        const topicStr = String(rawTopic).toLowerCase();
+        
+        // "fb_live", "feedback", ya da kontratınızdaki ilgili her türlü topic ismini kapsar
+        return topicStr.includes("fb_live") || topicStr.includes("feedback") || topicStr.includes("live");
       });
 
       feedbackEvents.sort((a, b) => {
