@@ -31,8 +31,6 @@ const EVENT_PAGE_LIMIT = 200;
 const MAX_EVENT_PAGES = 10;
 const MAX_VISIBLE_LOGS = 50;
 
-const DEFAULT_FEEDBACKS = [];
-
 // ============================================================
 // RPC & HELPER UTILS
 // ============================================================
@@ -122,21 +120,21 @@ export default function LiveAnalyticsPanel({ activeWalletAddress }) {
   const [errorMessage, setErrorMessage] = useState("");
   const [lastUpdated, setLastUpdated] = useState(null);
 
-const feedbacks = useMemo(() => {
-  return userLogs
-    .filter((log) => log.action === "create_feedback")
-    .map((log) => ({
-      id: log.eventId,
-      wallet: log.wallet,
-      fullWallet: log.fullWallet,
-      type: "POSITIVE",
-      comment:
-        typeof log.payload === "string" && log.payload.trim() !== ""
-          ? log.payload
-          : "On-Chain Interaction Executed Successfully! 🚀",
-      date: log.time,
-    }));
-}, [userLogs]);
+  const feedbacks = useMemo(() => {
+    return userLogs
+      .filter((log) => log.action === "create_feedback")
+      .map((log) => ({
+        id: log.eventId,
+        wallet: log.wallet,
+        fullWallet: log.fullWallet,
+        type: "POSITIVE",
+        comment:
+          typeof log.payload === "string" && log.payload.trim() !== ""
+            ? log.payload
+            : "On-Chain Interaction Executed Successfully! 🚀",
+        date: log.time,
+      }));
+  }, [userLogs]);
 
   const [newComment, setNewComment] = useState("");
   const [feedbackType, setFeedbackType] = useState("POSITIVE");
@@ -222,9 +220,18 @@ const feedbacks = useMemo(() => {
     let collectedEvents = [];
     let cursor = null;
 
+    // fb_live topic'ini scVal XDR formatına dönüştürerek filtreleme yapıyoruz
+    const fbLiveTopicXdr = xdr.ScVal.scvSymbol("fb_live").toXDR("base64");
+
     for (let page = 0; page < MAX_EVENT_PAGES; page++) {
       const params = {
-        filters: [{ type: "contract", contractIds: [CONTRACT_ID] }],
+        filters: [
+          {
+            type: "contract",
+            contractIds: [CONTRACT_ID],
+            topics: [[fbLiveTopicXdr]], // Doğrudan fb_live event'lerini hedefle
+          },
+        ],
         pagination: { limit: EVENT_PAGE_LIMIT },
       };
 
@@ -274,7 +281,10 @@ const feedbacks = useMemo(() => {
 
       setRpcHealthy(true);
       const latestLedger = latestLedgerResponse.sequence;
-     const startLedger = Math.max(latestLedger - 110000, latestLedger - 120000);
+      
+      // Dinamik Güvenli Aralık: RPC'nin patlamaması için Math.max garantisi
+      const maxLookback = EVENT_LOOKBACK_LEDGERS; 
+      const startLedger = Math.max(1, latestLedger - maxLookback);
 
       const allEvents = await fetchContractEvents(startLedger, signal);
 
@@ -352,18 +362,18 @@ const feedbacks = useMemo(() => {
   }, [fetchLiveAnalytics]);
 
   // ----------------------------------------------------------
-  // HANDLERS FOR FEEDBACK (Sadece Yerel State + LocalStorage)
+  // HANDLERS FOR FEEDBACK
   // ----------------------------------------------------------
 
-const handleAddComment = (e) => {
-  e.preventDefault();
-  if (!newComment.trim()) return;
+  const handleAddComment = (e) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
 
-  alert(
-    "To display your feedback across all browsers/users, the comment must be signed and submitted on-chain via your Soroban Wallet!"
-  );
-  setNewComment("");
-};
+    alert(
+      "To display your feedback across all browsers/users, the comment must be signed and submitted on-chain via your Soroban Wallet!"
+    );
+    setNewComment("");
+  };
 
   // ----------------------------------------------------------
   // RENDER UI
@@ -595,7 +605,7 @@ const handleAddComment = (e) => {
       </div>
 
       {/* ============================================================ */}
-      {/* CANLI TOPLULUK GERİ BİLDİRİM & YORUM TABLOSU (LOCALSTORAGE) */}
+      {/* CANLI TOPLULUK GERİ BİLDİRİM & YORUM TABLOSU */}
       {/* ============================================================ */}
       <div className="mt-8 border border-slate-800 rounded-xl overflow-hidden bg-slate-950/60 p-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
