@@ -34,7 +34,15 @@ const CONTRACT_ID = "CDQUFGNQGT3CYQYNM4DUNZRLBARAXWNGJQW466OYZOODPHLXT2Z3AXMI";
 const REFRESH_INTERVAL = 10000;
 const EVENT_PAGE_LIMIT = 200;
 const MAX_EVENT_PAGES = 10;
-const MAX_VISIBLE_LOGS = 50;
+
+// Tablo eski kayıtları çok erken kesmesin.
+const MAX_VISIBLE_LOGS = 250;
+
+// 10.000 ledger'lık çalışan canlı pencereyi koruyoruz.
+// 4 pencere = son ~40.000 ledger. Böylece anlık işlemler + dün gece
+// aynı senkronizasyonda birleştiriliyor.
+const HISTORY_WINDOW_LEDGERS = 10000;
+const HISTORY_WINDOW_COUNT = 4;
 
 // LocalStorage Anahtarı (Off-Chain yorumları tarayıcıda saklamak için)
 const LOCAL_STORAGE_OFFCHAIN_KEY = "stellar_guest_comments_v1";
@@ -138,6 +146,11 @@ export default function LiveAnalyticsPanel({ activeWalletAddress }) {
   const [rating, setRating] = useState(5);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Interaction stream görünümü:
+  // LATEST_PER_WALLET_ACTION = aynı cüzdan + aynı action için sadece en yeni kayıt
+  // ALL = tüm eventleri göster
+  const [streamFilter, setStreamFilter] = useState("LATEST_PER_WALLET_ACTION");
+
   const walletCache = useRef(new Map());
   const refreshingRef = useRef(false);
 
@@ -177,6 +190,55 @@ export default function LiveAnalyticsPanel({ activeWalletAddress }) {
       return [];
     }
   }, []);
+  // Soroban RPC Event Çekme Mantığı
+const fetchSorobanEvents = async () => {
+  try {
+    // Stellar Testnet RPC'sine istek
+    const response = await fetch(RPC_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "getEvents",
+        params: {
+          startLedger: 0, // Veya son bildiğin ledger
+          filters: [
+            {
+              type: "contract",
+              contractIds: [CONTRACT_ID]
+            }
+          ],
+          pagination: {
+            limit: 100
+          }
+        }
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.result && data.result.events) {
+      // GELEN EVENTLERİ TERS ÇEVİR (EN YENİ EN ÜSTE GELSİN)
+      const parsedEvents = data.result.events.reverse().map((ev, index) => {
+        return {
+          eventId: ev.id || `evt-${index}`,
+          fullWallet: ev.contractId || "Contract Event",
+          wallet: "fb_live_contract",
+          action: "fb_live",
+          status: "Confirmed",
+          timestamp: ev.createdAt ? new Date(ev.createdAt).toISOString() : new Date().toISOString(),
+          txHash: ev.pagingToken || "Soroban_Tx",
+        };
+      });
+
+      // Eski loglarla birleştir ve mükerrer kayıtları engelle
+      setUserLogs(parsedEvents);
+    }
+  } catch (err) {
+    console.error("Soroban events fetch error:", err);
+  }
+};
 
   // Initial Off-Chain yükleme
   useEffect(() => {
@@ -268,6 +330,43 @@ export default function LiveAnalyticsPanel({ activeWalletAddress }) {
   }, [userLogs]);
 
   // ----------------------------------------------------------
+  // STREAM FILTER — AYNI CÜZDAN + AYNI ACTION İÇİN EN SON KAYIT
+  // ----------------------------------------------------------
+  const displayedUserLogs = useMemo(() => {
+    const sorted = [...userLogs].sort(
+      (a, b) =>
+        new Date(b.timestamp || 0).getTime() -
+        new Date(a.timestamp || 0).getTime()
+    );
+
+    if (streamFilter === "ALL") {
+      return sorted;
+    }
+
+    const seen = new Set();
+    const latestOnly = [];
+
+    for (const log of sorted) {
+      // fullWallet gerçek kullanıcı kimliği olarak öncelikli.
+      // UNKNOWN durumunda kısa wallet/event bilgisi fallback olarak kullanılır.
+      const walletKey =
+        log.fullWallet && log.fullWallet !== "UNKNOWN"
+          ? log.fullWallet
+          : log.wallet || "UNKNOWN";
+
+      const actionKey = log.action || "contract_interaction";
+      const uniqueKey = `${walletKey}::${actionKey}`;
+
+      if (seen.has(uniqueKey)) continue;
+
+      seen.add(uniqueKey);
+      latestOnly.push(log);
+    }
+
+    return latestOnly;
+  }, [userLogs, streamFilter]);
+
+  // ----------------------------------------------------------
   // RPC WALLET RESOLVER
   // ----------------------------------------------------------
   const resolveSourceWallet = useCallback(async (txHash, signal) => {
@@ -308,31 +407,54 @@ export default function LiveAnalyticsPanel({ activeWalletAddress }) {
   // ----------------------------------------------------------
   // FETCH SOROBAN EVENTS
   // ----------------------------------------------------------
-  const fetchContractEvents = useCallback(async (startLedger, signal) => {
-    let collectedEvents = [];
-    let cursor = null;
+  const fetchContractEvents = useCallback(
+    async (startLedger, signal, endLedger = null) => {
+      let collectedEvents = [];
+      let cursor = null;
 
-    for (let page = 0; page < MAX_EVENT_PAGES; page++) {
-      const params = {
-        filters: [{ type: "contract", contractIds: [CONTRACT_ID] }],
-        pagination: { limit: EVENT_PAGE_LIMIT },
-        startLedger: startLedger,
-      };
+      for (let page = 0; page < MAX_EVENT_PAGES; page++) {
+        const params = {
+          filters: [{ type: "contract", contractIds: [CONTRACT_ID] }],
+          pagination: { limit: EVENT_PAGE_LIMIT },
+        };
 
-      if (cursor) params.pagination.cursor = cursor;
+        // İlk sayfada ledger aralığını kullan.
+        // Cursor geldikten sonra startLedger/endLedger göndermiyoruz.
+        if (!cursor) {
+          params.startLedger = startLedger;
 
-      const result = await rpcRequest("getEvents", params, signal);
-      const events = Array.isArray(result?.events) ? result.events : [];
-      collectedEvents.push(...events);
+          if (Number.isFinite(endLedger) && endLedger > startLedger) {
+            params.endLedger = endLedger;
+          }
+        } else {
+          params.pagination.cursor = cursor;
+        }
 
-      if (events.length < EVENT_PAGE_LIMIT) break;
-      if (!result?.cursor || result.cursor === cursor) break;
+        const result = await rpcRequest("getEvents", params, signal);
+        const events = Array.isArray(result?.events) ? result.events : [];
 
-      cursor = result.cursor;
-    }
+        collectedEvents.push(...events);
 
-    return Array.from(new Map(collectedEvents.map((e) => [e.id, e])).values());
-  }, []);
+        console.log(
+          `📦 Event window ${startLedger}${
+            endLedger ? ` → ${endLedger}` : " → latest"
+          } | page ${page + 1}: ${events.length} events`
+        );
+
+        if (events.length === 0) break;
+        if (!result?.cursor || result.cursor === cursor) break;
+
+        cursor = result.cursor;
+
+        if (events.length < EVENT_PAGE_LIMIT) break;
+      }
+
+      return Array.from(
+        new Map(collectedEvents.map((event) => [event.id, event])).values()
+      );
+    },
+    []
+  );
 
   // ----------------------------------------------------------
   // MAIN SYNC
@@ -346,77 +468,211 @@ export default function LiveAnalyticsPanel({ activeWalletAddress }) {
       setErrorMessage("");
 
       const startTime = performance.now();
-      const latestLedgerResponse = await rpcRequest("getLatestLedger", null, signal);
-      const endTime = performance.now();
 
+      // Latest ledger canlı taraf için; getHealth ise history sınırını
+      // RPC node'un gerçekten sakladığı ledger aralığında tutmak için.
+      const [latestLedgerResponse, healthResponse] = await Promise.all([
+        rpcRequest("getLatestLedger", null, signal),
+        rpcRequest("getHealth", null, signal),
+      ]);
+
+      const endTime = performance.now();
       setLatency(Math.max(0, Math.round(endTime - startTime)));
 
-      if (!latestLedgerResponse || typeof latestLedgerResponse.sequence !== "number") {
+      if (
+        !latestLedgerResponse ||
+        typeof latestLedgerResponse.sequence !== "number"
+      ) {
         throw new Error("Latest Stellar ledger could not be retrieved.");
       }
 
       setRpcHealthy(true);
+
       const latestLedger = latestLedgerResponse.sequence;
+      const oldestLedger =
+        typeof healthResponse?.oldestLedger === "number"
+          ? healthResponse.oldestLedger
+          : Math.max(
+              1,
+              latestLedger -
+                HISTORY_WINDOW_LEDGERS * HISTORY_WINDOW_COUNT
+            );
 
-      const targetTime = new Date();
-      targetTime.setDate(targetTime.getDate() - 1);
-      targetTime.setHours(23, 0, 0, 0);
+      console.log(
+        "📡 Analytics ledger range:",
+        oldestLedger,
+        "→",
+        latestLedger
+      );
 
-      const diffInSeconds = Math.floor((Date.now() - targetTime.getTime()) / 1000);
-      const neededLedgers = Math.ceil(diffInSeconds / 5);
-      const safeStartLedger = Math.max(1, latestLedger - (neededLedgers + 2000));
+      // --------------------------------------------------------
+      // 🟢 ÇALIŞAN 10K LIVE WINDOW + ESKİ 10K WINDOW'LAR
+      // --------------------------------------------------------
+      // Window 0: latest - 10k → latest      (anlık / bugün)
+      // Window 1: latest - 20k → latest-10k
+      // Window 2: latest - 30k → latest-20k
+      // Window 3: latest - 40k → latest-30k (dün gece / daha eski)
+      //
+      // Böylece tek devasa sorgu yerine, çalışan 10k mantığını
+      // birkaç parçaya bölüp sonuçları birleştiriyoruz.
+      const historyBatches = [];
 
-      const allEvents = await fetchContractEvents(safeStartLedger, signal);
-      const feedbackEvents = allEvents.filter((event) => event && event.id);
+      for (let i = 0; i < HISTORY_WINDOW_COUNT; i++) {
+        const rawStart =
+          latestLedger - HISTORY_WINDOW_LEDGERS * (i + 1);
 
-      feedbackEvents.sort((a, b) => new Date(b.ledgerClosedAt).getTime() - new Date(a.ledgerClosedAt).getTime());
+        const rawEnd =
+          i === 0
+            ? null
+            : latestLedger - HISTORY_WINDOW_LEDGERS * i;
 
-      const visibleEvents = feedbackEvents.slice(0, MAX_VISIBLE_LOGS);
+        const windowStart = Math.max(oldestLedger, rawStart);
 
-      const logs = await mapWithConcurrencyLimit(visibleEvents, 5, async (event) => {
-        const sourceWallet = await resolveSourceWallet(event.txHash, signal);
-        const payload = decodeScVal(event.value);
+        // RPC retention sınırına ulaştıysak daha geriye gitme.
+        if (windowStart >= latestLedger) break;
 
-        let detectedAction = "contract_interaction";
-        if (Array.isArray(event.topic) && event.topic.length > 0) {
-          const rawTopic = decodeScVal(event.topic[0]);
-          if (typeof rawTopic === "string" && rawTopic.trim() !== "") {
-            detectedAction = rawTopic;
+        const windowEnd =
+          rawEnd && rawEnd > windowStart ? rawEnd : null;
+
+        const batch = await fetchContractEvents(
+          windowStart,
+          signal,
+          windowEnd
+        );
+
+        historyBatches.push(...batch);
+
+        // oldestLedger'a ulaştıysak sonraki pencere gereksiz.
+        if (windowStart <= oldestLedger) break;
+      }
+
+      // Aynı event iki pencerenin sınırında geldiyse tekilleştir.
+      const allEvents = Array.from(
+        new Map(
+          historyBatches
+            .filter((event) => event && event.id)
+            .map((event) => [event.id, event])
+        ).values()
+      );
+
+      const feedbackEvents = allEvents.sort(
+        (a, b) =>
+          new Date(b.ledgerClosedAt).getTime() -
+          new Date(a.ledgerClosedAt).getTime()
+      );
+
+      console.log(
+        "📚 Combined contract events:",
+        feedbackEvents.length,
+        "| newest:",
+        feedbackEvents[0]?.ledgerClosedAt || "none",
+        "| oldest:",
+        feedbackEvents[feedbackEvents.length - 1]?.ledgerClosedAt || "none"
+      );
+
+      const visibleEvents = feedbackEvents.slice(
+        0,
+        MAX_VISIBLE_LOGS
+      );
+
+      const logs = await mapWithConcurrencyLimit(
+        visibleEvents,
+        5,
+        async (event) => {
+          const sourceWallet = await resolveSourceWallet(
+            event.txHash,
+            signal
+          );
+
+          const payload = decodeScVal(event.value);
+
+          let detectedAction = "contract_interaction";
+
+          if (
+            Array.isArray(event.topic) &&
+            event.topic.length > 0
+          ) {
+            const rawTopic = decodeScVal(event.topic[0]);
+
+            if (
+              typeof rawTopic === "string" &&
+              rawTopic.trim() !== ""
+            ) {
+              detectedAction = rawTopic;
+            }
           }
-        }
 
-        let extractedFeedbackType = "POSITIVE";
-        if (typeof payload === "object" && payload?.is_positive === false) {
-          extractedFeedbackType = "NEGATIVE";
-        } else if (typeof payload === "string" && payload.toLowerCase().includes("bad")) {
-          extractedFeedbackType = "NEGATIVE";
-        }
+          let extractedFeedbackType = "POSITIVE";
 
-        return {
-          eventId: event.id,
-          fullWallet: sourceWallet,
-          wallet: shortenWallet(sourceWallet),
-          action: detectedAction,
-          status: "Confirmed",
-          timestamp: event.ledgerClosedAt,
-          txHash: event.txHash,
-          payload: typeof payload === "object" ? JSON.stringify(payload) : payload,
-          feedbackType: extractedFeedbackType,
-          rating: typeof payload === "object" && payload?.rating ? payload.rating : 5,
-        };
-      });
+          if (
+            typeof payload === "object" &&
+            payload?.is_positive === false
+          ) {
+            extractedFeedbackType = "NEGATIVE";
+          } else if (
+            typeof payload === "string" &&
+            payload.toLowerCase().includes("bad")
+          ) {
+            extractedFeedbackType = "NEGATIVE";
+          }
+
+          return {
+            eventId: event.id,
+            fullWallet: sourceWallet,
+            wallet: shortenWallet(sourceWallet),
+            action: detectedAction,
+            status: "Confirmed",
+            timestamp: event.ledgerClosedAt,
+            txHash: event.txHash,
+            payload:
+              typeof payload === "object"
+                ? JSON.stringify(payload)
+                : payload,
+            feedbackType: extractedFeedbackType,
+            rating:
+              typeof payload === "object" && payload?.rating
+                ? payload.rating
+                : 5,
+          };
+        }
+      );
 
       setUserLogs((prev) => {
-        const localLogs = prev.filter((p) => p.eventId.startsWith("temp-"));
+        // Formdan yeni eklenmiş ama henüz RPC'de görünmeyen temp kayıtları koru.
+        const localLogs = prev.filter((item) =>
+          String(item?.eventId || "").startsWith("temp-")
+        );
+
         const combined = [...localLogs, ...logs];
-        return Array.from(new Map(combined.map((item) => [item.eventId, item])).values());
+
+        // Tekilleştir + en yeni en üstte.
+        return Array.from(
+          new Map(
+            combined.map((item) => [item.eventId, item])
+          ).values()
+        )
+          .sort(
+            (a, b) =>
+              new Date(b.timestamp || 0).getTime() -
+              new Date(a.timestamp || 0).getTime()
+          )
+          .slice(0, MAX_VISIBLE_LOGS);
       });
 
       setLastUpdated(new Date());
     } catch (error) {
       if (error?.name === "AbortError") return;
-      console.error("❌ Live Analytics Sync Error:", error);
-      setErrorMessage(error?.message || "Live Stellar analytics could not be loaded.");
+
+      console.error(
+        "❌ Live Analytics Sync Error:",
+        error
+      );
+
+      setErrorMessage(
+        error?.message ||
+          "Live Stellar analytics could not be loaded."
+      );
+
       setRpcHealthy(false);
     } finally {
       setLoading(false);
@@ -636,13 +892,47 @@ export default function LiveAnalyticsPanel({ activeWalletAddress }) {
 
       {/* STREAM TABLE */}
       <div className="mt-6 border border-slate-800 rounded-xl overflow-hidden bg-slate-950/40">
-        <div className="px-4 py-3 bg-slate-800/60 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="px-4 py-3 bg-slate-800/60 border-b border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
             Verified User & Contract Interaction Stream — Level 4 Proof
           </span>
-          <span className="text-[11px] text-slate-400">
-            {lastUpdated ? `Auto-refresh • ${lastUpdated.toLocaleTimeString()}` : "Connecting..."}
-          </span>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1 p-1 bg-slate-950/70 border border-slate-700 rounded-lg">
+              <button
+                type="button"
+                onClick={() => setStreamFilter("LATEST_PER_WALLET_ACTION")}
+                className={`px-2.5 py-1 rounded-md text-[10px] font-medium transition-all cursor-pointer ${
+                  streamFilter === "LATEST_PER_WALLET_ACTION"
+                    ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
+                    : "text-slate-500 hover:text-slate-300"
+                }`}
+                title="Show only the newest record for each wallet + action pair"
+              >
+                Latest per Wallet
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setStreamFilter("ALL")}
+                className={`px-2.5 py-1 rounded-md text-[10px] font-medium transition-all cursor-pointer ${
+                  streamFilter === "ALL"
+                    ? "bg-slate-700 text-white border border-slate-600"
+                    : "text-slate-500 hover:text-slate-300"
+                }`}
+                title="Show every contract event"
+              >
+                All Events
+              </button>
+            </div>
+
+            <span className="text-[11px] text-slate-400 whitespace-nowrap">
+              {displayedUserLogs.length}/{userLogs.length} shown
+              {lastUpdated
+                ? ` • ${lastUpdated.toLocaleTimeString()}`
+                : " • Connecting..."}
+            </span>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -657,7 +947,7 @@ export default function LiveAnalyticsPanel({ activeWalletAddress }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/50 font-mono">
-              {loading && userLogs.length === 0 && (
+              {loading && displayedUserLogs.length === 0 && (
                 <tr>
                   <td colSpan="5" className="px-4 py-10 text-center text-cyan-400 animate-pulse">
                     Reading verified Soroban events from Stellar Testnet...
@@ -665,7 +955,7 @@ export default function LiveAnalyticsPanel({ activeWalletAddress }) {
                 </tr>
               )}
 
-              {!loading && userLogs.length === 0 && (
+              {!loading && displayedUserLogs.length === 0 && (
                 <tr>
                   <td colSpan="5" className="px-4 py-10 text-center text-slate-500">
                     No verified user interaction has been detected yet.
@@ -673,7 +963,7 @@ export default function LiveAnalyticsPanel({ activeWalletAddress }) {
                 </tr>
               )}
 
-              {userLogs.map((log) => (
+              {displayedUserLogs.map((log) => (
                 <tr key={log.eventId} className="hover:bg-slate-800/30 transition-colors">
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-2">
