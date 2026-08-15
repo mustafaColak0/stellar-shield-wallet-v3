@@ -556,27 +556,66 @@ function Header({
   const [txStatus, setTxStatus] = useState({ type: "", message: "", hash: "" });
   const [selectedAsset, setSelectedAsset] = useState("XLM");
   const [transferAsset, setTransferAsset] = useState("XLM");
-  const [transactions, setTransactions] = useState(() => {
-    try {
-      const saved = localStorage.getItem("stellar_shield_transactions_v1");
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  // ============================================================
+  // WALLET-SPECIFIC TRANSACTION HISTORY
+  // Her wallet kendi local history alanını kullanır.
+  // ============================================================
 
+  const [transactions, setTransactions] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [historyFilter, setHistoryFilter] = useState("ALL");
-  useEffect(() => {
-    try {
-      localStorage.setItem(
-        "stellar_shield_transactions_v1",
-        JSON.stringify(transactions),
-      );
-    } catch (error) {
-      console.warn("Transaction history save error:", error);
+
+  const [loadedHistoryKey, setLoadedHistoryKey] = useState(null);
+
+  const transactionStorageKey = useMemo(() => {
+    const walletAddress = String(pubKey || "").trim();
+
+    if (!walletAddress) {
+      return null;
     }
-  }, [transactions]);
+
+    return `stellar_shield_transactions_v2_${walletAddress}`;
+  }, [pubKey]);
+
+  // Wallet değiştiğinde o wallet'ın geçmişini yükle
+  useEffect(() => {
+    if (!transactionStorageKey) {
+      setTransactions([]);
+      setLoadedHistoryKey(null);
+      return;
+    }
+
+    try {
+      const saved = localStorage.getItem(transactionStorageKey);
+
+      if (!saved) {
+        setTransactions([]);
+      } else {
+        const parsed = JSON.parse(saved);
+
+        setTransactions(Array.isArray(parsed) ? parsed : []);
+      }
+    } catch (error) {
+      console.warn("Wallet transaction history could not be loaded:", error);
+
+      setTransactions([]);
+    }
+
+    setLoadedHistoryKey(transactionStorageKey);
+  }, [transactionStorageKey]);
+
+  // Sadece aktif wallet'ın history alanına kaydet
+  useEffect(() => {
+    if (!transactionStorageKey || loadedHistoryKey !== transactionStorageKey) {
+      return;
+    }
+
+    try {
+      localStorage.setItem(transactionStorageKey, JSON.stringify(transactions));
+    } catch (error) {
+      console.warn("Wallet transaction history could not be saved:", error);
+    }
+  }, [transactions, transactionStorageKey, loadedHistoryKey]);
 
   const [addressBook, setAddressBook] = useState([
     { id: 1, name: "Jüri İnceleme Cüzdanı", address: "GBJURI777...TESTNET" },
@@ -807,7 +846,13 @@ function Header({
 
       const newTx = {
         id: Date.now(),
-        date: new Date().toLocaleString(),
+
+        timestamp: Date.now(),
+        date: new Date().toLocaleString("tr-TR"),
+
+        ownerWallet: pubKey || "",
+        from: pubKey || "",
+
         to: destination,
         amount: amount,
         asset: selectedAsset || "XLM",
@@ -1144,7 +1189,13 @@ function Header({
         setTransactions((prev) => [
           {
             id: Date.now(),
+
+            timestamp: Date.now(),
             date: new Date().toLocaleString("tr-TR"),
+
+            ownerWallet: pubKey || "",
+            from: pubKey || "",
+
             to: destination,
             amount,
             asset: selectedAsset,
@@ -1179,7 +1230,13 @@ function Header({
       setTransactions((prev) => [
         {
           id: Date.now(),
+
+          timestamp: Date.now(),
           date: new Date().toLocaleString("tr-TR"),
+
+          ownerWallet: pubKey || "",
+          from: pubKey || "",
+
           to: destination,
           amount,
           asset: selectedAsset,
@@ -1482,10 +1539,20 @@ function Header({
         // 1. Add to the transaction history table
         const newHistoryTx = {
           id: Date.now(),
+
+          timestamp: Date.now(),
           date: new Date().toLocaleString("tr-TR"),
+
+          ownerWallet: pubKey || "",
+          from: pubKey || "",
+
           to: "CDQUFGNQGT3CYQYNM4DUNZRLBARAXWNGJQW466OYZOODPHLXT2Z3AXMI",
+
           amount: addedAmount.toString(),
           asset: "XLM",
+
+          isSorobanInteraction: true,
+
           hash:
             result.hash ||
             "soroban_" + Math.random().toString(16).slice(2, 18) + "testnet",
@@ -2829,6 +2896,7 @@ function Header({
                                 to: safeDestination,
                                 from: pubKey || "",
                                 sender: pubKey || "",
+                                ownerWallet: pubKey || "",
                                 date: new Date().toLocaleTimeString(),
                                 timestamp: Date.now(),
                                 status: "SUCCESS",
@@ -4601,29 +4669,25 @@ function Header({
                       txHash: String(currentTxHash),
                       tx_hash: String(currentTxHash),
                       transactionHash: String(currentTxHash),
-
                       type: "Soroban Contract Call",
                       action: "create_feedback",
                       category: "Soroban Interaction",
                       description: `Simulated deposit input: ${depositAmount} XLM`,
                       memo: "Soroban create_feedback",
-
                       isSorobanInteraction: true,
                       isSimulatedAmount: true,
-
                       amount: depositAmount,
                       value: depositAmount,
                       asset: "XLM",
                       assetCode: "XLM",
                       token: "XLM",
                       symbol: "XLM",
-
                       destination: String(currentDest),
                       address: String(currentDest),
                       to: String(currentDest),
                       from: String(pubKey || "Wallet Account"),
                       sender: String(pubKey || "Wallet Account"),
-
+                      ownerWallet: String(pubKey || ""),
                       status: "SUCCESS",
                       statusText: "Success",
                       date: new Date().toLocaleTimeString("tr-TR"),

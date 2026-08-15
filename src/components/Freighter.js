@@ -88,7 +88,10 @@ const sendXlmTransaction = async (destination, amount) => {
 
     return { success: true, hash: result.hash };
   } catch (error) {
-    console.error("Transfer error:", error);
+    console.error(
+      "Header.js:4488 🚫 Wallet signature was cancelled by the user.",
+      error,
+    );
     return {
       success: false,
       error: error.message || "The operation was cancelled or failed.",
