@@ -52,6 +52,8 @@ import {
   CartesianGrid,
 } from "recharts";
 import LiveAnalyticsPanel from "./LiveAnalyticsPanel";
+import UserGuide from "./UserGuide";
+import { ShieldCheck } from "lucide-react";
 
 const securityAlerts = [
   {
@@ -1468,22 +1470,98 @@ function Header({
         darkMode ? "bg-slate-950 text-slate-100" : "bg-slate-50 text-slate-900"
       } flex flex-col md:flex-row overflow-x-hidden md:overflow-hidden`}
     >
-      {/* SIDEBAR */}
       <div
-        className={`w-full md:w-72 border-b md:border-b-0 md:border-r flex flex-col justify-between p-4 md:p-6 ${darkMode ? "bg-slate-900/60 border-slate-900" : "bg-white border-slate-200"}`}
+        className={`w-full md:w-72 md:min-w-72 md:shrink-0 border-b md:border-b-0 md:border-r flex flex-col justify-between p-4 md:p-6 ${darkMode ? "bg-slate-900/60 border-slate-900" : "bg-white border-slate-200"}`}
       >
         <div className="space-y-4 md:space-y-8">
           <div className="flex items-center justify-between">
+            {/* SIDEBAR HEADER - LOGO BÖLÜMÜ */}
             <div
               onClick={() => setActiveTab("dashboard")}
-              className="flex items-center gap-2.5 cursor-pointer hover:opacity-80 transition active:scale-95 select-none"
+              className="
+    flex
+    items-center
+    gap-3
+    cursor-pointer
+    select-none
+    group
+    transition-all
+    duration-300
+    hover:scale-[1.02]
+  "
             >
-              <div className="w-9 h-9 bg-gradient-to-tr from-cyan-500 to-indigo-500 rounded-xl flex items-center justify-center font-black text-slate-950 tracking-tighter text-sm">
-                SS
+              {/* LOGO */}
+              <div
+                className="
+      relative
+      w-14
+      h-14
+      shrink-0
+      flex
+      items-center
+      justify-center
+      rounded-xl
+      transition-all
+      duration-300
+      group-hover:drop-shadow-[0_0_16px_rgba(34,211,238,0.75)]
+    "
+              >
+                <img
+                  src="/logo.png"
+                  alt="Stellar Shield Logo"
+                  className="
+        w-full
+        h-full
+        object-contain
+        drop-shadow-[0_0_7px_rgba(34,211,238,0.40)]
+        transition-all
+        duration-300
+        group-hover:scale-105
+      "
+                />
               </div>
-              <span className="font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-400 text-lg">
-                STELLAR SHIELD
-              </span>
+
+              {/* BRAND NAME */}
+              <div className="flex flex-col justify-center leading-none">
+                <span
+                  className="
+        text-[17px]
+        font-black
+        tracking-[0.12em]
+        text-transparent
+        bg-clip-text
+        bg-gradient-to-r
+        from-cyan-400
+        via-blue-400
+        to-indigo-400
+        transition-all
+        duration-300
+        group-hover:drop-shadow-[0_0_14px_rgba(34,211,238,0.75)]
+      "
+                >
+                  STELLAR
+                </span>
+
+                <span
+                  className="
+        mt-2
+        text-[17px]
+        font-black
+        tracking-[0.12em]
+        text-transparent
+        bg-clip-text
+        bg-gradient-to-r
+        from-cyan-400
+        via-blue-400
+        to-indigo-400
+        transition-all
+        duration-300
+        group-hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.45)]
+      "
+                >
+                  SHIELD
+                </span>
+              </div>
             </div>
             <button
               onClick={() => setDarkMode(!darkMode)}
@@ -1502,12 +1580,13 @@ function Header({
               { id: "receive", icon: QrCode, label: "QR Code (Receive)" },
               { id: "security", icon: ShieldAlert, label: "Security Audit" },
               { id: "feedback", icon: MessageSquare, label: "Feedback" },
+              { id: "user-guide", icon: BookOpen, label: "User Guide" },
             ].map((item) => (
               <button
                 key={item.id}
                 onClick={() => connected && setActiveTab(item.id)}
                 disabled={!connected}
-                className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-sm transition-all ${
+                className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-sm whitespace-nowrap transition-all ${
                   !connected
                     ? "opacity-40 cursor-not-allowed"
                     : activeTab === item.id
@@ -1542,7 +1621,7 @@ function Header({
       </div>
 
       {/* MAIN CONTENT */}
-      <div className="p-8 lg:p-12 w-full max-w-5xl mx-auto flex-1 flex flex-col justify-start overflow-y-auto">
+      <div className="p-8 lg:p-12 min-w-0 w-full max-w-5xl mx-auto flex-1 flex flex-col justify-start overflow-y-auto">
         {!connected ? (
           <div className="max-w-xl mx-auto my-auto text-center space-y-6">
             <div className="w-16 h-16 bg-cyan-500/10 text-cyan-400 rounded-2xl flex items-center justify-center mx-auto mb-2">
@@ -1995,12 +2074,16 @@ function Header({
             {/* TRANSFER (MULTI-ASSET) CONTENT */}
             {activeTab === "transfer" && (
               <div
-                className={`relative group flex flex-col p-6 md:p-8 rounded-xl transition-all duration-500: shadow-2xl font-sans animate-in fade-in zoom-in-95 duration-300 h-full
-                  ${
-                    darkMode
-                      ? "bg-[#090d16] border border-emerald-900/30 hover:border-emerald-500/50 text-slate-300"
-                      : "bg-black border border-emerald-100 hover:border-emerald-400/60 text-slate-700"
-                  }`}
+                className={`relative group overflow-hidden flex flex-col p-6 md:p-8 rounded-xl
+  shadow-2xl font-sans animate-in fade-in zoom-in-95 h-full
+  transition-all duration-300 ease-out
+  hover:-translate-y-1
+  hover:shadow-[0_0_30px_rgba(34,211,238,0.30)]
+  ${
+    darkMode
+      ? "bg-[#090d16] border border-emerald-900/30 hover:border-cyan-400/80 text-slate-300"
+      : "bg-black border border-emerald-100 hover:border-cyan-400/80 text-slate-700"
+  }`}
               >
                 <div
                   className={`absolute inset-0 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none
@@ -2798,14 +2881,24 @@ function Header({
             )}
             {/* HISTORY */}
             {activeTab === "history" && (
-              <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300 p-2 sm:p-0 max-h-[80vh] md:max-h-none overflow-y-auto scrollbar-thin">
+              <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300 p-2 max-h-[80vh] md:max-h-none overflow-y-auto md:overflow-visible scrollbar-thin">
                 {/* TRANSACTION HISTORY MAIN PANEL */}
                 <div
-                  className={`relative group flex flex-col p-4 sm:p-6 md:p-8 rounded-xl transition-all duration-500 shadow-2xl font-sans w-full overflow-hidden
+                  className={`relative group overflow-hidden flex flex-col p-4 sm:p-6 md:p-8 rounded-xl
+        shadow-2xl font-sans w-full
+        transition-all duration-300 ease-out
+        hover:-translate-y-1
+        hover:shadow-[0_0_30px_rgba(34,211,238,0.30)]
+        after:content-[''] after:absolute after:bottom-0 after:left-1/2
+        after:-translate-x-1/2 after:w-0 after:h-[2px]
+        after:bg-gradient-to-r after:from-transparent after:via-cyan-300 after:to-transparent
+        after:shadow-[0_0_16px_rgba(34,211,238,0.9)]
+        after:transition-all after:duration-500 after:ease-out
+        after:pointer-events-none hover:after:w-[88%]
         ${
           darkMode
-            ? "bg-[#090d16] border border-emerald-900/30 hover:border-emerald-500/50 text-slate-300"
-            : "bg-black border border-emerald-100 hover:border-emerald-400/60 text-slate-700"
+            ? "bg-[#090d16] border border-emerald-900/30 hover:border-cyan-400/80 text-slate-300"
+            : "bg-black border border-emerald-100 hover:border-cyan-400/80 text-slate-700"
         }`}
                 >
                   <div
@@ -2959,12 +3052,45 @@ function Header({
             {/* CONTACTS */}
             {activeTab === "contacts" && (
               <div
-                className={`w-full max-w-5xl mx-auto relative group p-6 rounded-xl transition-all duration-500: shadow-2xl font-sans animate-in fade-in zoom-in-95 duration-300
-                  ${
-                    darkMode
-                      ? "bg-[#090d16] border border-emerald-900/30 hover:border-emerald-500/50 text-slate-300"
-                      : "bg-black border border-emerald-100 hover:border-emerald-400/60 text-slate-700"
-                  }`}
+                className={`w-full max-w-5xl mx-auto
+  relative group overflow-hidden p-6 rounded-xl
+
+  shadow-2xl font-sans
+  animate-in fade-in zoom-in-95
+
+  transition-all duration-300 ease-out
+
+  hover:-translate-y-1
+  hover:shadow-[0_0_30px_rgba(34,211,238,0.30)]
+
+  after:content-['']
+  after:absolute
+  after:bottom-0
+  after:left-1/2
+  after:-translate-x-1/2
+
+  after:w-0
+  after:h-[2px]
+
+  after:bg-gradient-to-r
+  after:from-transparent
+  after:via-cyan-300
+  after:to-transparent
+
+  after:shadow-[0_0_16px_rgba(34,211,238,0.9)]
+
+  after:transition-all
+  after:duration-500
+  after:ease-out
+  after:pointer-events-none
+
+  hover:after:w-[88%]
+
+  ${
+    darkMode
+      ? "bg-[#090d16] border border-emerald-900/30 hover:border-cyan-400/80 text-slate-300"
+      : "bg-black border border-emerald-100 hover:border-cyan-400/80 text-slate-700"
+  }`}
               >
                 <div
                   className={`absolute inset-0 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none
@@ -3078,11 +3204,21 @@ function Header({
             {/* RECEIVE */}
             {activeTab === "receive" && (
               <div
-                className={`w-full max-w-xl mx-auto relative group p-6 rounded-xl transition-all duration-500: shadow-2xl font-sans animate-in fade-in duration-300
+                className={`w-full max-w-xl mx-auto relative group overflow-hidden p-6 rounded-xl
+                  shadow-2xl font-sans animate-in fade-in zoom-in-95
+                  transition-all duration-300 ease-out
+                  hover:-translate-y-1
+                  hover:shadow-[0_0_30px_rgba(34,211,238,0.30)]
+                  after:content-[''] after:absolute after:bottom-0 after:left-1/2
+                  after:-translate-x-1/2 after:w-0 after:h-[2px]
+                  after:bg-gradient-to-r after:from-transparent after:via-cyan-300 after:to-transparent
+                  after:shadow-[0_0_16px_rgba(34,211,238,0.9)]
+                  after:transition-all after:duration-500 after:ease-out
+                  after:pointer-events-none hover:after:w-[88%]
                   ${
                     darkMode
-                      ? "bg-[#090d16] border border-emerald-900/30 hover:border-emerald-500/50 text-slate-300"
-                      : "bg-black border border-emerald-100 hover:border-emerald-400/60 text-slate-700"
+                      ? "bg-[#090d16] border border-emerald-900/30 hover:border-cyan-400/80 text-slate-300"
+                      : "bg-black border border-emerald-100 hover:border-cyan-400/80 text-slate-700"
                   }`}
               >
                 <div
@@ -3233,7 +3369,7 @@ function Header({
 
             {/* SECURITY AUDIT & JURY VERIFICATION MATRIX */}
             {activeTab === "security" && (
-              <div className="w-full max-w-5xl mx-auto space-y-6 text-slate-300 font-sans p-4 sm:p-6 pb-32 rounded-2xl bg-[#030712] border border-slate-900 shadow-2xl animate-in fade-in zoom-in-95 duration-300">
+              <div className="relative group overflow-hidden w-full max-w-5xl mx-auto space-y-6 text-slate-300 font-sans p-4 sm:p-6 pb-32 rounded-2xl bg-[#030712] border border-slate-900 shadow-2xl animate-in fade-in zoom-in-95 transition-all duration-300 ease-out hover:-translate-y-1 hover:border-cyan-400/80 hover:shadow-[0_0_30px_rgba(34,211,238,0.30)] after:content-[''] after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-0 after:h-[2px] after:bg-gradient-to-r after:from-transparent after:via-cyan-300 after:to-transparent after:shadow-[0_0_16px_rgba(34,211,238,0.9)] after:transition-all after:duration-500 after:ease-out after:pointer-events-none hover:after:w-[88%]">
                 {/* Top Header and Scan Button */}
                 <div className="border-b border-slate-900 pb-4 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                   <div className="flex items-start gap-3 w-full lg:w-auto">
@@ -3693,6 +3829,16 @@ function Header({
           </div>
         )}
       </div>
+
+      {/* USER GUIDE TAB */}
+      {activeTab === "user-guide" && (
+        <div className="w-full min-h-[calc(100vh-6rem)] flex items-center justify-center">
+          <div className="w-full max-w-4xl mx-auto animate-in fade-in zoom-in-95 duration-300">
+            <UserGuide darkMode={darkMode} />
+          </div>
+        </div>
+      )}
+
       {/* ========================================================================= */}
       {/* GLOBAL SECURITY AND APPROVAL MODAL (OUTERMOST – ACCESSIBLE FROM EVERYWHERE) */}
       {/* ========================================================================= */}

@@ -774,7 +774,28 @@ const fetchSorobanEvents = async () => {
   };
 
   return (
-    <div className="w-full mt-8 p-5 md:p-6 bg-slate-900/90 border border-slate-800 rounded-2xl shadow-2xl backdrop-blur-md text-white">
+    <div
+  className="
+    relative
+    w-full
+    mt-8
+    p-5 md:p-6
+
+    bg-slate-900/90
+    border border-slate-800
+    rounded-2xl
+    shadow-2xl
+    backdrop-blur-md
+    text-white
+
+    transition-all
+    duration-300
+    ease-out
+
+    hover:border-cyan-400/70
+    hover:shadow-[0_0_28px_rgba(34,211,238,0.20)]
+  "
+>
       {/* HEADER */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-slate-800">
         <div className="flex items-start gap-3">
@@ -827,7 +848,16 @@ const fetchSorobanEvents = async () => {
 
       {/* METRIC CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 my-6">
-        <div className="p-4 bg-slate-800/40 border border-slate-700/40 rounded-xl">
+        <div className="group relative overflow-hidden p-4 bg-slate-800/40 border border-slate-700/40 rounded-xl
+transition-all duration-300 ease-out
+hover:-translate-y-1 hover:border-cyan-400/70
+hover:shadow-[0_0_22px_rgba(34,211,238,0.20)]
+after:content-[''] after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2
+after:w-0 after:h-[2px]
+after:bg-gradient-to-r after:from-transparent after:via-cyan-300 after:to-transparent
+after:shadow-[0_0_12px_rgba(34,211,238,0.85)]
+after:transition-all after:duration-500 after:ease-out
+after:pointer-events-none hover:after:w-[82%]">
           <div className="flex items-center justify-between text-slate-400 mb-2">
             <span className="text-xs font-semibold uppercase tracking-wider">
               Verified Unique Wallets
@@ -847,7 +877,16 @@ const fetchSorobanEvents = async () => {
           </div>
         </div>
 
-        <div className="p-4 bg-slate-800/40 border border-slate-700/40 rounded-xl">
+        <div className="group relative overflow-hidden p-4 bg-slate-800/40 border border-slate-700/40 rounded-xl
+transition-all duration-300 ease-out
+hover:-translate-y-1 hover:border-cyan-400/70
+hover:shadow-[0_0_22px_rgba(34,211,238,0.20)]
+after:content-[''] after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2
+after:w-0 after:h-[2px]
+after:bg-gradient-to-r after:from-transparent after:via-cyan-300 after:to-transparent
+after:shadow-[0_0_12px_rgba(34,211,238,0.85)]
+after:transition-all after:duration-500 after:ease-out
+after:pointer-events-none hover:after:w-[82%]">
           <div className="flex items-center justify-between text-slate-400 mb-2">
             <span className="text-xs font-semibold uppercase tracking-wider">
               Today's On-Chain Interactions
@@ -865,7 +904,16 @@ const fetchSorobanEvents = async () => {
           </div>
         </div>
 
-        <div className="p-4 bg-slate-800/40 border border-slate-700/40 rounded-xl">
+        <div className="group relative overflow-hidden p-4 bg-slate-800/40 border border-slate-700/40 rounded-xl
+transition-all duration-300 ease-out
+hover:-translate-y-1 hover:border-cyan-400/70
+hover:shadow-[0_0_22px_rgba(34,211,238,0.20)]
+after:content-[''] after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2
+after:w-0 after:h-[2px]
+after:bg-gradient-to-r after:from-transparent after:via-cyan-300 after:to-transparent
+after:shadow-[0_0_12px_rgba(34,211,238,0.85)]
+after:transition-all after:duration-500 after:ease-out
+after:pointer-events-none hover:after:w-[82%]">
           <div className="flex items-center justify-between text-slate-400 mb-2">
             <span className="text-xs font-semibold uppercase tracking-wider">
               Soroban RPC Latency
@@ -992,7 +1040,12 @@ const fetchSorobanEvents = async () => {
                         href={`https://stellar.expert/explorer/testnet/tx/${log.txHash}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-[11px] text-slate-400 hover:text-cyan-400 bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded border border-slate-700"
+                        className="group/explorer inline-flex items-center gap-1 text-[11px] text-slate-400
+bg-slate-800 px-2 py-1 rounded border border-slate-700
+transition-all duration-200
+hover:text-cyan-300 hover:bg-cyan-500/10 hover:border-cyan-500/40
+hover:shadow-[0_0_12px_rgba(34,211,238,0.18)]
+hover:-translate-y-[1px]"
                       >
                         Explorer <ExternalLink className="w-3 h-3" />
                       </a>
@@ -1010,7 +1063,9 @@ const fetchSorobanEvents = async () => {
       {/* ============================================================ */}
       {/* CANLI HİBRİT TOPLULUK GERİ BİLDİRİM & YORUM TABLOSU */}
       {/* ============================================================ */}
-      <div className="mt-8 border border-slate-800 rounded-xl overflow-hidden bg-slate-950/60 p-5">
+      <div className="mt-8 border border-slate-800 rounded-xl overflow-hidden bg-slate-950/60 p-5
+transition-all duration-300
+hover:border-cyan-500/30 hover:shadow-[0_0_22px_rgba(34,211,238,0.10)]">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-4 border-b border-slate-800">
           <div className="flex items-center gap-2">
             <MessageSquare className="w-5 h-5 text-cyan-400" />
@@ -1034,7 +1089,7 @@ const fetchSorobanEvents = async () => {
               type="button"
               onClick={() => setFeedbackFilter("ON_CHAIN")}
               className={`px-2.5 py-1 rounded transition-all cursor-pointer flex items-center gap-1 ${
-                feedbackFilter === "ON_CHAIN" ? "bg-emerald-500/20 text-emerald-400 font-bold" : "text-slate-400 hover:text-slate-200"
+                feedbackFilter === "ON_CHAIN" ? "bg-emerald-500/20 text-emerald-400 font-bold" : "text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/10"
               }`}
             >
               <ShieldCheck className="w-3 h-3" /> On-Chain
@@ -1043,7 +1098,7 @@ const fetchSorobanEvents = async () => {
               type="button"
               onClick={() => setFeedbackFilter("OFF_CHAIN")}
               className={`px-2.5 py-1 rounded transition-all cursor-pointer flex items-center gap-1 ${
-                feedbackFilter === "OFF_CHAIN" ? "bg-blue-500/20 text-blue-400 font-bold" : "text-slate-400 hover:text-slate-200"
+                feedbackFilter === "OFF_CHAIN" ? "bg-blue-500/20 text-blue-400 font-bold" : "text-slate-400 hover:text-blue-300 hover:bg-blue-500/10"
               }`}
             >
               <Globe className="w-3 h-3" /> Guest Users
@@ -1060,8 +1115,8 @@ const fetchSorobanEvents = async () => {
             <button
               type="button"
               onClick={() => setFeedbackFilter("NEGATIVE")}
-              className={`px-2.5 py-1 rounded transition-all cursor-pointer ${
-                feedbackFilter === "NEGATIVE" ? "bg-rose-500/20 text-rose-400 font-bold" : "text-slate-400 hover:text-slate-200"
+               className={`px-2.5 py-1 rounded transition-all cursor-pointer ${
+                feedbackFilter === "NEGATIVE" ? "bg-rose-500/20 text-rose-400 font-bold" : "text-slate-400 hover:text-rose-300 hover:bg-rose-500/10"
               }`}
             >
               👎 Negative
@@ -1070,7 +1125,9 @@ const fetchSorobanEvents = async () => {
         </div>
 
         {/* YORUM FORMU */}
-        <form onSubmit={handleAddComment} className="my-5 p-4 bg-slate-900/80 border border-slate-800 rounded-xl space-y-3">
+       <form onSubmit={handleAddComment} className="my-5 p-4 bg-slate-900/80 border border-slate-800 rounded-xl space-y-3
+transition-all duration-300
+hover:border-cyan-500/30 hover:shadow-[0_0_18px_rgba(34,211,238,0.10)]">
           
           {/* Yorum Türü Seçimi (Cüzdanlı vs Normal) */}
           <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800/60">
@@ -1183,8 +1240,10 @@ const fetchSorobanEvents = async () => {
               type="submit"
               disabled={isSubmitting || !newComment.trim()}
               className={`${
-                commentType === "ON_CHAIN" ? "bg-emerald-500 hover:bg-emerald-400" : "bg-blue-500 hover:bg-blue-400"
-              } text-slate-950 font-bold px-4 py-2 rounded-lg text-xs flex items-center gap-1.5 transition-all cursor-pointer shrink-0 disabled:opacity-50`}
+               commentType === "ON_CHAIN" ? "bg-emerald-500 hover:bg-emerald-400" : "bg-blue-500 hover:bg-blue-400"
+              } text-slate-950 font-bold px-4 py-2 rounded-lg text-xs flex items-center gap-1.5
+transition-all duration-200 cursor-pointer shrink-0 disabled:opacity-50
+hover:-translate-y-[1px] hover:shadow-[0_0_14px_rgba(34,211,238,0.28)]`}
             >
               {isSubmitting ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1197,7 +1256,7 @@ const fetchSorobanEvents = async () => {
         </form>
 
         {/* HİBRİT YORUM LİSTESİ */}
-        <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
+        <div className="space-y-2.5 max-h-80 overflow-y-auto px-1 pt-2 pb-2">
           {filteredFeedbacks.length === 0 ? (
             <div className="text-center py-8 text-xs text-slate-500 font-mono">
               No comments found in this filter category.
@@ -1206,7 +1265,13 @@ const fetchSorobanEvents = async () => {
             filteredFeedbacks.map((fb) => (
               <div
                 key={fb.id}
-                className="p-3 bg-slate-900/50 border border-slate-800/80 rounded-xl flex items-start justify-between gap-4 text-xs font-mono hover:border-slate-700/60 transition-all"
+                className="group/comment p-3 bg-slate-900/50 border border-slate-800/80 rounded-xl
+flex items-start justify-between gap-4 text-xs font-mono
+transition-all duration-300 ease-out
+hover:-translate-y-[2px]
+hover:border-cyan-500/40
+hover:bg-slate-900/80
+hover:shadow-[0_0_16px_rgba(34,211,238,0.12)]"
               >
                 <div className="space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
