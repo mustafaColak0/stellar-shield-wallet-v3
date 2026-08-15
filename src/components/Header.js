@@ -556,8 +556,28 @@ function Header({
   const [txStatus, setTxStatus] = useState({ type: "", message: "", hash: "" });
   const [selectedAsset, setSelectedAsset] = useState("XLM");
   const [transferAsset, setTransferAsset] = useState("XLM");
-  const [transactions, setTransactions] = useState([]);
+  const [transactions, setTransactions] = useState(() => {
+    try {
+      const saved = localStorage.getItem("stellar_shield_transactions_v1");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
   const [searchQuery, setSearchQuery] = useState("");
+  const [historyFilter, setHistoryFilter] = useState("ALL");
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        "stellar_shield_transactions_v1",
+        JSON.stringify(transactions),
+      );
+    } catch (error) {
+      console.warn("Transaction history save error:", error);
+    }
+  }, [transactions]);
+
   const [addressBook, setAddressBook] = useState([
     { id: 1, name: "Jüri İnceleme Cüzdanı", address: "GBJURI777...TESTNET" },
     { id: 2, name: "Siber Güvenlik Kasası", address: "GASHIELD99...TESTNET" },
@@ -1179,13 +1199,112 @@ function Header({
   };
 
   // Unnecessary filtering calculations were prevented using useMemo.
+  const getTransactionTimestamp = (tx) => {
+    // Yeni kayıtlarda timestamp varsa direkt kullan
+    if (tx?.timestamp) {
+      const numeric = Number(tx.timestamp);
+
+      if (!Number.isNaN(numeric)) {
+        return numeric;
+      }
+    }
+
+    // Eski kayıtlardaki Türkçe tarih formatını çöz
+    if (tx?.date) {
+      const normalDate = new Date(tx.date).getTime();
+
+      if (!Number.isNaN(normalDate)) {
+        return normalDate;
+      }
+
+      // Örnek: 15.08.2026 13:45:22
+      const match = String(tx.date).match(
+        /^(\d{1,2})[./](\d{1,2})[./](\d{4})(?:,\s*|\s+)(\d{1,2}):(\d{2})(?::(\d{2}))?/,
+      );
+
+      if (match) {
+        const [, day, month, year, hour, minute, second = "0"] = match;
+
+        return new Date(
+          Number(year),
+          Number(month) - 1,
+          Number(day),
+          Number(hour),
+          Number(minute),
+          Number(second),
+        ).getTime();
+      }
+    }
+
+    // id Date.now() ise fallback
+    if (typeof tx?.id === "number") {
+      return tx.id;
+    }
+
+    return 0;
+  };
+
   const filteredTransactions = useMemo(() => {
-    return transactions.filter(
-      (tx) =>
-        tx.to.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        tx.hash.toLowerCase().includes(searchQuery.toLowerCase()),
+    const now = new Date();
+
+    // Bugün
+    const startOfToday = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
     );
-  }, [transactions, searchQuery]);
+
+    // Bu hafta - Pazartesi başlangıç
+    const startOfWeek = new Date(startOfToday);
+    const day = startOfToday.getDay();
+    const difference = day === 0 ? 6 : day - 1;
+
+    startOfWeek.setDate(startOfWeek.getDate() - difference);
+
+    // Bu ay
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const query = searchQuery.trim().toLowerCase();
+
+    return transactions
+      .filter((tx) => {
+        // SEARCH
+        const address = String(tx?.to || tx?.destination || "").toLowerCase();
+
+        const hash = String(
+          tx?.hash || tx?.txHash || tx?.transactionHash || tx?.id || "",
+        ).toLowerCase();
+
+        const matchesSearch =
+          !query || address.includes(query) || hash.includes(query);
+
+        if (!matchesSearch) return false;
+
+        // DATE FILTER
+        if (historyFilter === "ALL") {
+          return true;
+        }
+
+        const txTime = getTransactionTimestamp(tx);
+
+        if (!txTime) return false;
+
+        if (historyFilter === "TODAY") {
+          return txTime >= startOfToday.getTime();
+        }
+
+        if (historyFilter === "WEEK") {
+          return txTime >= startOfWeek.getTime();
+        }
+
+        if (historyFilter === "MONTH") {
+          return txTime >= startOfMonth.getTime();
+        }
+
+        return true;
+      })
+      .sort((a, b) => getTransactionTimestamp(b) - getTransactionTimestamp(a));
+  }, [transactions, searchQuery, historyFilter]);
 
   // === STELLAR SHIELD LEVEL 2: ENHANCED DYNAMIC COMPLIANCE ENGINE ===
   const isAddressEntered = destination && destination.trim().length > 0;
@@ -2889,27 +3008,44 @@ function Header({
         transition-all duration-300 ease-out
         hover:-translate-y-1
         hover:shadow-[0_0_30px_rgba(34,211,238,0.30)]
-        after:content-[''] after:absolute after:bottom-0 after:left-1/2
-        after:-translate-x-1/2 after:w-0 after:h-[2px]
-        after:bg-gradient-to-r after:from-transparent after:via-cyan-300 after:to-transparent
+
+        after:content-['']
+        after:absolute
+        after:bottom-0
+        after:left-1/2
+        after:-translate-x-1/2
+        after:w-0
+        after:h-[2px]
+        after:bg-gradient-to-r
+        after:from-transparent
+        after:via-cyan-300
+        after:to-transparent
         after:shadow-[0_0_16px_rgba(34,211,238,0.9)]
-        after:transition-all after:duration-500 after:ease-out
-        after:pointer-events-none hover:after:w-[88%]
+        after:transition-all
+        after:duration-500
+        after:ease-out
+        after:pointer-events-none
+        hover:after:w-[88%]
+
         ${
           darkMode
             ? "bg-[#090d16] border border-emerald-900/30 hover:border-cyan-400/80 text-slate-300"
             : "bg-black border border-emerald-100 hover:border-cyan-400/80 text-slate-700"
         }`}
                 >
+                  {/* HOVER BACKGROUND */}
                   <div
                     className={`absolute inset-0 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none
           ${darkMode ? "bg-emerald-500/5" : "bg-emerald-500/10"}`}
                   ></div>
 
                   <div className="relative z-10 w-full space-y-4">
-                    {/* Top Section: Header, Badge and Search Bar Unified */}
+                    {/* ===================================================== */}
+                    {/* HEADER */}
+                    {/* ===================================================== */}
+
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-2">
-                      {/* Left Corner: Headline */}
+                      {/* LEFT */}
                       <h3 className="text-lg sm:text-xl font-bold flex items-center gap-2 shrink-0">
                         <History
                           size={22}
@@ -2920,39 +3056,151 @@ function Header({
                     : "text-cyan-600 group-hover:drop-shadow-[0_0_6px_rgba(8,145,178,0.4)]"
                 }`}
                         />
+
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 tracking-wide break-words">
                           Transaction History
                         </span>
                       </h3>
 
-                      {/* Right Corner: LIVE Badge and Search Bar (Stacked beautifully) */}
+                      {/* RIGHT */}
                       <div className="flex flex-col items-start md:items-end gap-2.5 w-full md:w-auto">
+                        {/* LIVE STATUS */}
                         <span className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-mono text-emerald-400 font-bold uppercase tracking-widest h-fit w-fit whitespace-nowrap">
                           <span className="relative flex h-1.5 w-1.5">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+
                             <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
                           </span>
                           Transaction Live
                         </span>
 
-                        {/* Search Bar - Full width on mobile, 64 (256px) on desktop */}
+                        {/* SEARCH */}
                         <div className="relative w-full md:w-64">
                           <Search
                             size={16}
                             className="absolute left-3 top-2.5 text-slate-400"
                           />
+
                           <input
                             type="text"
                             placeholder="Search address or hash..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-4 py-2 text-xs focus:outline-none focus:border-cyan-500 text-slate-200 transition-colors"
+                            className="
+                  w-full
+                  bg-slate-950
+                  border border-slate-800
+                  rounded-lg
+                  pl-9 pr-4 py-2
+                  text-xs
+                  text-slate-200
+                  focus:outline-none
+                  focus:border-cyan-500
+                  focus:shadow-[0_0_12px_rgba(34,211,238,0.12)]
+                  transition-all
+                "
                           />
                         </div>
                       </div>
                     </div>
 
-                    {/* Bottom Section: Cyber Table View */}
+                    {/* ===================================================== */}
+                    {/* BANK STYLE DATE FILTERS */}
+                    {/* ===================================================== */}
+
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      {/* FILTER BUTTONS */}
+                      <div
+                        className="
+              flex
+              flex-wrap
+              items-center
+              gap-1.5
+
+              bg-slate-950/80
+              border
+              border-slate-800
+              rounded-xl
+
+              p-1.5
+              w-fit
+            "
+                      >
+                        {[
+                          {
+                            id: "ALL",
+                            label: "All",
+                          },
+                          {
+                            id: "TODAY",
+                            label: "Today",
+                          },
+                          {
+                            id: "WEEK",
+                            label: "This Week",
+                          },
+                          {
+                            id: "MONTH",
+                            label: "This Month",
+                          },
+                        ].map((item) => (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => setHistoryFilter(item.id)}
+                            className={`
+                  px-3
+                  sm:px-4
+                  py-1.5
+
+                  rounded-lg
+
+                  text-[11px]
+                  font-semibold
+
+                  cursor-pointer
+
+                  transition-all
+                  duration-200
+
+                  ${
+                    historyFilter === item.id
+                      ? `
+                        bg-cyan-500
+                        text-slate-950
+                        shadow-[0_0_14px_rgba(34,211,238,0.30)]
+                      `
+                      : `
+                        text-slate-400
+                        hover:text-cyan-300
+                        hover:bg-cyan-500/10
+                      `
+                  }
+                `}
+                          >
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* TRANSACTION COUNTER */}
+                      <div className="text-[10px] font-mono text-slate-500">
+                        Showing{" "}
+                        <span className="text-cyan-400 font-bold">
+                          {filteredTransactions.length}
+                        </span>{" "}
+                        of{" "}
+                        <span className="text-slate-300 font-bold">
+                          {transactions.length}
+                        </span>{" "}
+                        transactions
+                      </div>
+                    </div>
+
+                    {/* ===================================================== */}
+                    {/* CYBER TRANSACTION TABLE */}
+                    {/* ===================================================== */}
+
                     <div className="bg-[#090d16] border border-slate-800/80 rounded-xl overflow-hidden shadow-inner w-full">
                       <div className="w-full overflow-x-auto scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
                         <table className="w-full text-left border-collapse min-w-[768px]">
@@ -2961,14 +3209,19 @@ function Header({
                               <th className="p-4 w-[22%]">
                                 Transaction ID / Hash
                               </th>
+
                               <th className="p-4 w-[28%]">Target Address</th>
+
                               <th className="p-4 w-[20%]">Amount / Asset</th>
+
                               <th className="p-4 w-[15%]">Time</th>
+
                               <th className="p-4 text-right w-[15%]">
                                 Network Summary
                               </th>
                             </tr>
                           </thead>
+
                           <tbody className="divide-y divide-slate-800/50 text-[11px] font-mono">
                             {filteredTransactions.length === 0 ? (
                               <tr>
@@ -2976,19 +3229,34 @@ function Header({
                                   colSpan="5"
                                   className="p-8 text-center text-slate-400 bg-slate-950/30"
                                 >
-                                  No data found or no transactions yet.
+                                  {historyFilter === "ALL"
+                                    ? "No data found or no transactions yet."
+                                    : "No transactions found for the selected time period."}
                                 </td>
                               </tr>
                             ) : (
                               filteredTransactions.map((tx) => (
                                 <tr
                                   key={tx.id}
-                                  className="hover:bg-slate-800/40 transition-colors group"
+                                  className="
+                        hover:bg-cyan-500/5
+                        hover:shadow-[inset_3px_0_0_rgba(34,211,238,0.75)]
+                        transition-all
+                        duration-200
+                        group
+                      "
                                 >
-                                  {/* Hash Copying Column */}
+                                  {/* HASH */}
                                   <td className="p-4 text-cyan-400 font-bold whitespace-nowrap">
                                     <span
-                                      className="cursor-pointer border-b border-dashed border-cyan-400/30 hover:border-cyan-400 transition-colors"
+                                      className="
+                            cursor-pointer
+                            border-b
+                            border-dashed
+                            border-cyan-400/30
+                            hover:border-cyan-400
+                            transition-colors
+                          "
                                       onClick={() => copyToClipboard(tx.hash)}
                                       title="Click to copy"
                                     >
@@ -2997,15 +3265,16 @@ function Header({
                                     </span>
                                   </td>
 
-                                  {/* Address Column */}
+                                  {/* TARGET ADDRESS */}
                                   <td
                                     className="p-4 text-slate-300 whitespace-nowrap"
                                     title={tx.to}
                                   >
-                                    {tx.to.slice(0, 12)}...{tx.to.slice(-10)}
+                                    {tx.to.slice(0, 12)}...
+                                    {tx.to.slice(-10)}
                                   </td>
 
-                                  {/* Amount Column */}
+                                  {/* AMOUNT */}
                                   <td className="p-4 font-bold whitespace-nowrap">
                                     {tx.isSorobanInteraction ? (
                                       <span className="text-cyan-400">
@@ -3021,18 +3290,44 @@ function Header({
                                     )}
                                   </td>
 
-                                  {/* Time Column */}
+                                  {/* TIME */}
                                   <td className="p-4 text-slate-400 whitespace-nowrap">
-                                    {tx.date}
+                                    {tx.timestamp
+                                      ? new Date(tx.timestamp).toLocaleString(
+                                          "tr-TR",
+                                        )
+                                      : tx.date}
                                   </td>
 
-                                  {/* Stellar Expert Button Column */}
+                                  {/* STELLAR EXPERT */}
                                   <td className="p-4 text-right whitespace-nowrap">
                                     <a
                                       href={`https://stellar.expert/explorer/testnet/tx/${tx.hash}`}
                                       target="_blank"
                                       rel="noreferrer"
-                                      className="inline-block px-2.5 py-1 bg-slate-900 border border-slate-700 hover:border-cyan-500/50 text-slate-400 hover:text-cyan-400 rounded text-[10px] transition-all"
+                                      className="
+                            inline-block
+                            px-2.5
+                            py-1
+
+                            bg-slate-900
+
+                            border
+                            border-slate-700
+
+                            text-slate-400
+
+                            rounded
+                            text-[10px]
+
+                            transition-all
+                            duration-200
+
+                            hover:border-cyan-500/50
+                            hover:text-cyan-400
+                            hover:bg-cyan-500/10
+                            hover:shadow-[0_0_12px_rgba(34,211,238,0.15)]
+                          "
                                     >
                                       Stellar Expert
                                     </a>
