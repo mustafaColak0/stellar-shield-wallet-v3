@@ -1850,7 +1850,17 @@ function Header({
           </div>
         ) : (
           <div
-            className={`w-full space-y-6 p-4 rounded-3xl transition-colors duration-500 ${darkMode ? "bg-transparent" : "bg-slate-100 shadow-inner"}`}
+            className={`space-y-6 transition-all duration-500 ${
+              activeTab === "receive"
+                ? `w-fit max-w-full mx-auto p-2 rounded-2xl ${
+                    darkMode
+                      ? "bg-slate-900/40 border border-slate-800"
+                      : "bg-slate-100 border border-slate-200 shadow-[0_8px_24px_rgba(15,23,42,0.10)]"
+                  }`
+                : `w-full p-4 rounded-3xl ${
+                    darkMode ? "bg-transparent" : "bg-slate-100 shadow-inner"
+                  }`
+            }`}
           >
             {activeTab === "dashboard" && (
               <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
@@ -3498,170 +3508,362 @@ function Header({
 
             {/* RECEIVE */}
             {activeTab === "receive" && (
-              <div
-                className={`w-full max-w-xl mx-auto relative group overflow-hidden p-6 rounded-xl
-                  shadow-2xl font-sans animate-in fade-in zoom-in-95
-                  transition-all duration-300 ease-out
-                  hover:-translate-y-1
-                  hover:shadow-[0_0_30px_rgba(34,211,238,0.30)]
-                  after:content-[''] after:absolute after:bottom-0 after:left-1/2
-                  after:-translate-x-1/2 after:w-0 after:h-[2px]
-                  after:bg-gradient-to-r after:from-transparent after:via-cyan-300 after:to-transparent
-                  after:shadow-[0_0_16px_rgba(34,211,238,0.9)]
-                  after:transition-all after:duration-500 after:ease-out
-                  after:pointer-events-none hover:after:w-[88%]
-                  ${
-                    darkMode
-                      ? "bg-[#090d16] border border-emerald-900/30 hover:border-cyan-400/80 text-slate-300"
-                      : "bg-black border border-emerald-100 hover:border-cyan-400/80 text-slate-700"
-                  }`}
-              >
+              <div className="w-full max-w-2xl mx-auto">
+                {/* SİYAH QR PANEL */}
                 <div
-                  className={`absolute inset-0 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none
-                    ${darkMode ? "bg-emerald-500/5" : "bg-emerald-500/10"}`}
-                ></div>
+                  className={`w-full mx-auto relative group overflow-hidden p-6 rounded-xl
+        shadow-2xl font-sans
+        animate-in fade-in zoom-in-95
 
-                <div
-                  className={`absolute top-4 right-4 flex items-center gap-1.5 border px-2.5 py-1 rounded-md text-[9px] font-mono font-bold uppercase tracking-widest select-none animate-pulse z-30
-                    ${
-                      darkMode
-                        ? "bg-amber-950/40 text-amber-400 border-amber-900/50"
-                        : "bg-amber-50 text-amber-700 border-amber-200"
-                    }`}
+        transition-all duration-300 ease-out
+
+        hover:shadow-[0_0_30px_rgba(34,211,238,0.30)]
+
+        after:content-['']
+        after:absolute
+        after:bottom-0
+        after:left-1/2
+        after:-translate-x-1/2
+        after:w-0
+        after:h-[2px]
+
+        after:bg-gradient-to-r
+        after:from-transparent
+        after:via-cyan-300
+        after:to-transparent
+        after:shadow-[0_0_16px_rgba(34,211,238,0.9)]
+        after:transition-all
+        after:duration-500
+        after:ease-out
+        after:pointer-events-none
+        hover:after:w-[88%]
+
+        ${
+          darkMode
+            ? "bg-[#090d16] border border-emerald-900/30 hover:border-cyan-400/80 text-slate-300"
+            : "bg-black border border-emerald-100 hover:border-cyan-400/80 text-slate-700"
+        }`}
                 >
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full ${darkMode ? "bg-amber-500" : "bg-amber-60 -mt-4 sm:mt-0 mb-2 sm:mb-0"}`}
-                  ></span>
-                  ⚠️ Test Network Only
-                </div>
+                  {/* HOVER GLOW */}
+                  <div
+                    className={`absolute inset-0 rounded-xl blur-xl opacity-0
+          group-hover:opacity-100 transition-opacity duration-500
+          pointer-events-none
+          ${darkMode ? "bg-emerald-500/5" : "bg-emerald-500/10"}`}
+                  ></div>
 
-                {/* Header Icon & Title */}
-                <div className="text-center mt-2">
-                  <div className="flex justify-center mb-3 text-cyan-400">
-                    <QrCode className="w-6 h-6" />
-                  </div>
-                  <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 tracking-wide">
-                    Account QR Code
-                  </h3>
-                  <p className="text-xs text-slate-400  max-w-xs mx-auto  mt-1 pb-6">
-                    Scan this QR code to quickly receive Stellar Testnet assets.
-                  </p>
-                </div>
+                  {/* TEST NETWORK BADGE */}
+                  <div
+                    className={`absolute top-4 right-4
+          flex items-center gap-1.5
+          border
+          px-2.5 py-1
+          rounded-md
 
-                {/* QR Code Frame */}
-                <div className="text-center">
-                  <div className="bg-white p-4 rounded-2xl inline-block shadow-xl border border-slate-100">
-                    {connected && pubKey ? (
-                      <QRCodeSVG
-                        value={
-                          qrAmount || qrMemo
-                            ? `web+stellar:pay?destination=${pubKey}${
-                                qrAmount ? `&amount=${qrAmount}` : ""
-                              }${
-                                qrMemo
-                                  ? `&memo=${encodeURIComponent(qrMemo)}&memo_type=MEMO_TEXT`
-                                  : ""
-                              }`
-                            : pubKey
-                        }
-                        size={220}
-                        level="H"
-                        includeMargin={true}
-                      />
-                    ) : (
-                      <div className="w-[220px] h-[220px] flex items-center justify-center text-slate-800 font-bold text-xs font-mono">
-                        Please Connect Your Wallet
-                      </div>
-                    )}
-                  </div>
-                </div>
+          text-[9px]
+          font-mono
+          font-bold
+          uppercase
+          tracking-widest
 
-                {/* PUBLIC KEY DISPLAY SLOT */}
-                <div className="w-full max-w-md mx-auto space-y-1.5 mt-4">
-                  <label className="text-[9px] font-bold uppercase tracking-wider text-slate-500 block text-left pl-1">
-                    Your Public Key (Address)
-                  </label>
-                  <div className="w-full bg-slate-950 border border-slate-900 rounded-xl p-3 flex items-center justify-between font-mono text-xs text-cyan-400">
-                    <span className="truncate mr-2">
-                      {pubKey || "GBUJJYN..."}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        connected && pubKey && copyToClipboard(pubKey)
-                      }
-                      className="text-slate-500 hover:text-cyan-400 transition-colors shrink-0"
-                    >
-                      {copied ? (
-                        <Check className="w-4 h-4 text-emerald-400" />
-                      ) : (
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <rect
-                            width="14"
-                            height="14"
-                            x="8"
-                            y="8"
-                            rx="2"
-                            ry="2"
-                          />
-                          <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-                        </svg>
-                      )}
-                    </button>
-                  </div>
-                </div>
+          select-none
+          animate-pulse
+          z-30
 
-                <hr className="border-slate-900 my-4" />
-
-                {/* CUSTOM PAYMENT REQUEST */}
-                <div className="text-left w-full max-w-md mx-auto p-4 rounded-xl bg-[#090d16] border border-slate-900 space-y-4">
-                  <div className="text-[10px] font-bold text-cyan-400 tracking-wider uppercase flex items-center gap-1">
-                    <span>⚙️ CUSTOM PAYMENT REQUEST</span>
+          ${
+            darkMode
+              ? "bg-amber-950/40 text-amber-400 border-amber-900/50"
+              : "bg-amber-50 text-amber-700 border-amber-200"
+          }`}
+                  >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        darkMode ? "bg-amber-500" : "bg-amber-600"
+                      }`}
+                    ></span>
+                    ⚠️ Test Network Only
                   </div>
 
-                  <div className="flex gap-4 w-full">
-                    {/* Amount Input */}
-                    <div className="flex flex-col gap-1.5 w-1/2">
-                      <label className="text-slate-400 text-[10px] font-mono">
-                        Amount (XLM)
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="0.00"
-                        value={qrAmount}
-                        onChange={(e) => setQrAmount(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-900 rounded-lg px-3 py-2 text-xs text-cyan-400 font-mono focus:outline-none focus:border-cyan-500 transition-colors"
-                      />
+                  {/* HEADER */}
+                  <div className="text-center mt-2">
+                    <div className="flex justify-center mb-3 text-cyan-400">
+                      <QrCode className="w-6 h-6" />
                     </div>
 
-                    {/* Filtered Memo Input */}
-                    <div className="flex flex-col gap-1.5 w-1/2">
-                      <label className="text-slate-400 text-[10px] font-mono">
-                        Memo (Text)
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Reference ID"
-                        value={qrMemo}
-                        onChange={handleQrMemoChange}
-                        className="w-full bg-slate-950 border border-slate-900 rounded-lg px-3 py-2 text-xs text-cyan-400 font-mono focus:outline-none focus:border-cyan-500 transition-colors"
-                      />
+                    <h3
+                      className="
+            text-xl
+            font-bold
+            text-transparent
+            bg-clip-text
+            bg-gradient-to-r
+            from-cyan-400
+            to-blue-400
+            tracking-wide
+          "
+                    >
+                      Account QR Code
+                    </h3>
+
+                    <p className="text-xs text-slate-400 max-w-xs mx-auto mt-1 pb-6">
+                      Scan this QR code to quickly receive Stellar Testnet
+                      assets.
+                    </p>
+                  </div>
+
+                  {/* QR CODE */}
+                  <div className="text-center">
+                    <div
+                      className="
+            bg-white
+            p-4
+            rounded-2xl
+            inline-block
+            shadow-xl
+            border
+            border-slate-100
+          "
+                    >
+                      {connected && pubKey ? (
+                        <QRCodeSVG
+                          value={
+                            qrAmount || qrMemo
+                              ? `web+stellar:pay?destination=${pubKey}${
+                                  qrAmount ? `&amount=${qrAmount}` : ""
+                                }${
+                                  qrMemo
+                                    ? `&memo=${encodeURIComponent(
+                                        qrMemo,
+                                      )}&memo_type=MEMO_TEXT`
+                                    : ""
+                                }`
+                              : pubKey
+                          }
+                          size={220}
+                          level="H"
+                          includeMargin={true}
+                        />
+                      ) : (
+                        <div
+                          className="
+                w-[220px]
+                h-[220px]
+                flex
+                items-center
+                justify-center
+                text-slate-800
+                font-bold
+                text-xs
+                font-mono
+              "
+                        >
+                          Please Connect Your Wallet
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* PUBLIC KEY */}
+                  <div className="w-full max-w-md mx-auto space-y-1.5 mt-4">
+                    <label
+                      className="
+            text-[9px]
+            font-bold
+            uppercase
+            tracking-wider
+            text-slate-500
+            block
+            text-left
+            pl-1
+          "
+                    >
+                      Your Public Key (Address)
+                    </label>
+
+                    <div
+                      className="
+            w-full
+            bg-slate-950
+            border
+            border-slate-900
+            rounded-xl
+            p-3
+
+            flex
+            items-center
+            justify-between
+
+            font-mono
+            text-xs
+            text-cyan-400
+          "
+                    >
+                      <span className="truncate mr-2">
+                        {pubKey || "GBUJJYN..."}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          connected && pubKey && copyToClipboard(pubKey)
+                        }
+                        className="
+              text-slate-500
+              hover:text-cyan-400
+              transition-colors
+              shrink-0
+            "
+                      >
+                        {copied ? (
+                          <Check className="w-4 h-4 text-emerald-400" />
+                        ) : (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <rect
+                              width="14"
+                              height="14"
+                              x="8"
+                              y="8"
+                              rx="2"
+                              ry="2"
+                            />
+
+                            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <hr className="border-slate-900 my-4" />
+
+                  {/* CUSTOM PAYMENT REQUEST */}
+                  <div
+                    className="
+          text-left
+          w-full
+          max-w-md
+          mx-auto
+          p-4
+          rounded-xl
+          bg-[#090d16]
+          border
+          border-slate-900
+          space-y-4
+        "
+                  >
+                    <div
+                      className="
+            text-[10px]
+            font-bold
+            text-cyan-400
+            tracking-wider
+            uppercase
+            flex
+            items-center
+            gap-1
+          "
+                    >
+                      <span>⚙️ CUSTOM PAYMENT REQUEST</span>
+                    </div>
+
+                    <div className="flex gap-4 w-full">
+                      {/* AMOUNT */}
+                      <div className="flex flex-col gap-1.5 w-1/2">
+                        <label className="text-slate-400 text-[10px] font-mono">
+                          Amount (XLM)
+                        </label>
+
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          placeholder="0.00"
+                          value={qrAmount}
+                          onChange={(e) => {
+                            /*
+                             * Sadece pozitif sayısal XLM değeri:
+                             * 10
+                             * 10.5
+                             * 0.25
+                             *
+                             * Harf, negatif sayı ve özel karakter kabul edilmez.
+                             */
+                            const value = e.target.value.replace(",", ".");
+
+                            if (/^\d*\.?\d*$/.test(value)) {
+                              setQrAmount(value);
+                            }
+                          }}
+                          className="
+                w-full
+                bg-slate-950
+                border
+                border-slate-900
+                rounded-lg
+
+                px-3
+                py-2
+
+                text-xs
+                text-cyan-400
+                font-mono
+
+                focus:outline-none
+                focus:border-cyan-500
+                focus:shadow-[0_0_12px_rgba(34,211,238,0.15)]
+
+                transition-all
+              "
+                        />
+                      </div>
+
+                      {/* MEMO */}
+                      <div className="flex flex-col gap-1.5 w-1/2">
+                        <label className="text-slate-400 text-[10px] font-mono">
+                          Memo (Text)
+                        </label>
+
+                        <input
+                          type="text"
+                          placeholder="Reference ID"
+                          value={qrMemo}
+                          onChange={handleQrMemoChange}
+                          className="
+                w-full
+                bg-slate-950
+                border
+                border-slate-900
+                rounded-lg
+
+                px-3
+                py-2
+
+                text-xs
+                text-cyan-400
+                font-mono
+
+                focus:outline-none
+                focus:border-cyan-500
+                focus:shadow-[0_0_12px_rgba(34,211,238,0.15)]
+
+                transition-all
+              "
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             )}
-
             {/* SECURITY AUDIT & JURY VERIFICATION MATRIX */}
             {activeTab === "security" && (
               <div className="relative group overflow-hidden w-full max-w-5xl mx-auto space-y-6 text-slate-300 font-sans p-4 sm:p-6 pb-32 rounded-2xl bg-[#030712] border border-slate-900 shadow-2xl animate-in fade-in zoom-in-95 transition-all duration-300 ease-out hover:-translate-y-1 hover:border-cyan-400/80 hover:shadow-[0_0_30px_rgba(34,211,238,0.30)] after:content-[''] after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-0 after:h-[2px] after:bg-gradient-to-r after:from-transparent after:via-cyan-300 after:to-transparent after:shadow-[0_0_16px_rgba(34,211,238,0.9)] after:transition-all after:duration-500 after:ease-out after:pointer-events-none hover:after:w-[88%]">
