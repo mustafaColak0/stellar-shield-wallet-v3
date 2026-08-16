@@ -205,20 +205,19 @@ StellarShield now includes a dedicated live analytics panel for external testing
 *   **Automated generation of JavaScript/TypeScript bindings from the Soroban Rust contract using Stellar CLI, ensuring a robust, type-safe architecture for frontend deployment.
 --
 
-🧬 Tech Stack
-Frontend: React.js (JavaScript / JSX)
+```md
+## 🧬 Tech Stack
 
-Styling: Tailwind CSS
-
-Icons: Lucide React
-
-Charts: Recharts
-
-Stellar SDK: @stellar/stellar-sdk
-
-Wallet API: @stellar/freighter-api
-
-Network Data: Stellar Horizon Testnet + Soroban RPC
+* **Frontend:** React.js (JavaScript / JSX)
+* **Styling:** Tailwind CSS
+* **Icons:** Lucide React
+* **Charts:** Recharts
+* **Stellar SDK:** `@stellar/stellar-sdk`
+* **Wallet API:** `@stellar/freighter-api`
+* **Network Data:** Stellar Horizon Testnet + Soroban RPC
+* **Persistence:** Browser `localStorage` for wallet-specific transaction history and verified analytics cache
+* **Deployment:** Vercel
+```
 
 Persistence: Browser localStorage for wallet-specific history and verified analytics cache
 
