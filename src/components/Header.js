@@ -18,7 +18,6 @@ import {
   retrievePublicKey,
   getBalance,
   sendXlmTransaction,
-  fetchNetworkFee,
 } from "./Freighter";
 
 import { QRCodeSVG } from "qrcode.react";
@@ -79,7 +78,7 @@ const securityAlerts = [
   },
   {
     type: "NETWORK",
-    msg: "Ledger #2026-X active synchronization benchmark: 4.2s close time optimal.",
+    msg: "Stellar Testnet synchronization active. Live network metrics are updating.",
     color: "text-blue-400",
     bg: "bg-blue-500/5",
     border: "border-blue-500/20",
@@ -545,9 +544,17 @@ function Header({
 
   // UI & Graphic States
   const [copied, setCopied] = useState(false);
-  const [networkFee, setNetworkFee] = useState({
-    baseFee: "0.00010",
-    status: "Low(Normal)",
+  const [networkFeeStats, setNetworkFeeStats] = useState({
+    baseFeeStroops: 100,
+    feeXlm: "0.0000100",
+    capacityUsage: 0,
+    sorobanFee: 100,
+
+    ledgerCloseSeconds: null,
+    protocolVersion: null,
+
+    status: "OPTIMAL",
+    loading: true,
   });
 
   // Transfer States
@@ -630,9 +637,6 @@ function Header({
   const [terminalMessage, setTerminalMessage] = useState(
     "Ready to broadcast transaction.",
   );
-  const [networkLoad, setNetworkLoad] = useState(12);
-  const [ledgerClose, setLedgerClose] = useState(4.2);
-  const [gasMode, setGasMode] = useState("NORMAL"); // 'LOW', 'NORMAL', 'HIGH'
 
   // LEVEL 2: JURY & SOROBAN ECOSYSTEM STATES
   const [juryTxStatus, setJuryTxStatus] = useState("IDLE");
@@ -673,30 +677,6 @@ function Header({
     { name: "01:50", balance: 9950 },
     { name: "01:50:36", balance: 9897.184 },
   ]);
-
-  const gasConfigs = {
-    LOW: {
-      baseFee: "0.00001",
-      sorobanGas: "100",
-      statusText: "LIVE",
-      statusColor: "text-emerald-400",
-      pingColor: "bg-emerald-500",
-    },
-    NORMAL: {
-      baseFee: "0.00005",
-      sorobanGas: "140",
-      statusText: "LIVE",
-      statusColor: "text-emerald-400",
-      pingColor: "bg-emerald-500",
-    },
-    HIGH: {
-      baseFee: "0.00012",
-      sorobanGas: "310",
-      statusText: "CONGESTED",
-      statusColor: "text-rose-400",
-      pingColor: "bg-rose-500",
-    },
-  };
 
   // ============================================================
   // REAL STELLAR BALANCE SYNC
@@ -906,37 +886,217 @@ function Header({
   };
 
   useEffect(() => {
-    const init = async () => {
-      try {
-        const hasAccess = await checkConnection();
-        if (hasAccess) {
-          const key = await retrievePublicKey();
-          if (key) {
-            setPubKey(key);
-            setConnected(true);
-            setConnectedWalletType("Freighter");
-            const bal = await getBalance();
-            setBalance(bal);
+    let cancelled = false;
 
-            const nowTR = new Date().toLocaleTimeString("tr-TR", {
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-            });
-            setBalanceData([
-              { time: "Başlangıç", balance: parseFloat(bal) },
-              { time: nowTR, balance: parseFloat(bal) },
-            ]);
+    const fetchNetworkFeeStats = async () => {
+      try {
+        const [horizonResponse, rpcResponse, ledgersResponse] =
+          await Promise.all([
+            fetch("https://horizon-testnet.stellar.org/fee_stats"),
+
+            fetch("https://soroban-testnet.stellar.org", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                jsonrpc: "2.0",
+                id: Date.now(),
+                method: "getFeeStats",
+              }),
+            }),
+
+            // Son 6 ledger:
+            // 5 gerçek ledger-close aralığının ortalamasını alacağız.
+            fetch(
+              "https://horizon-testnet.stellar.org/ledgers?order=desc&limit=6",
+            ),
+          ]);
+
+        if (!horizonResponse.ok || !rpcResponse.ok || !ledgersResponse.ok) {
+          throw new Error("Network statistics could not be loaded.");
+        }
+
+        const horizonData = await horizonResponse.json();
+
+        const rpcData = await rpcResponse.json();
+
+        const ledgersData = await ledgersResponse.json();
+
+        if (rpcData.error) {
+          throw new Error(
+            rpcData.error.message || "Stellar RPC fee stats error.",
+          );
+        }
+
+        // --------------------------------------------------------
+        // CLASSIC BASE FEE
+        // --------------------------------------------------------
+
+        const baseFeeStroops = Number(horizonData.last_ledger_base_fee || 100);
+
+        const feeXlm = baseFeeStroops / 10_000_000;
+
+        // --------------------------------------------------------
+        // NETWORK CAPACITY
+        // Horizon değeri 0.0 - 1.0 arasında.
+        // --------------------------------------------------------
+
+        const capacityUsage = Number(horizonData.ledger_capacity_usage || 0);
+
+        // --------------------------------------------------------
+        // SOROBAN INCLUSION FEE
+        // p50 = median network inclusion fee
+        // --------------------------------------------------------
+
+        const sorobanFee = Number(
+          rpcData.result?.sorobanInclusionFee?.p50 || 100,
+        );
+
+        // --------------------------------------------------------
+        // REAL LEDGER CLOSE TIME + PROTOCOL VERSION
+        // --------------------------------------------------------
+
+        const ledgerRecords = ledgersData?._embedded?.records || [];
+
+        let ledgerCloseSeconds = null;
+        let protocolVersion = null;
+
+        if (ledgerRecords.length > 0) {
+          protocolVersion = Number(ledgerRecords[0]?.protocol_version) || null;
+        }
+
+        if (ledgerRecords.length >= 2) {
+          const closeDifferences = [];
+
+          for (let i = 0; i < ledgerRecords.length - 1; i++) {
+            const newer = new Date(ledgerRecords[i].closed_at).getTime();
+
+            const older = new Date(ledgerRecords[i + 1].closed_at).getTime();
+
+            const diff = (newer - older) / 1000;
+
+            if (Number.isFinite(diff) && diff > 0) {
+              closeDifferences.push(diff);
+            }
+          }
+
+          if (closeDifferences.length > 0) {
+            ledgerCloseSeconds =
+              closeDifferences.reduce((sum, value) => sum + value, 0) /
+              closeDifferences.length;
           }
         }
-        const feeData = await fetchNetworkFee();
-        if (feeData.success)
-          setNetworkFee({ baseFee: feeData.baseFee, status: feeData.status });
-      } catch (err) {
-        console.error(err);
+
+        // --------------------------------------------------------
+        // UI STATUS
+        // Bunlar Stellar'ın resmi status isimleri değil;
+        // dashboard sınıflandırmamız.
+        // --------------------------------------------------------
+
+        let status = "OPTIMAL";
+
+        if (capacityUsage >= 0.8) {
+          status = "CONGESTED";
+        } else if (capacityUsage >= 0.5) {
+          status = "BUSY";
+        }
+
+        if (!cancelled) {
+          setNetworkFeeStats({
+            baseFeeStroops,
+
+            feeXlm: feeXlm.toFixed(7),
+
+            capacityUsage,
+
+            sorobanFee,
+
+            ledgerCloseSeconds: Number.isFinite(ledgerCloseSeconds)
+              ? Number(ledgerCloseSeconds.toFixed(1))
+              : null,
+
+            protocolVersion,
+
+            status,
+
+            loading: false,
+          });
+        }
+      } catch (error) {
+        console.warn("Network fee stats error:", error);
+
+        if (!cancelled) {
+          setNetworkFeeStats({
+            baseFeeStroops: null,
+            feeXlm: null,
+            capacityUsage: null,
+            sorobanFee: null,
+            ledgerCloseSeconds: null,
+            protocolVersion: null,
+            status: "UNAVAILABLE",
+            loading: false,
+          });
+        }
       }
     };
-    init();
+
+    fetchNetworkFeeStats();
+
+    const interval = setInterval(fetchNetworkFeeStats, 15000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
+
+  // ============================================================
+  // WALLET INITIALIZATION + SECURITY ALERT ROTATION
+  // ============================================================
+  useEffect(() => {
+    const initWallet = async () => {
+      try {
+        const hasAccess = await checkConnection();
+
+        if (!hasAccess) return;
+
+        const key = await retrievePublicKey();
+
+        if (!key) return;
+
+        setPubKey(key);
+        setConnected(true);
+        setConnectedWalletType("Freighter");
+
+        const bal = await getBalance();
+
+        if (bal !== undefined && bal !== null) {
+          setBalance(bal);
+
+          const nowTR = new Date().toLocaleTimeString("tr-TR", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          });
+
+          setBalanceData([
+            {
+              time: "Başlangıç",
+              balance: parseFloat(bal),
+            },
+            {
+              time: nowTR,
+              balance: parseFloat(bal),
+            },
+          ]);
+        }
+      } catch (error) {
+        console.warn("Wallet initialization error:", error);
+      }
+    };
+
+    initWallet();
 
     const alertInterval = setInterval(() => {
       setCurrentAlertIndex(
@@ -944,20 +1104,10 @@ function Header({
       );
     }, 4000);
 
-    const interval = setInterval(() => {
-      const randomLoad = Math.floor(Math.random() * (15 - 10 + 1)) + 10;
-      if (typeof setNetworkLoad === "function") setNetworkLoad(randomLoad);
-
-      const randomClose = (Math.random() * (4.5 - 4.0) + 4.0).toFixed(1);
-      if (typeof setLedgerClose === "function")
-        setLedgerClose(parseFloat(randomClose));
-    }, 3000);
-
     return () => {
-      clearInterval(interval);
       clearInterval(alertInterval);
     };
-  }, []);
+  }, [setPubKey, setConnected]);
 
   const simulateJuryErrors = (errorType) => {
     setJurySorobanError("");
@@ -2088,100 +2238,144 @@ function Header({
                     </div>
                   </div>
 
-                  {/* RIGHT CARD: Instant Network Transaction Fee */}
+                  {/* RIGHT CARD: LIVE NETWORK TRANSACTION FEE */}
                   <div className="relative group p-6 rounded-2xl bg-[#030712] border border-slate-900 hover:border-cyan-500/40 transition-all duration-500 shadow-2xl flex flex-col min-h-[220px]">
                     <div className="absolute inset-0 bg-cyan-500/10 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
 
-                    <div className="relative z-10 flex flex-col justify-between flex-1">
+                    <div className="relative z-10 flex flex-col flex-1">
+                      {/* HEADER */}
                       <div className="flex justify-between items-start">
                         <div>
                           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 group-hover:text-cyan-400/70 transition-colors duration-300 block mb-2">
-                            Instant Network Transaction Fee (Base Fee)
+                            Live Network Transaction Fee
                           </span>
                         </div>
 
-                        {/* "Lİve" Statu Badge */}
+                        {/* LIVE NETWORK STATUS */}
                         <span
-                          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-950 border border-slate-900 group-hover:border-slate-700 transition-colors duration-300 text-[10px] font-bold ${gasConfigs[gasMode].statusColor} tracking-wide uppercase shadow-inner`}
+                          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-950 border transition-colors duration-300 text-[10px] font-bold tracking-wide uppercase shadow-inner ${
+                            networkFeeStats.status === "UNAVAILABLE"
+                              ? "text-slate-400 border-slate-600/50"
+                              : networkFeeStats.status === "CONGESTED"
+                                ? "text-rose-400 border-rose-500/30"
+                                : networkFeeStats.status === "BUSY"
+                                  ? "text-amber-400 border-amber-500/30"
+                                  : "text-emerald-400 border-emerald-500/30"
+                          }`}
                         >
                           <span
-                            className={`w-1.5 h-1.5 rounded-full ${gasConfigs[gasMode].pingColor} ${gasMode === "HIGH" ? "" : "animate-pulse shadow-[0_0_8px_currentColor]"}`}
-                          ></span>
-                          {gasConfigs[gasMode].statusText}
+                            className={`w-1.5 h-1.5 rounded-full animate-pulse ${
+                              networkFeeStats.status === "CONGESTED"
+                                ? "bg-rose-400"
+                                : networkFeeStats.status === "BUSY"
+                                  ? "bg-amber-400"
+                                  : "bg-emerald-400"
+                            }`}
+                          />
+
+                          {networkFeeStats.loading
+                            ? "SYNCING"
+                            : networkFeeStats.status}
                         </span>
                       </div>
-                    </div>
 
-                    <div className="flex items-baseline gap-2 my-2">
-                      <span
-                        className={`text-3xl font-black tracking-tight font-mono transition-colors duration-300 ${gasMode === "HIGH" ? "text-rose-400" : "text-emerald-400"}`}
-                      >
-                        {gasConfigs[gasMode].baseFee}
+                      {/* BASE FEE */}
+                      <div className="flex items-baseline gap-2 my-2">
+                        <span
+                          className={`text-3xl font-black tracking-tight font-mono transition-colors duration-300 ${
+                            networkFeeStats.status === "CONGESTED"
+                              ? "text-rose-400"
+                              : networkFeeStats.status === "BUSY"
+                                ? "text-amber-400"
+                                : "text-emerald-400"
+                          }`}
+                        >
+                          {networkFeeStats.loading
+                            ? "--"
+                            : networkFeeStats.feeXlm}
+                        </span>
+
+                        <span
+                          className={`text-xl font-black font-mono ${
+                            networkFeeStats.status === "CONGESTED"
+                              ? "text-rose-400"
+                              : networkFeeStats.status === "BUSY"
+                                ? "text-amber-400"
+                                : "text-emerald-400"
+                          }`}
+                        >
+                          XLM
+                        </span>
+                      </div>
+
+                      <span className="text-[9px] text-slate-400 font-mono mb-2">
+                        Base Fee / Operation • {networkFeeStats.baseFeeStroops}{" "}
+                        Stroops
                       </span>
-                      <span
-                        className={`text-xl font-black font-mono transition-colors duration-300 ${gasMode === "HIGH" ? "text-rose-400" : "text-emerald-400"}`}
-                      >
-                        XLM
-                      </span>
-                    </div>
 
-                    <div className="my-2 grid grid-cols-2 gap-3 bg-slate-950/50 p-3 rounded-xl border border-slate-900/60 font-mono text-[10px]">
-                      <div>
-                        <span className="text-slate-500 block text-[9px] uppercase font-sans font-bold">
-                          Network Load
-                        </span>
-                        <span className="text-xs font-mono text-cyan-400 font-bold">
-                          {networkLoad} Ops/sec (Optimal)
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 block text-[9px] uppercase font-sans font-bold">
-                          Ledger Close Time
-                        </span>
-                        <span className="text-slate-300 font-bold">
-                          {ledgerClose} seconds
-                        </span>
-                      </div>
-                      <div className="mt-1">
-                        <span className="text-slate-500 block text-[9px] uppercase font-sans font-bold">
-                          Soroban Gas Price
-                        </span>
-                        <span className="text-amber-400 font-bold">
-                          {gasConfigs[gasMode].sorobanGas} Stroops
-                        </span>
-                      </div>
-                      <div className="mt-1">
-                        <span className="text-slate-500 block text-[9px] uppercase font-sans font-bold">
-                          Protocol Version
-                        </span>
-                        <span className="text-blue-400 font-bold">
-                          v21 (Stable)
-                        </span>
-                      </div>
-                    </div>
+                      {/* LIVE NETWORK METRICS */}
+                      <div className="my-2 grid grid-cols-2 gap-3 bg-slate-950/50 p-3 rounded-xl border border-slate-900/60 font-mono text-[10px]">
+                        {/* CAPACITY */}
+                        <div>
+                          <span className="text-slate-500 block text-[9px] uppercase font-sans font-bold">
+                            Network Capacity
+                          </span>
 
-                    <div className="flex items-center space-x-2 text-[10px] font-mono bg-slate-950 p-1.5 rounded-lg border border-slate-900 max-w-max mt-2">
-                      <button
-                        type="button"
-                        onClick={() => setGasMode("LOW")}
-                        className={`px-2.5 py-1 rounded transition-colors focus:outline-none ${gasMode === "LOW" ? "bg-cyan-500/20 text-cyan-400 font-bold border border-cyan-500/30" : "text-slate-500 hover:text-slate-300"}`}
-                      >
-                        Low
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setGasMode("NORMAL")}
-                        className={`px-2.5 py-1 rounded transition-colors focus:outline-none ${gasMode === "NORMAL" ? "bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30" : "text-slate-500 hover:text-slate-300"}`}
-                      >
-                        ⚡ Normal
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setGasMode("HIGH")}
-                        className={`px-2.5 py-1 rounded transition-colors focus:outline-none ${gasMode === "HIGH" ? "bg-rose-500/20 text-rose-400 font-bold border border-rose-500/30" : "text-slate-500 hover:text-slate-300"}`}
-                      >
-                        High ⚠️
-                      </button>
+                          <span className="text-xs font-mono text-cyan-400 font-bold">
+                            {networkFeeStats.loading
+                              ? "--"
+                              : `${(
+                                  networkFeeStats.capacityUsage * 100
+                                ).toFixed(1)}%`}
+                          </span>
+                        </div>
+
+                        {/* LEDGER CLOSE */}
+                        <div>
+                          <span className="text-slate-500 block text-[9px] uppercase font-sans font-bold">
+                            Avg Ledger Close
+                          </span>
+
+                          <span className="text-slate-300 font-bold">
+                            {networkFeeStats.ledgerCloseSeconds !== null
+                              ? `${networkFeeStats.ledgerCloseSeconds}s`
+                              : "--"}
+                          </span>
+                        </div>
+
+                        {/* SOROBAN FEE */}
+                        <div className="mt-1">
+                          <span className="text-slate-500 block text-[9px] uppercase font-sans font-bold">
+                            Soroban Inclusion Fee (p50)
+                          </span>
+
+                          <span className="text-amber-400 font-bold">
+                            {networkFeeStats.loading
+                              ? "--"
+                              : networkFeeStats.sorobanFee}{" "}
+                            Stroops
+                          </span>
+                        </div>
+
+                        {/* PROTOCOL */}
+                        <div className="mt-1">
+                          <span className="text-slate-500 block text-[9px] uppercase font-sans font-bold">
+                            Protocol Version
+                          </span>
+
+                          <span className="text-blue-400 font-bold">
+                            {networkFeeStats.protocolVersion
+                              ? `v${networkFeeStats.protocolVersion}`
+                              : "--"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* LIVE FOOTER */}
+                      <div className="flex items-center gap-2 text-[9px] font-mono text-slate-500 mt-auto pt-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        Stellar Testnet • Live data • Refresh 15s
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -4232,8 +4426,8 @@ function Header({
                                       BARON CONTRACT STATUS:
                                     </p>
                                     <span className="text-[8px] text-emerald-500 font-mono font-medium block">
-                                      Target reached! Tokens successfully locked
-                                      into liquidity pool.
+                                      Target reached! On-chain contract
+                                      interaction confirmed.
                                     </span>
                                   </div>
                                 </div>
@@ -5142,7 +5336,7 @@ function Header({
                                 <div class="mt-0.5 select-none text-xs">🎉</div>
                                 <div class="flex flex-col text-left">
                                   <span class="text-[11px] font-bold tracking-wide text-emerald-400 uppercase">BARON CONTRACT STATUS:</span>
-                                  <span class="text-[11px] text-emerald-300/90 font-medium mt-0.5 leading-relaxed">Target reached! Tokens successfully locked into liquidity pool.</span>
+                                  <span class="text-[11px] text-emerald-300/90 font-medium mt-0.5 leading-relaxed">Target reached! On-chain contract interaction confirmed.</span>
                                 </div>
                               `;
                               dbTargetButton.parentNode.insertBefore(
@@ -5186,7 +5380,7 @@ function Header({
                                 <div class="mt-0.5 select-none text-xs">🎉</div>
                                 <div class="flex flex-col text-left">
                                   <span class="text-[11px] font-bold tracking-wide text-emerald-400 uppercase">BARON CONTRACT STATUS:</span>
-                                  <span class="text-[11px] text-emerald-300/90 font-medium mt-0.5 leading-relaxed">Target reached! Tokens successfully locked into liquidity pool.</span>
+                                  <span class="text-[11px] text-emerald-300/90 font-medium mt-0.5 leading-relaxed">Target reached! On-chain contract interaction confirmed.</span>
                                 </div>
                               `;
                               sorobanTargetInput.parentNode.insertBefore(
