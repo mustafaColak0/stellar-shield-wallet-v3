@@ -31,18 +31,28 @@ import { supabase } from "./supabaseClient";
 
 const RPC_URL = "https://soroban-testnet.stellar.org";
 const CONTRACT_ID = "CDQUFGNQGT3CYQYNM4DUNZRLBARAXWNGJQW466OYZOODPHLXT2Z3AXMI";
+const DEVELOPER_WALLET =
+  "GBUJJIYNPOC57O6CIFKFOBLPNTS6I5IYNGO5XQY7DAIPQ6JCU7ZBV7LN";
 const REFRESH_INTERVAL = 10000;
-const EVENT_PAGE_LIMIT = 200;
-const MAX_EVENT_PAGES = 10;
+const RETENTION_SAFETY_LEDGERS = 10;
 
-// Tablo eski kayıtları çok erken kesmesin.
-const MAX_VISIBLE_LOGS = 250;
+const EVENT_PAGE_LIMIT = 500;
+const MAX_EVENT_PAGES = 40;
+
+const MAX_VISIBLE_LOGS = 100;
+const MAX_VISIBLE_FEEDBACK = 100;
+
+// Doğrulanmış on-chain eventleri retention dışına çıksa bile
+// browser tarafında korumak için.
+const VERIFIED_LOGS_STORAGE_KEY =
+  `stellar_shield_verified_fb_live_${CONTRACT_ID}`;
+
+const MAX_PERSISTED_LOGS = 2000;
 
 // 10.000 ledger'lık çalışan canlı pencereyi koruyoruz.
 // 4 pencere = son ~40.000 ledger. Böylece anlık işlemler + dün gece
 // aynı senkronizasyonda birleştiriliyor.
 const HISTORY_WINDOW_LEDGERS = 10000;
-const HISTORY_WINDOW_COUNT = 4;
 
 // LocalStorage Anahtarı (Off-Chain yorumları tarayıcıda saklamak için)
 const LOCAL_STORAGE_OFFCHAIN_KEY = "stellar_guest_comments_v1";
@@ -128,7 +138,45 @@ async function mapWithConcurrencyLimit(items, limit, fn) {
 // ============================================================
 
 export default function LiveAnalyticsPanel({ activeWalletAddress }) {
-  const [userLogs, setUserLogs] = useState([]);
+  const [userLogs, setUserLogs] = useState(() => {
+  try {
+    const saved = localStorage.getItem(
+      VERIFIED_LOGS_STORAGE_KEY
+    );
+
+    if (!saved) return [];
+
+    const parsed = JSON.parse(saved);
+
+    return Array.isArray(parsed)
+      ? parsed
+      : [];
+  } catch (error) {
+    console.warn(
+      "Verified analytics cache could not be loaded:",
+      error
+    );
+
+    return [];
+  }
+});
+useEffect(() => {
+  try {
+    const safeLogs = Array.isArray(userLogs)
+      ? userLogs.slice(0, MAX_PERSISTED_LOGS)
+      : [];
+
+    localStorage.setItem(
+      VERIFIED_LOGS_STORAGE_KEY,
+      JSON.stringify(safeLogs)
+    );
+  } catch (error) {
+    console.warn(
+      "Verified analytics cache could not be saved:",
+      error
+    );
+  }
+}, [userLogs]);
   const [offChainComments, setOffChainComments] = useState([]);
   const [latency, setLatency] = useState(null);
   const [rpcHealthy, setRpcHealthy] = useState(false);
@@ -142,7 +190,8 @@ export default function LiveAnalyticsPanel({ activeWalletAddress }) {
   const [guestName, setGuestName] = useState("");
   const [newComment, setNewComment] = useState("");
   const [feedbackType, setFeedbackType] = useState("POSITIVE");
-  const [feedbackFilter, setFeedbackFilter] = useState("ALL"); // ALL | ON_CHAIN | OFF_CHAIN | POSITIVE | NEGATIVE
+const [feedbackFilter, setFeedbackFilter] = useState("ALL");
+// ALL | TESTERS | ON_CHAIN | OFF_CHAIN | POSITIVE | NEGATIVE
   const [rating, setRating] = useState(5);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -233,7 +282,41 @@ const fetchSorobanEvents = async () => {
       });
 
       // Eski loglarla birleştir ve mükerrer kayıtları engelle
-      setUserLogs(parsedEvents);
+      setUserLogs((previousLogs) => {
+  const oldLogs = Array.isArray(previousLogs)
+    ? previousLogs
+    : [];
+
+  const newLogs = Array.isArray(parsedEvents)
+  ? parsedEvents
+  : [];
+
+  // Yeni RPC kayıtları önce gelir.
+  // Retention dışına çıkmış eski doğrulanmış kayıtlar silinmez.
+  const mergedLogs = [
+    ...newLogs,
+    ...oldLogs,
+  ];
+
+  const uniqueMergedLogs = Array.from(
+    new Map(
+      mergedLogs.map((log) => [
+        log.eventId ||
+          log.txHash ||
+          `${log.fullWallet}-${log.timestamp}`,
+        log,
+      ])
+    ).values()
+  );
+
+  return uniqueMergedLogs
+    .sort(
+      (a, b) =>
+        new Date(b.timestamp || 0).getTime() -
+        new Date(a.timestamp || 0).getTime()
+    )
+    .slice(0, MAX_PERSISTED_LOGS);
+});
     }
   } catch (err) {
     console.error("Soroban events fetch error:", err);
@@ -296,38 +379,105 @@ const fetchSorobanEvents = async () => {
     return combined.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }, [userLogs, offChainComments]);
 
+  const testerFeedbackCount = useMemo(() => {
+  return allFeedbacks.filter((f) => {
+    const wallet = String(f.fullWallet || "").trim();
+    const comment = String(f.comment || "").trim();
+
+ return (
+  f.isOnChain &&
+  f.action === "fb_live" &&
+  f.txHash &&
+  f.txHash !== "Pending_Tx_Hash" &&
+  wallet &&
+  wallet !== "UNKNOWN" &&
+  wallet !== DEVELOPER_WALLET &&
+  !comment.startsWith("Simulated deposit of ")
+);
+  }).length;
+}, [allFeedbacks]);
+
   // Filtrelenmiş Yorumlar
   const filteredFeedbacks = useMemo(() => {
-    return allFeedbacks.filter((f) => {
-      if (feedbackFilter === "ON_CHAIN") return f.isOnChain;
-      if (feedbackFilter === "OFF_CHAIN") return !f.isOnChain;
-      if (feedbackFilter === "POSITIVE") return f.type === "POSITIVE";
-      if (feedbackFilter === "NEGATIVE") return f.type === "NEGATIVE";
-      return true;
-    });
-  }, [allFeedbacks, feedbackFilter]);
+  return allFeedbacks.filter((f) => {
+    if (feedbackFilter === "TESTERS") {
+      const wallet = String(f.fullWallet || "").trim();
+      const comment = String(f.comment || "").trim();
+
+    return (
+  f.isOnChain &&
+  f.action === "fb_live" &&
+  f.txHash &&
+  f.txHash !== "Pending_Tx_Hash" &&
+  wallet &&
+  wallet !== "UNKNOWN" &&
+  wallet !== DEVELOPER_WALLET &&
+  !comment.startsWith("Simulated deposit of ")
+);
+    }
+
+    if (feedbackFilter === "ON_CHAIN") {
+      return f.isOnChain;
+    }
+
+    if (feedbackFilter === "OFF_CHAIN") {
+      return !f.isOnChain;
+    }
+
+    if (feedbackFilter === "POSITIVE") {
+      return f.type === "POSITIVE";
+    }
+
+    if (feedbackFilter === "NEGATIVE") {
+      return f.type === "NEGATIVE";
+    }
+
+    return true;
+  });
+}, [allFeedbacks, feedbackFilter]);
 
   // ----------------------------------------------------------
   // STATS
   // ----------------------------------------------------------
-  const verifiedUsersCount = useMemo(() => {
-    const wallets = new Set(
-      userLogs
-        .map((log) => log.fullWallet)
-        .filter((wallet) => wallet && wallet !== "UNKNOWN")
-    );
-    return wallets.size;
-  }, [userLogs]);
+const verifiedUsersCount = useMemo(() => {
+  const wallets = new Set(
+    userLogs
+      .filter(
+        (log) =>
+          log.action === "fb_live" &&
+          log.txHash &&
+          log.txHash !== "Pending_Tx_Hash"
+      )
+      .map((log) =>
+        String(log.fullWallet || "").trim()
+      )
+      .filter(
+        (wallet) =>
+          wallet &&
+          wallet !== "UNKNOWN" &&
+          wallet !== DEVELOPER_WALLET
+      )
+  );
 
-  const todayInteractions = useMemo(() => {
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
+  return wallets.size;
+}, [userLogs]);
+const todayInteractions = useMemo(() => {
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
 
-    return userLogs.filter((log) => {
-      if (!log.timestamp) return false;
-      return new Date(log.timestamp) >= todayStart;
-    }).length;
-  }, [userLogs]);
+  return userLogs.filter((log) => {
+    if (
+      log.action !== "fb_live" ||
+      !log.txHash ||
+      log.txHash === "Pending_Tx_Hash" ||
+      !log.timestamp
+    ) {
+      return false;
+    }
+
+    return new Date(log.timestamp) >= todayStart;
+  }).length;
+}, [userLogs]);
 
   // ----------------------------------------------------------
   // STREAM FILTER — AYNI CÜZDAN + AYNI ACTION İÇİN EN SON KAYIT
@@ -488,22 +638,42 @@ const fetchSorobanEvents = async () => {
 
       setRpcHealthy(true);
 
-      const latestLedger = latestLedgerResponse.sequence;
-      const oldestLedger =
-        typeof healthResponse?.oldestLedger === "number"
-          ? healthResponse.oldestLedger
-          : Math.max(
-              1,
-              latestLedger -
-                HISTORY_WINDOW_LEDGERS * HISTORY_WINDOW_COUNT
-            );
+const latestLedger = latestLedgerResponse.sequence;
 
-      console.log(
-        "📡 Analytics ledger range:",
-        oldestLedger,
-        "→",
-        latestLedger
+const rpcOldestLedger =
+  typeof healthResponse?.oldestLedger === "number"
+    ? healthResponse.oldestLedger
+    : Math.max(
+        1,
+        latestLedger - 40000
       );
+
+const oldestLedger = Math.min(
+  latestLedger,
+  rpcOldestLedger + RETENTION_SAFETY_LEDGERS
+);
+
+const availableLedgerSpan = Math.max(
+  0,
+  latestLedger - oldestLedger
+);
+
+const dynamicWindowCount = Math.max(
+  1,
+  Math.ceil(
+    availableLedgerSpan /
+      HISTORY_WINDOW_LEDGERS
+  )
+);
+
+console.log(
+  "📡 Analytics ledger range:",
+  oldestLedger,
+  "→",
+  latestLedger,
+  "| windows:",
+  dynamicWindowCount
+);
 
       // --------------------------------------------------------
       // 🟢 ÇALIŞAN 10K LIVE WINDOW + ESKİ 10K WINDOW'LAR
@@ -517,7 +687,7 @@ const fetchSorobanEvents = async () => {
       // birkaç parçaya bölüp sonuçları birleştiriyoruz.
       const historyBatches = [];
 
-      for (let i = 0; i < HISTORY_WINDOW_COUNT; i++) {
+      for (let i = 0; i < dynamicWindowCount; i++) {
         const rawStart =
           latestLedger - HISTORY_WINDOW_LEDGERS * (i + 1);
 
@@ -555,11 +725,26 @@ const fetchSorobanEvents = async () => {
         ).values()
       );
 
-      const feedbackEvents = allEvents.sort(
-        (a, b) =>
-          new Date(b.ledgerClosedAt).getTime() -
-          new Date(a.ledgerClosedAt).getTime()
-      );
+     const feedbackEvents = allEvents
+  .filter((event) => {
+    if (
+      !Array.isArray(event.topic) ||
+      event.topic.length === 0
+    ) {
+      return false;
+    }
+
+    const eventName = decodeScVal(
+      event.topic[0]
+    );
+
+    return eventName === "fb_live";
+  })
+  .sort(
+    (a, b) =>
+      new Date(b.ledgerClosedAt).getTime() -
+      new Date(a.ledgerClosedAt).getTime()
+  );
 
       console.log(
         "📚 Combined contract events:",
@@ -636,28 +821,39 @@ const fetchSorobanEvents = async () => {
           };
         }
       );
+setUserLogs((prev) => {
+  const previousLogs = Array.isArray(prev)
+    ? prev
+    : [];
 
-      setUserLogs((prev) => {
-        // Formdan yeni eklenmiş ama henüz RPC'de görünmeyen temp kayıtları koru.
-        const localLogs = prev.filter((item) =>
-          String(item?.eventId || "").startsWith("temp-")
-        );
+  const networkLogs = Array.isArray(logs)
+    ? logs
+    : [];
 
-        const combined = [...localLogs, ...logs];
+  // Yeni RPC kayıtlarını önce koy.
+  // Eski doğrulanmış kayıtlar retention dışına çıksa bile korunur.
+  const combined = [
+    ...networkLogs,
+    ...previousLogs,
+  ];
 
-        // Tekilleştir + en yeni en üstte.
-        return Array.from(
-          new Map(
-            combined.map((item) => [item.eventId, item])
-          ).values()
-        )
-          .sort(
-            (a, b) =>
-              new Date(b.timestamp || 0).getTime() -
-              new Date(a.timestamp || 0).getTime()
-          )
-          .slice(0, MAX_VISIBLE_LOGS);
-      });
+  return Array.from(
+    new Map(
+      combined.map((item) => [
+        item.eventId ||
+          item.txHash ||
+          `${item.fullWallet}-${item.timestamp}`,
+        item,
+      ])
+    ).values()
+  )
+    .sort(
+      (a, b) =>
+        new Date(b.timestamp || 0).getTime() -
+        new Date(a.timestamp || 0).getTime()
+    )
+    .slice(0, MAX_PERSISTED_LOGS);
+});
 
       setLastUpdated(new Date());
     } catch (error) {
@@ -1085,6 +1281,20 @@ hover:border-cyan-500/30 hover:shadow-[0_0_22px_rgba(34,211,238,0.10)]">
             >
               All ({allFeedbacks.length})
             </button>
+            <button
+  type="button"
+  onClick={() =>
+    setFeedbackFilter("TESTERS")
+  }
+  className={`px-2.5 py-1 rounded transition-all cursor-pointer flex items-center gap-1 ${
+    feedbackFilter === "TESTERS"
+      ? "bg-purple-500/20 text-purple-300 font-bold border border-purple-500/30"
+      : "text-slate-400 hover:text-purple-300 hover:bg-purple-500/10"
+  }`}
+>
+  <UserCheck className="w-3 h-3" />
+  Testers ({testerFeedbackCount})
+</button>
             <button
               type="button"
               onClick={() => setFeedbackFilter("ON_CHAIN")}
