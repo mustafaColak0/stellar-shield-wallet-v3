@@ -28,7 +28,6 @@ The project focuses on transparent verification: supported transactions expose t
     * **Wallet 404:** Detected when no compatible wallet extensions are found in the client browser environment.
     * **Reject 401:** Triggered instantly when a user explicitly rejects or cancels the signing request inside the wallet popup window.
     * **Balance 402:** Fired when a transaction request amount exceeds the available network token balance.
- 
 * 🧠 **Soroban Transaction Reliability:** Uses prepareTransaction, fresh account sequence reads, retry handling for temporary network congestion, txBadSeq rebuild protection, and final ledger confirmation polling.
 * 🟢 **Live Broadcast Success UI:** Displays confirmed transaction hashes and direct Stellar Expert verification links after successful on-chain operations.
 * 📊 **Live Stellar Network Metrics:** Refreshes every 15 seconds and displays the current base fee, network capacity usage, average ledger close time, Soroban inclusion fee (p50), protocol version, and an automatically derived OPTIMAL / BUSY / CONGESTED status.
@@ -107,7 +106,6 @@ Proof of successful Freighter extension connection showing the active account st
 <img width="872" height="722" alt="dashboard3" src="https://github.com/user-attachments/assets/7ad42cde-e9c2-45f3-b2cc-148504f98e5b" />
 
 
-
 2. Multi-Asset Transfer Engine with Compliance Filters
 The cross-asset ecosystem panel (supporting XLM, USDC, EURC) equipped with real-time compliance network logs, integrated quick contacts, and the automated "Sign & Send Transaction" interface:
 <img width="1918" height="876" alt="transfer2" src="https://github.com/user-attachments/assets/43b7ae37-7d09-40a3-b898-143e9f2d9036" />
@@ -115,20 +113,13 @@ The cross-asset ecosystem panel (supporting XLM, USDC, EURC) equipped with real-
 <img width="845" height="503" alt="transfer_enforced" src="https://github.com/user-attachments/assets/5d5bb9ba-56a0-4eb6-8bcd-751bdb10152d" />
 
 
-
-
 3. Dynamic QR Code Peer-to-Peer Payment Request Engine
 A real-time payment address sharing layout that auto-generates a high-contrast verifiable QR code corresponding directly to the connected user's Public Key, including options for custom amounts and memos:
 <img width="1918" height="861" alt="qrkod2" src="https://github.com/user-attachments/assets/3cb5ae92-b2a2-44d5-8f06-80d5f5d80300" />
 
-
-
 4. Level 2 Security Audit & Soroban Interaction Matrix
 The centralized simulation sandbox showing automated code scans, cryptographic binding logs, a custom transaction monitor, and live exception/abort test handlers:
 <img width="1918" height="862" alt="security_autdit_empty" src="https://github.com/user-attachments/assets/27a5100c-71e1-406b-84c2-b7d95b3084dd" />
-
-
-
 
 
 5. Soroban Contract Interface & Emitted Event Timeline
@@ -136,14 +127,9 @@ The core Smart Contract execution window containing real-time crowdfunding progr
 <img width="886" height="700" alt="security_audit_deposit" src="https://github.com/user-attachments/assets/edbbb585-91fc-4e0b-93b5-b70b9ad23c14" />
 <img width="1901" height="871" alt="security_audit_txhash" src="https://github.com/user-attachments/assets/86622544-abbf-4756-9bdd-ba9c58012077" />
 
-
-
-
 6. Integrated Address Book for Verified Test Accounts
 A secure, custom local registry allowing users to manage, save, and launch quick-transfer triggers (`Send Money`) directly to designated jury test wallets or secure vaults:
 <img width="1918" height="863" alt="adressbook2" src="https://github.com/user-attachments/assets/4728197a-e93b-4d24-8bd8-cc3f5d34488b" />
-
-
 
 7. Optimized Transaction Ledger (Transaction History UI)
 A real-time query-filtered interface mapped out with clean responsive constraints, designed to trace case-insensitive searches for transaction hashes and target addresses:
@@ -154,8 +140,6 @@ A real-time query-filtered interface mapped out with clean responsive constraint
 Proof of fully functional GitHub Actions automated workflow execution. The pipeline compiles the repository, triggers isolated Soroban unit testing routines, checks cross-device frontend builds, and finishes with a 100% success rate:
 <img width="1915" height="896" alt="ci-summary" src="https://github.com/user-attachments/assets/49a560da-c1fa-477c-8d0b-0b3f7d0e538a" />
 <img width="1905" height="853" alt="ci-detail" src="https://github.com/user-attachments/assets/22223c04-5952-4c9a-9cdf-762abb7086bd" />
-
-
 
 
 9. Smart Contract Unit Test Execution Output (3/3 Passed)
@@ -169,12 +153,13 @@ A feedback and status verification module integrated with smart contracts runnin
 - **On-Chain Verification:** Displays confirmed transaction hashes and network validation status for supported contract interactions.
 - **Verified Tester Analytics:** Separates real external tester activity from developer activity and provides a dedicated Testers feedback filter.
 - **Unique Wallet Tracking:** Counts verified external wallets toward the testing target while excluding the developer wallet.
+
 <img width="1918" height="862" alt="feedback" src="https://github.com/user-attachments/assets/a6f19c87-54cb-49e4-810f-6ad74224ec7d" />
 <img width="1918" height="731" alt="create_feedback" src="https://github.com/user-attachments/assets/bdc24cb9-a625-4501-aedf-163ae454b917" />
 
 --
 
-👥 Live Analytics & Real-User Testing (Level 4 Progress)
+## 👥 Live Analytics & Real-User Testing (Level 4 Progress)
 StellarShield now includes a dedicated live analytics panel for external testing:
 *Verified Unique Wallets counts unique wallets with confirmed fb_live activity.
 *The developer wallet remains visible in the stream but is excluded from the tester target.
