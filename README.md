@@ -1,6 +1,8 @@
 # 🌌 Stellar Shield Wallet
 
-Stellar Shield Wallet is a modern, fast, and user-friendly Web3 wallet and transaction interface that integrates seamlessly with Soroban smart contracts. The project is designed to manage financial workflows on the Stellar network in the most transparent and secure manner.
+Stellar Shield Wallet is a React-based Web3 dashboard built for the Stellar Testnet. It combines Freighter wallet connectivity, real XLM transfers, Soroban smart contract interactions, wallet-specific transaction history, live Stellar network metrics, QR payment requests, security-focused transaction flows, and on-chain feedback analytics.
+
+The project focuses on transparent verification: supported transactions expose their transaction hashes, Soroban interactions can be verified on Stellar Expert, and the analytics panel separates verified external tester activity from developer activity.
 
 ---
 
@@ -56,11 +58,14 @@ Stellar Shield Wallet is a modern, fast, and user-friendly Web3 wallet and trans
 
 ## ⛓️ Smart Contract Deployment Details (Jury Verification)
 
-* **Target Contract Address (Testnet):** `CDQUFGNQGT3CYQYNM4DUNZRLBARAXWNGJQW466OYZOODPHLXT2Z3AXMI` 
+* **Target Contract Address (Testnet):** `CDQUFGNQGT3CYQYNM4DUNZRLBARAXWNGJQW466OYZOODPHLXT2Z3AXMI`
 * **Verifiable Transaction Hash (Successful Contract Call):** `44553efa132d580cddab3070361e4c63b8abf9fbb1318d7052082b252f742c42`
-* **Explorer Link:** [View Successful Deposit Transaction on Stellar Expert](https://stellar.expert/explorer/testnet/tx/44553efa132d580cddab3070361e4c63b8abf9fbb1318d7052082b252f742c42)
-> 🛡️ **Jury Note on Verification:** 
-> The dynamic deposit flow uses a security-oriented mock boundary. As seen in the transaction explorer logs, executing the `deposit()` action dynamically triggers and translates into a cryptographically signed `send_feedback` operation emitting the exact payload payload (e.g., `"Simulated deposit of 5 XLM!"`) directly to the target Soroban contract state.
+* **Explorer Link:** [View Successful Contract Transaction on Stellar Expert](https://stellar.expert/explorer/testnet/tx/44553efa132d580cddab3070361e4c63b8abf9fbb1318d7052082b252f742c42)
+
+> 🛡️ **Jury Note on Verification:**  
+> The current Soroban interaction calls the deployed contract's `create_feedback` function. The amount entered in the crowdfunding-style demo interface is included inside the feedback payload, for example `"Simulated deposit of 5 XLM!"`.
+>
+> The transaction itself is cryptographically signed and confirmed on the Stellar Testnet; however, this flow does **not** transfer or lock the entered XLM amount inside the smart contract.
 
 <img width="1886" height="796" alt="tx_hash_succes" src="https://github.com/user-attachments/assets/0adf65eb-9787-48ce-80e8-341c252290e5" />
 
