@@ -19,15 +19,26 @@ Stellar Shield Wallet is a modern, fast, and user-friendly Web3 wallet and trans
 
 ## 🚀 Features
 
-* 🔐 **Multi-Wallet Integration:** Full integration with the official **Freighter** wallet, along with ecosystem simulation models for Albedo and xBull in a sandbox environment.
-* ⚡ **Soroban RPC Transaction Simulation:** Advanced transaction simulation that completely eliminates `400 Bad Request` errors! Before being broadcasted to the network, transactions are simulated via `rpc.Server` using `prepareTransaction`. Gas and resource limits are automatically calculated, ensuring zero-error submissions.
-* 🧠 **Safe XDR Data Parsing (`nativeToScVal`):** Employs the latest `@stellar/stellar-sdk` standards to resolve low-level XDR parsing errors (such as `invalid u32 value`). Utilizing `nativeToScVal` with the `i128` data type ensures that `BigInt` values are passed securely and flawlessly to the smart contract.
+* 🔐 **Freighter Wallet Integration: Connects to the active Freighter account, restores the connected wallet on refresh, and synchronizes the real Stellar Testnet XLM balance.
+* 💸  **Real XLM Transfers: Broadcasts signed XLM transfers through Freighter and displays the resulting transaction hash for explorer verification. USDC/EURC remain visible as ecosystem UI options but are not presented as completed real-transfer flows.
+* ⚡ **Soroban create_feedback Interaction: Builds, prepares, signs, submits, retries, and confirms Soroban Testnet transactions through Stellar RPC. The current contract interaction records feedback payloads such as "Simulated deposit of 5 XLM!"; it does not transfer the entered XLM amount to the contract.
 * 🛑 **Advanced Security Audit Matrix (Error Boundary Handling):** A production-ready exception simulator that explicitly handles, intercepts, and renders distinct application behaviors for specific Web3 failure points:
     * **Wallet 404:** Detected when no compatible wallet extensions are found in the client browser environment.
     * **Reject 401:** Triggered instantly when a user explicitly rejects or cancels the signing request inside the wallet popup window.
     * **Balance 402:** Fired when a transaction request amount exceeds the available network token balance.
-* 🟢 **Live Broadcast Success UI:** Once the transaction is successfully confirmed on-chain, this displays a sleek, green success notification panel showcasing the unique 64-character **Transaction Hash** and providing a direct verification link to the **Stellar Expert Explorer**.
-* 📊 **Live Contract Event Stream Timeline:** Real-time monitoring of emitted smart contract events, utilizing auto-updating layouts and specialized **`DEPOSIT`** badges to visualize historical and live blockchain operations smoothly.
+ 
+* 🧠 **Soroban Transaction Reliability: Uses prepareTransaction, fresh account sequence reads, retry handling for temporary network congestion, txBadSeq rebuild protection, and final ledger confirmation polling.
+* 🟢 **Live Broadcast Success UI: Displays confirmed transaction hashes and direct Stellar Expert verification links after successful on-chain operations.
+* 📊 **Live Stellar Network Metrics: Refreshes every 15 seconds and displays the current base fee, network capacity usage, average ledger close time, Soroban inclusion fee (p50), protocol version, and an automatically derived OPTIMAL / BUSY / CONGESTED status.
+* 👥 **Verified User Analytics: Tracks real fb_live on-chain interactions, deduplicates wallets, excludes the developer wallet from the tester target, and preserves previously verified activity locally when older RPC events leave the active retention window.
+* 💬 **Tester Feedback Filter: Separates verified tester feedback from developer/demo activity so real external tester comments can be reviewed independently.
+* 🧾 **Wallet-Specific Persistent Transaction History: Stores transaction history under a wallet-specific localStorage key so different Freighter accounts on the same browser do not share history. Includes All, Today, This Week, and This Month filters plus search by address or transaction hash.
+* 🔲 **Dynamic QR Payment Request: Generates Stellar payment QR codes from the connected public key with optional numeric amount and sanitized memo fields.
+* 📇 **Validated Address Book: Prevents duplicate contact names and duplicate wallet addresses and supports quick-transfer workflows.
+* 🛡️ **Security Audit & Confirmation UI: Includes security-oriented confirmation flows, simulated audit/error scenarios, and explicit user approval before signing sensitive actions.
+* 🌗 **Dark / Light Theme: Fully reactive cyber-style dark mode and high-contrast light mode.
+* 📈 **Asset Flow Chart: Recharts visualization synchronized with real Testnet balance refreshes after supported transactions.
+* 📘 **Integrated User Guide: In-app guidance for connecting Freighter, interacting with the smart contract, verifying transactions, and obtaining Testnet XLM.
 * 🌌 **Soroban Smart Contract & Feedback Engine:** A user-friendly dynamic amount input field and a multi-stage transaction verification modal tailored for interacting with Soroban smart contract `deposit()` and cryptographically signed `send_feedback` methods, fetching encrypted/unencrypted data states securely.
 * 🛑 **Jury Soroban Error Detail Window:** An advanced error handling boundary that captures contract failures (`FAILED` transaction status) and displays raw `jurySorobanError` stack traces inside a monospaced, highly readable, and responsive debug container.
 * 🛡️ **Smart Security Detector (Security Audit):** A native module performing real-time `SSL/TLS Connection Status` checks and running a `Wallet Injection Interceptor` shield to mitigate malicious extension exploits.
@@ -149,13 +160,23 @@ Proof of fully functional GitHub Actions automated workflow execution. The pipel
 ### 10. Soroban Smart Contract Feedback Matrix (Level 3 Architecture)
 
 A feedback and status verification module integrated with smart contracts running live on the Soroban Testnet network:
-- **Create Feedback:** Enables users to record data anonymously and securely on the Stellar network via the `create_feedback` function.
-- **Encrypted Status Query (Check Feedback):** Retrieves data from the smart contract (`fetchFeedback`) in real time and verifies its status by performing an ID-based query.
-- **TX Hash & Log Tracking:** The unique transaction hash and network validation statuses for all transactions are displayed in real time on the interface.
-
+- **Create Feedback:** Records feedback through the create_feedback contract function.
+- **On-Chain Verification:** Displays confirmed transaction hashes and network validation status for supported contract interactions.
+- **Verified Tester Analytics:** Separates real external tester activity from developer activity and provides a dedicated Testers feedback filter.
+- **Unique Wallet Tracking:** Counts verified external wallets toward the testing target while excluding the developer wallet.
 <img width="1918" height="862" alt="feedback" src="https://github.com/user-attachments/assets/a6f19c87-54cb-49e4-810f-6ad74224ec7d" />
 <img width="1918" height="731" alt="create_feedback" src="https://github.com/user-attachments/assets/bdc24cb9-a625-4501-aedf-163ae454b917" />
 
+--
+
+👥 Live Analytics & Real-User Testing (Level 4 Progress)
+StellarShield now includes a dedicated live analytics panel for external testing:
+*Verified Unique Wallets counts unique wallets with confirmed fb_live activity.
+*The developer wallet remains visible in the stream but is excluded from the tester target.
+*The Testers feedback filter shows external tester comments separately from developer/demo feedback.
+*Verified activity is merged with local persisted records so previously observed testers are not removed simply because older RPC events move outside the active retention window.
+*The target remains based on real external testers, not repeated transactions from the same wallet.
+*Status: Real-user testing is currently in progress. The README should be updated with the final tester count and latest proof screenshot only after the target is actually reached.
 
 
 
@@ -164,7 +185,7 @@ A feedback and status verification module integrated with smart contracts runnin
 🗺️ Future Roadmap
 
 ### 🔄 Phase 1: Soroban Optimization & Verification (Short-Term)
-*   **Soroban Auth Next-Gen Integration:** Migrate from standard invocations to Soroban's advanced `isValidSignature` and multi-signature authorization frameworks for institutional vault workflows.
+*   **Soroban Auth Next-Gen Integration:** Migrate from standard invocations to Soroban's advanced isValidSignature and multi-signature authorization frameworks for institutional vault workflows.
 *   **Automated Contract Unit-Testing:** Embed an isolated client-side WebAssembly (WASM) simulation boundary allowing developers to test Soroban contract custom exceptions and gas limits directly inside the dashboard.
 
 ### 🌐 Phase 2: Mobile Ecosystem & Deep Linking (Medium-Term)
@@ -182,10 +203,18 @@ A feedback and status verification module integrated with smart contracts runnin
 🧬 Tech Stack
 Frontend: React.js (JavaScript / JSX)
 
-Styling: Tailwind CSS (Fully Responsive Layout)
+Styling: Tailwind CSS
 
 Icons: Lucide React
 
 Charts: Recharts
 
-Stellar SDK: @stellar/freighter-api
+Stellar SDK: @stellar/stellar-sdk
+
+Wallet API: @stellar/freighter-api
+
+Network Data: Stellar Horizon Testnet + Soroban RPC
+
+Persistence: Browser localStorage for wallet-specific history and verified analytics cache
+
+Deployment: Vercel
