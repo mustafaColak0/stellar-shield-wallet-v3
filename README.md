@@ -203,7 +203,3 @@ StellarShield now includes a dedicated live analytics panel for external testing
 * **Persistence:** Browser `localStorage` for wallet-specific transaction history and verified analytics cache
 * **Deployment:** Vercel
 ```
-
-Persistence: Browser localStorage for wallet-specific history and verified analytics cache
-
-Deployment: Vercel
