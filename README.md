@@ -65,8 +65,8 @@ Follow these steps to run the project locally on your machine:
 
 1. **Clone the Repository:**
    ```bash
-   git clone https://github.com/mustafaColak0/stellar-shield-wallet.git
-   cd stellar-shield-wallet
+   git clone https://github.com/mustafaColak0/stellar-shield-wallet-v3.git
+   cd stellar-shield-wallet-v3
     ```
 
 2.  **Install Dependencies:**
@@ -109,7 +109,7 @@ The centralized security-oriented sandbox showing audit simulations, cryptograph
 
 
 5. Soroban Contract Interface & Emitted Event Timeline
-The core Smart Contract execution window containing real-time crowdfunding progress bars, a direct `deposit()` execution method, and an isolated live ledger contract event stream listing verifiable asset badges:
+The Soroban interaction panel contains a crowdfunding-style demonstration interface, cryptographically signed `create_feedback` contract interactions, transaction confirmation states, and live contract event visualization:
 <img width="886" height="700" alt="security_audit_deposit" src="https://github.com/user-attachments/assets/edbbb585-91fc-4e0b-93b5-b70b9ad23c14" />
 <img width="1901" height="871" alt="security_audit_txhash" src="https://github.com/user-attachments/assets/86622544-abbf-4756-9bdd-ba9c58012077" />
 
@@ -143,7 +143,7 @@ A feedback and status verification module integrated with smart contracts runnin
 <img width="1918" height="862" alt="feedback" src="https://github.com/user-attachments/assets/a6f19c87-54cb-49e4-810f-6ad74224ec7d" />
 <img width="1918" height="731" alt="create_feedback" src="https://github.com/user-attachments/assets/bdc24cb9-a625-4501-aedf-163ae454b917" />
 
---
+---
 
 ## 👥 Live Analytics & Real-User Testing (Level 4 Progress)
 StellarShield now includes a dedicated live analytics panel for external testing:
@@ -177,7 +177,7 @@ StellarShield now includes a dedicated live analytics panel for external testing
 
 ---
 
-```md
+
 ## 🧬 Tech Stack
 
 * **Frontend:** React.js (JavaScript / JSX)
@@ -189,4 +189,4 @@ StellarShield now includes a dedicated live analytics panel for external testing
 * **Network Data:** Stellar Horizon Testnet + Soroban RPC
 * **Persistence:** Browser `localStorage` for wallet-specific transaction history and verified analytics cache
 * **Deployment:** Vercel
-```
+
