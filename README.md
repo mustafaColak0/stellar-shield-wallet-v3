@@ -171,7 +171,7 @@ Every round of user feedback helps us shape the next iteration. Here is how we a
 | User Feedback | Action Taken / Improvement | Status |
 | :--- | :--- | :---: |
 | "No major issues on desktop.| Unlocking public access for the User Guide so users can read instructions before connecting Freighter. | **In Progress** |
-| "UI could be much better and there is no logo for it. Work more on branding." | Refining global UI styling and adding official StellarShield logo/branding to the header. | **In Progress** |
+| "UI could be much better and there is no logo for it. Work more on branding." | Refining global UI styling and adding official StellarShield logo/branding to the header. | **Corrected** |
 | "I'd love to have a simple transaction history that explains what actually happened in plain language." | Planning human-readable transaction logs to replace raw contract payloads. | **Planned** |
 | "Transaction history export (CSV) — handy for tax/record keeping." | Adding CSV export functionality for all transaction logs. | **Planned** |
 | "My recommendation will be add a walkthrough for beginners..." | Designing an interactive step-by-step onboarding walkthrough for first-time users. | **Planned** |
