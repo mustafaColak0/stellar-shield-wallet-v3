@@ -156,6 +156,26 @@ StellarShield now includes a dedicated live analytics panel for external testing
 
 > 🚧 **Current Status:** Real-user testing is currently in progress. The final tester count and latest proof screenshots will be added after the external testing target is reached.
 
+## User Feedback
+
+We collect user feedback via Google Forms — name, email, wallet address, and product ratings — and export all responses for continuous UI/UX and zero-knowledge workflow analysis.
+
+📝 [Share your feedback](https://docs.google.com/forms/d/e/1FAIpQLScdB-Kdr1fzhEaM2YNk22lubI09lZcpcztqGGDoyTgDjdBbfQ/viewform) — takes ~1 minute.
+
+---
+
+## Feedback-Driven Iteration
+
+Every round of user feedback helps us shape the next iteration. Here is how we are addressing the tester feedback:
+
+| User Feedback | Action Taken / Improvement | Status |
+| :--- | :--- | :---: |
+| "No major issues on desktop. One note: all navigation is locked behind wallet connect — would be nice to browse the User Guide before connecting." — **Mustafa Çolak (@mustafaColak0)** | Unlocking public access for the User Guide so users can read instructions before connecting Freighter. | **In Progress** |
+| "UI could be much better and there is no logo for it. Work more on branding." | Refining global UI styling and adding official StellarShield logo/branding to the header. | **In Progress** |
+| "I'd love to have a simple transaction history that explains what actually happened in plain language." | Planning human-readable transaction logs to replace raw contract payloads. | **Planned** |
+| "Transaction history export (CSV) — handy for tax/record keeping." | Adding CSV export functionality for all transaction logs. | **Planned** |
+| "My recommendation will be add a walkthrough for beginners..." | Designing an interactive step-by-step onboarding walkthrough for first-time users. | **Planned** |
+
 ---
 
 ## 🗺️ Future Roadmap
