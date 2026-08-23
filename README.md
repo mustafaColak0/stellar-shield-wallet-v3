@@ -15,7 +15,7 @@ The project focuses on transparent verification: supported transactions expose t
 > **Live Demo (Vercel):** [🚀 Click Here to Open Live App](https://stellar-shield-wallet-v3-puce.vercel.app/)
 
 > 💡 **Want to see the full, uncut workflow?** > If you would like to watch the complete step-by-step wallet connection, multi-asset transfer processes, and live network confirmations in full detail, you can watch our comprehensive video here:  
->  👉  **[Click Here to Watch the Full Detailed Project Demo Video]((https://drive.google.com/file/d/1ShkzN2POMtGZ5pxHGL1p-I39ZXUGwHtr/view?usp=drive_open))**
+>  👉  **[Click Here to Watch the Full Detailed Project Demo Video](https://drive.google.com/file/d/1ShkzN2POMtGZ5pxHGL1p-I39ZXUGwHtr/view?usp=drive_open)**
 
 ---
 
