@@ -1843,7 +1843,7 @@ function Header({
     "
               >
                 <img
-                  src="/logo.png"
+                  src="/lg.png"
                   alt="Stellar Shield Logo"
                   className="
         w-full
