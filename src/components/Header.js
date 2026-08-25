@@ -40,6 +40,8 @@ import {
   Trash2,
   ChevronDown,
   Laptop,
+  Menu,
+  X,
 } from "lucide-react";
 import {
   AreaChart,
@@ -526,6 +528,7 @@ function Header({
   const [connectedWalletType, setConnectedWalletType] = useState("");
   const [balance, setBalance] = useState("0");
   const [loading, setLoading] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showAddressBook, setShowAddressBook] = useState(true);
   const [isSecurityChecked, setIsSecurityChecked] = useState(false);
   const [showSecurityCheck, setShowSecurityCheck] = useState(false);
@@ -2216,15 +2219,57 @@ function Header({
                 </span>
               </div>
             </div>
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              className={`p-2 rounded-xl transition ${darkMode ? "bg-slate-800 text-amber-400 hover:bg-slate-700" : "bg-slate-100 text-indigo-600 hover:bg-slate-200"}`}
-            >
-              {darkMode ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
+            <div className="flex items-center gap-2">
+              {/* THEME */}
+              <button
+                type="button"
+                onClick={() => setDarkMode(!darkMode)}
+                className={`p-2 rounded-xl transition ${
+                  darkMode
+                    ? "bg-slate-800 text-amber-400 hover:bg-slate-700"
+                    : "bg-slate-100 text-indigo-600 hover:bg-slate-200"
+                }`}
+                title="Change theme"
+              >
+                {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
+
+              {/* MOBILE MENU */}
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen((prev) => !prev)}
+                className={`
+      md:hidden
+      w-9
+      h-9
+      rounded-xl
+      flex
+      items-center
+      justify-center
+      border
+      transition-all
+      ${
+        mobileMenuOpen
+          ? "bg-cyan-500 text-slate-950 border-cyan-400"
+          : darkMode
+            ? "bg-slate-800 text-cyan-400 border-slate-700"
+            : "bg-white text-cyan-600 border-slate-200"
+      }
+    `}
+                aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+              >
+                {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+              </button>
+            </div>
           </div>
 
-          <nav className="space-y-1.5">
+          <nav
+            className={`
+    space-y-1.5
+    ${mobileMenuOpen ? "block" : "hidden"}
+    md:block
+  `}
+          >
             {[
               { id: "dashboard", icon: LayoutDashboard, label: "Dashboard" },
               { id: "transfer", icon: Send, label: "Transfer (Multi-Asset)" },
@@ -2237,7 +2282,12 @@ function Header({
             ].map((item) => (
               <button
                 key={item.id}
-                onClick={() => connected && setActiveTab(item.id)}
+                onClick={() => {
+                  if (!connected) return;
+
+                  setActiveTab(item.id);
+                  setMobileMenuOpen(false);
+                }}
                 disabled={!connected}
                 className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-semibold text-sm whitespace-nowrap transition-all ${
                   !connected
@@ -2254,9 +2304,17 @@ function Header({
         </div>
 
         {connected && (
-          <div className="space-y-3">
+          <div
+            className={`
+    space-y-3
+    mt-4
+    ${mobileMenuOpen ? "block" : "hidden"}
+    md:block
+    md:mt-0
+  `}
+          >
             <div
-              className={`text-[10px] text-center font-mono py-1 rounded border transition-all duration-300 ${darkMode ? "text-slate-500 bg-slate-950/40 border-slate-900" : "text-slate-700 bg-slate-100 border-slate-200 font-medium"}`}
+              className={`text-[10px] text-center font-mono py-1 rounded border transition-all duration-300 ${darkMode ? "text-slate-400 bg-slate-950/40 border-slate-900" : "text-slate-700 bg-slate-100 border-slate-200 font-medium"}`}
             >
               Connected via:{" "}
               <span className="text-cyan-400 font-bold">
@@ -2264,7 +2322,10 @@ function Header({
               </span>
             </div>
             <button
-              onClick={disconnectWallet}
+              onClick={() => {
+                disconnectWallet();
+                setMobileMenuOpen(false);
+              }}
               className="w-full flex items-center justify-center gap-2.5 px-4 py-3.5 rounded-xl font-semibold text-sm bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white transition-all"
             >
               <LogOut size={18} /> Disconnect Wallet
@@ -2274,7 +2335,24 @@ function Header({
       </div>
 
       {/* MAIN CONTENT */}
-      <div className="p-8 lg:p-12 min-w-0 w-full max-w-5xl mx-auto flex-1 min-h-0 flex flex-col justify-start overflow-y-auto">
+      <div
+        className="
+  p-3
+  sm:p-5
+  md:p-8
+  lg:p-12
+  min-w-0
+  w-full
+  max-w-5xl
+  mx-auto
+  flex-1
+  min-h-0
+  flex
+  flex-col
+  justify-start
+  overflow-y-auto
+"
+      >
         {!connected ? (
           <div className="max-w-xl mx-auto my-auto text-center space-y-6">
             <div className="w-16 h-16 bg-cyan-500/10 text-cyan-400 rounded-2xl flex items-center justify-center mx-auto mb-2">
@@ -2292,7 +2370,7 @@ function Header({
               <button
                 onClick={() => connectWallet("Freighter")}
                 disabled={loading}
-                className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-cyan-500/50 transition-all text-center group flex flex-col items-center justify-center space-y-3"
+                className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-cyan-500/20 transition-all text-center group flex flex-col items-center justify-center space-y-3"
               >
                 <div className="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center group-hover:scale-110 transition">
                   <Wallet size={20} />
@@ -2456,66 +2534,81 @@ function Header({
                       const remaining = Math.max(goal - currentRaised, 0);
 
                       return (
-                        <div className="space-y-2 border-t border-slate-950 pt-4">
-                          <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
-                            <span className="text-slate-400">
+                        <div className="space-y-3 border-t border-slate-950 pt-4">
+                          {/* HEADER */}
+                          <div className="flex items-center justify-between">
+                            <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500">
                               Crowdfunding Progress
                             </span>
-                            <span className="text-slate-500">
-                              Campaign Goal:{" "}
-                              <span className="text-slate-300 font-mono">
-                                1,500 XLM
+
+                            <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500">
+                              Goal
+                            </span>
+                          </div>
+
+                          {/* CURRENT / GOAL VALUES */}
+                          <div className="flex items-end justify-between">
+                            <div className="flex items-baseline gap-2">
+                              <span className="text-xl font-black text-slate-100 font-mono">
+                                {currentRaised}
                               </span>
+
+                              <span className="text-xs font-bold text-cyan-400 font-mono">
+                                XLM
+                              </span>
+                            </div>
+
+                            <span className="text-xs font-bold text-slate-300 font-mono">
+                              1,500 XLM
                             </span>
                           </div>
 
-                          <div className="flex items-baseline gap-1.5 py-1">
-                            <span className="text-xl font-black text-slate-200 font-mono">
-                              {currentRaised}
-                            </span>
-                            <span className="text-xs font-bold text-slate-400 font-mono">
-                              XLM
-                            </span>
-                          </div>
-
-                          <div className="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-900/50">
+                          {/* PROGRESS BAR */}
+                          <div className="w-full bg-slate-900 rounded-full h-1.5 border border-slate-800/50 overflow-hidden">
                             <div
                               className={`h-full rounded-full transition-all duration-500 ${
                                 percentage >= 100
-                                  ? "bg-gradient-to-r from-emerald-500 to-teal-400 shadow-lg shadow-emerald-500/20"
-                                  : "bg-gradient-to-r from-cyan-500 to-blue-500"
+                                  ? "bg-gradient-to-r from-emerald-500 to-teal-400 shadow-lg shadow-emerald-500/30"
+                                  : "bg-gradient-to-r from-cyan-500 to-blue-500 shadow-lg shadow-cyan-500/20"
                               }`}
-                              style={{ width: `${percentage}%` }}
-                            ></div>
+                              style={{
+                                width: `${Math.min(percentage, 100)}%`,
+                              }}
+                            />
                           </div>
 
-                          {percentage >= 100 ? (
-                            <div className="mt-4 p-3 rounded-xl bg-emerald-950/20 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-2 animate-bounce shadow-lg shadow-emerald-950/20">
-                              <span className="text-base">🎉</span>
+                          {/* FUNDED / REMAINING */}
+                          <div className="flex items-center justify-between text-[9px] font-mono text-slate-500">
+                            <span>
+                              Funded:{" "}
+                              <span className="text-cyan-400 font-bold">
+                                {percentage.toFixed(1)}%
+                              </span>
+                            </span>
+
+                            <span>
+                              Remaining:{" "}
+                              <span className="text-slate-400 font-bold">
+                                {remaining} XLM
+                              </span>
+                            </span>
+                          </div>
+
+                          {/* TARGET REACHED */}
+                          {percentage >= 100 && (
+                            <div className="p-2.5 rounded-xl bg-emerald-950/20 border border-emerald-500/30 text-emerald-400 flex items-start gap-2 shadow-lg shadow-emerald-950/20 animate-bounce">
+                              <span className="text-sm">🎉</span>
+
                               <div>
-                                <p className="tracking-wide text-[10px]">
-                                  SOROBAN CONTRACT STATUS:
+                                <p className="text-[9px] font-black tracking-wide uppercase">
+                                  BARON CONTRACT STATUS:
                                 </p>
-                                <span className="text-[10px] text-emerald-500 font-mono font-medium block">
-                                  Target reached! Tokens locked.
+
+                                <span className="text-[9px] text-emerald-500 font-mono font-medium block mt-0.5">
+                                  Target reached! On-chain contract interaction
+                                  confirmed.
                                 </span>
                               </div>
-                            </div>
-                          ) : (
-                            // Sharpening colors and brightness
-                            <div className="flex justify-between text-[10px] font-mono tracking-wide border-t border-slate-900/50 pt-2 mt-1">
-                              <span className="text-slate-300">
-                                Funded:{" "}
-                                <span className="text-cyan-400 font-bold">
-                                  {percentage.toFixed(1)}%
-                                </span>
-                              </span>
-                              <span className="text-slate-300">
-                                Remaining:{" "}
-                                <span className="text-amber-400 font-bold">
-                                  {remaining} XLM
-                                </span>
-                              </span>
                             </div>
                           )}
                         </div>
@@ -2800,14 +2893,14 @@ function Header({
                   <div className="flex items-center gap-2 mb-6">
                     <Send
                       size={22}
-                      className={`transition-all duration-300
+                      className={`-translate-y-1.5 shrink-0 transition-all duration-300
   ${
     darkMode
       ? "text-cyan-400 group-hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]"
       : "text-cyan-600 group-hover:drop-shadow-[0_0_6px_rgba(8,145,178,0.4)]"
   }`}
                     />
-                    <div>
+                    <div className="md:-translate-x-2">
                       <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 tracking-wide">
                         Stellar Multi-Asset Transfer Engine
                       </h3>
@@ -2992,18 +3085,60 @@ function Header({
 
                     {/* RECIPIENT ADDRESS */}
                     <div>
-                      <div className="flex justify-between items-center mb-1.5">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                      <div
+                        className="
+    flex
+    flex-col
+    items-start
+    gap-1.5
+    mb-2
+
+    sm:flex-row
+    sm:items-center
+    sm:justify-between
+    sm:gap-3
+  "
+                      >
+                        <label
+                          className="
+      text-[9px]
+      sm:text-[10px]
+      font-bold
+      text-slate-400
+      uppercase
+      tracking-wider
+      block
+    "
+                        >
                           Recipient Address (Public Key)
                         </label>
-                        <div
-                          className="text-xs text-cyan-400 cursor-pointer flex items-center gap-1 font-medium hover:text-cyan-300 transition-colors"
+
+                        <button
+                          type="button"
                           onClick={() =>
                             setActiveTab && setActiveTab("contacts")
                           }
+                          className="
+      self-end
+      sm:self-auto
+
+      text-[9px]
+      sm:text-[10px]
+      text-cyan-400
+
+      flex
+      items-center
+      gap-1
+
+      font-semibold
+      hover:text-cyan-300
+      transition-colors
+      whitespace-nowrap
+    "
                         >
-                          <BookUser size={12} /> Select from Contacts
-                        </div>
+                          <BookUser size={11} />
+                          Select from Contacts
+                        </button>
                       </div>
                       <div className="relative">
                         <input
@@ -3989,9 +4124,9 @@ function Header({
                     {/* HEADER */}
                     {/* ===================================================== */}
 
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-2">
+                    <div className="relative flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-2">
                       {/* LEFT */}
-                      <h3 className="text-lg sm:text-xl font-bold flex items-center gap-2 shrink-0">
+                      <h3 className="text-lg sm:text-xl font-bold flex items-center gap-2 shrink-0 pr-32 sm:pr-40">
                         <History
                           size={22}
                           className={`transition-all duration-300 shrink-0
@@ -4008,12 +4143,45 @@ function Header({
                       </h3>
 
                       {/* RIGHT */}
-                      <div className="flex flex-col items-start md:items-end gap-2.5 w-full md:w-auto">
+                      <div className="flex flex-col items-start md:items-end gap-2.5 w-full md:w-auto pt-7 md:pt-0">
                         {/* LIVE STATUS */}
-                        <span className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-mono text-emerald-400 font-bold uppercase tracking-widest h-fit w-fit whitespace-nowrap">
+                        {/* LIVE STATUS - TOP RIGHT */}
+                        <span
+                          className="
+    absolute
+top-0
+right-0
+
+md:static
+
+    flex
+    items-center
+    gap-1.5
+
+    px-2
+    sm:px-2.5
+    py-1
+
+    rounded
+
+    bg-emerald-500/10
+    border
+    border-emerald-500/20
+
+    text-[8px]
+    sm:text-[10px]
+
+    font-mono
+    text-emerald-400
+    font-bold
+    uppercase
+    tracking-widest
+
+    whitespace-nowrap
+  "
+                        >
                           <span className="relative flex h-1.5 w-1.5">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-
                             <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
                           </span>
                           Transaction Live
@@ -4726,27 +4894,93 @@ function Header({
                     ${darkMode ? "bg-emerald-500/5" : "bg-emerald-500/10"}`}
                 ></div>
 
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  {/* Header */}
-                  <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 tracking-wide flex items-center gap-2">
+                {/* ADDRESS BOOK HEADER */}
+                <div className="relative min-h-[58px] sm:min-h-[36px]">
+                  {/* TITLE */}
+                  <h3
+                    className="
+      text-lg
+      sm:text-xl
+      font-bold
+      text-transparent
+      bg-clip-text
+      bg-gradient-to-r
+      from-cyan-400
+      to-blue-400
+      tracking-wide
+      flex
+      items-start
+      gap-2
+      leading-tight
+      pr-24
+      sm:pr-40
+      md:pr-0
+    "
+                  >
                     <BookUser
                       size={22}
-                      className={`transition-all duration-300
-                        ${
-                          darkMode
-                            ? "text-cyan-400 group-hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]"
-                            : "text-cyan-600 group-hover:drop-shadow-[0_0_6px_rgba(8,145,178,0.4)]"
-                        }`}
+                      className={`shrink-0 mt-0.5 transition-all duration-300 ${
+                        darkMode
+                          ? "text-cyan-400 group-hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]"
+                          : "text-cyan-600 group-hover:drop-shadow-[0_0_6px_rgba(8,145,178,0.4)]"
+                      }`}
                     />
-                    Address Book
+
+                    <span>
+                      Address
+                      <br className="sm:hidden" />
+                      <span className="sm:ml-1">Book</span>
+                    </span>
                   </h3>
 
-                  <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-[9px] font-mono font-bold text-cyan-400">
+                  {/* CONTACT COUNTERS */}
+                  <div
+                    className="
+    absolute
+    top-0
+    right-0
+    flex
+    flex-row
+    items-center
+    gap-1.5
+    md:hidden
+  "
+                  >
+                    <span
+                      className="
+        px-2
+        py-1
+        rounded-lg
+        bg-cyan-500/10
+        border
+        border-cyan-500/20
+        text-[8px]
+        sm:text-[9px]
+        font-mono
+        font-bold
+        text-cyan-400
+        whitespace-nowrap
+      "
+                    >
                       {addressBook.length} CONTACTS
                     </span>
 
-                    <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-mono font-bold text-emerald-400">
+                    <span
+                      className="
+        px-2
+        py-1
+        rounded-lg
+        bg-emerald-500/10
+        border
+        border-emerald-500/20
+        text-[8px]
+        sm:text-[9px]
+        font-mono
+        font-bold
+        text-emerald-400
+        whitespace-nowrap
+      "
+                    >
                       {addressBook.filter((contact) => contact.trusted).length}{" "}
                       TRUSTED
                     </span>
@@ -4756,7 +4990,7 @@ function Header({
                 {/* Form Area */}
                 <form
                   onSubmit={handleAddContact}
-                  className="flex flex-col sm:flex-row gap-3 mb-3 p-4 bg-[#090d16] border border-slate-900 rounded-xl"
+                  className="flex flex-col sm:flex-row gap-3 mb-3 md:mb-1 p-4 bg-[#090d16] border border-slate-900 rounded-xl"
                 >
                   <input
                     type="text"
@@ -4787,6 +5021,57 @@ function Header({
                     <Plus size={16} /> Add
                   </button>
                 </form>
+                {/* CONTACT COUNTERS - DESKTOP */}
+                <div
+                  className="
+    hidden
+    md:flex
+    items-center
+    justify-end
+    gap-1.5
+
+    pr-4
+    -mt-1
+    mb-3
+  "
+                >
+                  <span
+                    className="
+      px-2.5
+      py-1
+      rounded-lg
+      bg-cyan-500/10
+      border
+      border-cyan-500/20
+      text-[9px]
+      font-mono
+      font-bold
+      text-cyan-400
+      whitespace-nowrap
+    "
+                  >
+                    {addressBook.length} CONTACTS
+                  </span>
+
+                  <span
+                    className="
+      px-2.5
+      py-1
+      rounded-lg
+      bg-emerald-500/10
+      border
+      border-emerald-500/20
+      text-[9px]
+      font-mono
+      font-bold
+      text-emerald-400
+      whitespace-nowrap
+    "
+                  >
+                    {addressBook.filter((contact) => contact.trusted).length}{" "}
+                    TRUSTED
+                  </span>
+                </div>
 
                 {/* Error Message Display */}
                 <div className="h-6 -mt-2">
@@ -5689,7 +5974,8 @@ disabled:hover:border-slate-800
                   {/* TOP ROW */}
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                     {/* TITLE */}
-                    <div className="flex items-start gap-3 min-w-0">
+                    <div className="relative flex items-start gap-3 min-w-0 flex-1">
+                      {/* ICON */}
                       <div
                         className="
           w-11
@@ -5709,111 +5995,151 @@ disabled:hover:border-slate-800
                         <ShieldCheck size={21} />
                       </div>
 
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h2
-                            className="
-              text-lg
-              sm:text-xl
-              font-black
-              text-transparent
-              bg-clip-text
-              bg-gradient-to-r
-              from-cyan-400
-              to-blue-400
-              tracking-wide
-            "
-                          >
-                            Security Audit Center
-                          </h2>
-
-                          <span
-                            className="
-              px-2
-              py-1
-              rounded-md
-              bg-emerald-500/10
-              border
-              border-emerald-500/20
-              text-[8px]
-              font-black
-              text-emerald-400
-              tracking-wider
-            "
-                          >
-                            ● SHIELD ACTIVE
-                          </span>
-                        </div>
+                      {/* TEXT */}
+                      <div className="min-w-0 flex-1 pr-28 lg:pr-0">
+                        <h2
+                          className="
+            text-lg
+            sm:text-xl
+            font-black
+            text-transparent
+            bg-clip-text
+            bg-gradient-to-r
+            from-cyan-400
+            to-blue-400
+            tracking-wide
+          "
+                        >
+                          Security Audit Center
+                        </h2>
 
                         <p className="text-[11px] text-slate-400 mt-1 max-w-2xl leading-relaxed">
                           Inspect wallet exception handlers, Soroban activity
                           and Stellar Shield security diagnostics.
                         </p>
                       </div>
+
+                      {/* SHIELD ACTIVE - MOBILE */}
+                      <span
+                        className="
+          absolute
+          top-0
+          right-0
+          lg:hidden
+          inline-flex
+          items-center
+          gap-1.5
+          px-2
+          py-1
+          rounded-md
+          bg-emerald-500/10
+          border
+          border-emerald-500/20
+          text-[8px]
+          font-black
+          text-emerald-400
+          tracking-wider
+          whitespace-nowrap
+        "
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        SHIELD ACTIVE
+                      </span>
                     </div>
 
-                    {/* SCAN BUTTON */}
-                    <button
-                      type="button"
-                      onClick={runSecurityScan}
-                      disabled={isScanning}
-                      className={`
-        min-w-[210px]
-        px-5
-        py-3
-        rounded-xl
-        border
-        text-[10px]
-        font-black
-        tracking-wider
-        uppercase
-        flex
-        items-center
-        justify-center
-        gap-2
-        shrink-0
-        transition-all
-        ${
-          isScanning
-            ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/30 cursor-wait"
-            : "bg-cyan-500 text-slate-950 border-cyan-400 hover:bg-cyan-400 hover:shadow-[0_0_20px_rgba(34,211,238,0.25)]"
-        }
-      `}
-                    >
-                      {isScanning ? (
-                        <>
-                          <Activity size={14} className="animate-pulse" />
-                          SCANNING LEDGER...
-                        </>
-                      ) : (
-                        <>
-                          <ShieldCheck size={14} />
-                          RUN SECURITY SCAN
-                        </>
-                      )}
-                    </button>
+                    {/* DESKTOP SECURITY ACTIONS */}
+                    <div className="relative shrink-0 lg:pt-7">
+                      {/* SHIELD ACTIVE - DESKTOP */}
+                      <span
+                        className="
+          hidden
+          lg:inline-flex
+          absolute
+          top-0
+          right-0
+          items-center
+          gap-1.5
+          px-2
+          py-1
+          rounded-md
+          bg-emerald-500/10
+          border
+          border-emerald-500/20
+          text-[8px]
+          font-black
+          text-emerald-400
+          tracking-wider
+          whitespace-nowrap
+        "
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        SHIELD ACTIVE
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={runSecurityScan}
+                        disabled={isScanning}
+                        className={`
+          min-w-[210px]
+          px-5
+          py-3
+          rounded-xl
+          border
+          text-[10px]
+          font-black
+          tracking-wider
+          uppercase
+          flex
+          items-center
+          justify-center
+          gap-2
+          shrink-0
+          transition-all
+          ${
+            isScanning
+              ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/30 cursor-wait"
+              : "bg-cyan-500 text-slate-950 border-cyan-400 hover:bg-cyan-400 hover:shadow-[0_0_20px_rgba(34,211,238,0.25)]"
+          }
+        `}
+                      >
+                        {isScanning ? (
+                          <>
+                            <Activity size={14} className="animate-pulse" />
+                            SCANNING LEDGER...
+                          </>
+                        ) : (
+                          <>
+                            <ShieldCheck size={14} />
+                            RUN SECURITY SCAN
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   {/* STATUS STRIP */}
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-5">
+                    {/* NETWORK */}
                     <div className="px-3 py-2.5 rounded-lg bg-slate-950 border border-slate-900">
-                      <span className="text-[8px] text-slate-500 uppercase tracking-wider block">
+                      <span className="text-[8px] text-slate-500 uppercase tracking-wider block text-center">
                         Network
                       </span>
 
-                      <span className="text-[10px] font-bold text-blue-400 flex items-center gap-1.5 mt-1">
+                      <span className="text-[10px] font-bold text-blue-400 flex items-center justify-center gap-1.5 mt-1 w-full">
                         <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
                         STELLAR TESTNET
                       </span>
                     </div>
 
+                    {/* SCANNER */}
                     <div className="px-3 py-2.5 rounded-lg bg-slate-950 border border-slate-900">
-                      <span className="text-[8px] text-slate-500 uppercase tracking-wider block">
+                      <span className="text-[8px] text-slate-500 uppercase tracking-wider block text-center">
                         Scanner
                       </span>
 
                       <span
-                        className={`text-[10px] font-bold flex items-center gap-1.5 mt-1 ${
+                        className={`text-[10px] font-bold flex items-center justify-center gap-1.5 mt-1 w-full ${
                           isScanning ? "text-cyan-400" : "text-emerald-400"
                         }`}
                       >
@@ -5829,23 +6155,25 @@ disabled:hover:border-slate-800
                       </span>
                     </div>
 
+                    {/* AUDIT LOGS */}
                     <div className="px-3 py-2.5 rounded-lg bg-slate-950 border border-slate-900">
-                      <span className="text-[8px] text-slate-500 uppercase tracking-wider block">
+                      <span className="text-[8px] text-slate-500 uppercase tracking-wider block text-center">
                         Audit Logs
                       </span>
 
-                      <span className="text-[10px] font-bold text-cyan-400 mt-1 block">
+                      <span className="text-[10px] font-bold text-cyan-400 mt-1 block text-center">
                         {auditLogs.length} EVENTS
                       </span>
                     </div>
 
+                    {/* WALLET */}
                     <div className="px-3 py-2.5 rounded-lg bg-slate-950 border border-slate-900">
-                      <span className="text-[8px] text-slate-500 uppercase tracking-wider block">
+                      <span className="text-[8px] text-slate-500 uppercase tracking-wider block text-center">
                         Wallet
                       </span>
 
                       <span
-                        className={`text-[10px] font-bold flex items-center gap-1.5 mt-1 ${
+                        className={`text-[10px] font-bold flex items-center justify-center gap-1.5 mt-1 w-full ${
                           connected ? "text-emerald-400" : "text-rose-400"
                         }`}
                       >
@@ -6061,35 +6389,60 @@ disabled:hover:border-slate-800
                   {/* WALLET EXCEPTION TEST MATRIX */}
                   <div className="p-4 rounded-xl bg-[#090d16] border border-slate-900 flex-1 w-full space-y-3">
                     {/* HEADER */}
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="relative flex items-start justify-between gap-2 min-h-[34px]">
                       <div className="flex items-center gap-2">
-                        <ShieldAlert size={14} className="text-amber-400" />
+                        <ShieldAlert
+                          size={14}
+                          className="text-amber-400 -translate-y-1.5 lg:-translate-y-0 shrink-0"
+                        />
 
-                        <span className="text-[10px] font-black text-amber-400 uppercase tracking-wider">
+                        <span
+                          className="
+    text-[10px]
+    sm:text-[10px]
+    font-black
+    text-amber-400
+    uppercase
+    tracking-wider
+    leading-tight
+    pr-28
+  "
+                        >
                           Wallet Exception Test Matrix
                         </span>
                       </div>
 
                       <span
                         className="
-        px-2
-        py-1
-        rounded-md
-        bg-amber-500/10
-        border
-        border-amber-500/20
-        text-[8px]
-        font-black
-        text-amber-400
-        tracking-wider
-      "
+    absolute
+    top-0
+    right-0
+    inline-flex
+    items-center
+    gap-1.5
+    px-2
+    py-1
+    rounded-md
+    bg-amber-500/10
+    border
+    border-amber-500/20
+    text-[8px]
+    font-black
+    text-amber-400
+    tracking-wider
+    whitespace-nowrap
+  "
                       >
+                        <span className="relative flex h-1.5 w-1.5">
+                          <span className="absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-70 animate-ping" />
+                          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-amber-400" />
+                        </span>
                         SIMULATION ONLY
                       </span>
                     </div>
 
                     {/* EXCEPTION CARDS */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       {/* WALLET 404 */}
                       <button
                         type="button"
@@ -6099,7 +6452,7 @@ disabled:hover:border-slate-800
         relative
         overflow-hidden
         group
-        p-3.5
+        p-4 md:p-3.5
         rounded-xl
         bg-slate-950
         border
@@ -6240,11 +6593,52 @@ disabled:hover:border-slate-800
                   {/* Left Card: Soroban Contract Method Interface */}
                   <div className="p-5 rounded-xl bg-[#090d16] border border-slate-900 flex flex-col justify-between min-h-[260px] w-full">
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <h3 className="text-xs font-bold text-cyan-400 uppercase tracking-wider truncate">
+                      <div className="relative flex items-start justify-between gap-2 min-h-[38px]">
+                        <h3
+                          className="
+      text-[10px]
+      sm:text-xs
+      font-bold
+      text-cyan-400
+      uppercase
+      tracking-wider
+      leading-tight
+      pr-28
+      sm:pr-0
+    "
+                        >
                           🤖 Soroban Contract Method Interface
                         </h3>
-                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-cyan-950/40 border border-cyan-800 rounded text-[10px] font-mono font-bold text-cyan-400 whitespace-nowrap shrink-0">
+
+                        <div
+                          className="
+      absolute
+      top-0
+      right-0
+      sm:static
+
+      inline-flex
+      items-center
+      gap-2
+
+      px-2.5
+      py-1
+
+      bg-cyan-950/40
+      border
+      border-cyan-800
+      rounded
+
+      text-[9px]
+      sm:text-[10px]
+      font-mono
+      font-bold
+      text-cyan-400
+
+      whitespace-nowrap
+      shrink-0
+    "
+                        >
                           <div className="relative flex h-2 w-2 shrink-0">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-800 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>

@@ -970,12 +970,18 @@ setUserLogs((prev) => {
   };
 
   return (
-    <div
+<div
   className="
     relative
     w-full
-    mt-8
-    p-5 md:p-6
+
+    mt-5
+    sm:mt-6
+    md:mt-8
+
+    p-3
+    sm:p-4
+    md:p-6
 
     bg-slate-900/90
     border border-slate-800
@@ -992,59 +998,221 @@ setUserLogs((prev) => {
     hover:shadow-[0_0_28px_rgba(34,211,238,0.20)]
   "
 >
-      {/* HEADER */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-slate-800">
-        <div className="flex items-start gap-3">
-          <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 shrink-0">
-            <Activity className="w-6 h-6 animate-pulse" />
-          </div>
+{/* HEADER */}
+<div
+  className="
+    flex
+    flex-col
+    lg:flex-row
+    lg:items-start
+    lg:justify-between
+    gap-4
 
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-lg md:text-xl font-bold tracking-tight text-white">
-                Live On-Chain Analytics & User Validation
-              </h2>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                LIVE
-              </span>
-            </div>
-            <p className="text-sm text-slate-400 mt-1">
-              Real Stellar Testnet contract events, verified source wallets and hybrid feedback.
-            </p>
-          </div>
-        </div>
+    pb-4
+    md:pb-6
+    border-b
+    border-slate-800
+  "
+>
+  {/* SOL TARAF */}
+  <div className="flex items-start gap-4 min-w-0 flex-1">
+    {/* ANALYTICS ICON */}
+    <div
+      className="
+        w-12
+        h-12
+        rounded-xl
+        border
+        border-emerald-500/20
+        bg-emerald-500/10
 
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => fetchLiveAnalytics()}
-            disabled={isRefreshing}
-            className="p-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-300 rounded-lg border border-slate-700 text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+        flex
+        items-center
+        justify-center
+
+        shrink-0
+      "
+    >
+      <Activity className="w-5 h-5 text-emerald-400 animate-pulse" />
+    </div>
+
+    {/* TITLE */}
+    <div className="min-w-0">
+      <h2 className="text-lg sm:text-xl font-bold text-white leading-tight">
+        Live On-Chain Analytics & User Validation
+      </h2>
+
+      <p className="text-[11px] sm:text-sm text-slate-400 mt-1 max-w-2xl leading-relaxed">
+        Real Stellar Testnet contract events, verified source wallets and hybrid
+        feedback.
+      </p>
+    </div>
+  </div>
+
+  {/* SAĞ TARAF */}
+  <div
+    className="
+      flex
+      flex-col
+      items-end
+      gap-2
+
+      w-full
+      lg:w-auto
+
+      shrink-0
+    "
+  >
+    {/* LIVE - DESKTOP RIGHT TOP */}
+    <span
+      className="
+        inline-flex
+        items-center
+        gap-1.5
+
+        px-2.5
+        py-1
+
+        rounded-full
+
+        bg-emerald-500/10
+        border
+        border-emerald-500/20
+
+        text-[9px]
+        sm:text-xs
+        font-bold
+        text-emerald-400
+
+        whitespace-nowrap
+      "
+    >
+      <span className="relative flex w-2 h-2">
+        <span className="absolute inline-flex w-full h-full rounded-full bg-emerald-400 opacity-50 animate-ping" />
+        <span className="relative inline-flex w-full h-full rounded-full bg-emerald-400" />
+      </span>
+
+      LIVE
+    </span>
+
+    {/* NETWORK CONTROLS */}
+    <div
+      className="
+        flex
+        flex-row
+        items-center
+        justify-end
+        gap-2
+
+        w-full
+        lg:w-auto
+      "
+    >
+      {/* SYNC NETWORK */}
+      <button
+        type="button"
+        onClick={() => fetchLiveAnalytics()}
+        disabled={isRefreshing}
+        className="
+          flex-1
+          lg:flex-none
+
+          px-3
+          py-2
+
+          rounded-lg
+
+          bg-slate-800
+          border
+          border-slate-700
+
+          text-[10px]
+          sm:text-xs
+          font-medium
+          text-slate-300
+
+          flex
+          items-center
+          justify-center
+          gap-1.5
+
+          whitespace-nowrap
+
+          hover:bg-slate-700
+          hover:border-cyan-500/40
+
+          disabled:opacity-50
+          disabled:cursor-wait
+
+          transition-all
+          cursor-pointer
+        "
+      >
+        <RefreshCw
+          className={`w-3.5 h-3.5 ${
+            isRefreshing ? "animate-spin text-cyan-400" : ""
+          }`}
+        />
+
+        <span>{isRefreshing ? "Syncing..." : "Sync Network"}</span>
+      </button>
+
+      {/* RPC STATUS */}
+      <div
+        className="
+          flex-1
+          lg:flex-none
+
+          px-3
+          py-2
+
+          rounded-lg
+
+          bg-slate-800/80
+          border
+          border-slate-700/60
+
+          text-[10px]
+          sm:text-xs
+          font-medium
+          text-slate-300
+
+          flex
+          items-center
+          justify-center
+          gap-2
+
+          whitespace-nowrap
+        "
+      >
+        <Radio
+          className={`w-3.5 h-3.5 ${
+            rpcHealthy
+              ? "text-emerald-400 animate-pulse"
+              : "text-rose-400"
+          }`}
+        />
+
+        <span>
+          RPC:{" "}
+          <strong
+            className={
+              rpcHealthy
+                ? "text-emerald-400"
+                : "text-rose-400"
+            }
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
-            <span>Sync Network</span>
-          </button>
-
-          <div className="flex items-center gap-2 px-3 py-2 bg-slate-800/80 border border-slate-700/60 rounded-lg text-xs font-medium text-slate-300">
-            <Radio
-              className={`w-4 h-4 ${
-                rpcHealthy ? "text-emerald-400 animate-pulse" : "text-rose-400"
-              }`}
-            />
-            <span>
-              RPC:{" "}
-              <strong className={rpcHealthy ? "text-emerald-400" : "text-rose-400"}>
-                {rpcHealthy ? "Available" : "Unavailable"}
-              </strong>
-            </span>
-          </div>
-        </div>
+            {rpcHealthy ? "Available" : "Unavailable"}
+          </strong>
+        </span>
       </div>
+    </div>
+  </div>
+</div>
 
       {/* METRIC CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 my-6">
-        <div className="group relative overflow-hidden p-4 bg-slate-800/40 border border-slate-700/40 rounded-xl
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 my-4 sm:my-6">
+        <div className="group relative overflow-hidden p-3 sm:p-4 bg-slate-800/40 border border-slate-700/40 rounded-xl
 transition-all duration-300 ease-out
 hover:-translate-y-1 hover:border-cyan-400/70
 hover:shadow-[0_0_22px_rgba(34,211,238,0.20)]
@@ -1055,25 +1223,25 @@ after:shadow-[0_0_12px_rgba(34,211,238,0.85)]
 after:transition-all after:duration-500 after:ease-out
 after:pointer-events-none hover:after:w-[82%]">
           <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">
+            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">  
               Verified Unique Wallets
             </span>
             <Users className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="flex flex-wrap items-baseline gap-2">
-            <span className="text-3xl font-extrabold text-white">
+            <span className="text-2xl sm:text-3xl font-extrabold text-white leading-none">
               {verifiedUsersCount}
             </span>
             <span className={`text-xs font-medium ${verifiedUsersCount >= 20 ? "text-emerald-400" : "text-amber-400"}`}>
               {verifiedUsersCount >= 20 ? "20+ target reached ✓" : `${verifiedUsersCount}/20 target`}
             </span>
           </div>
-          <div className="mt-2 text-[11px] text-slate-400">
+          <div className="mt-1.5 sm:mt-2 text-[9px] sm:text-[11px] text-slate-400 leading-relaxed">
             Unique wallets verified from real Soroban transactions
           </div>
         </div>
 
-        <div className="group relative overflow-hidden p-4 bg-slate-800/40 border border-slate-700/40 rounded-xl
+        <div className="group relative overflow-hidden p-3 sm:p-4 bg-slate-800/40 border border-slate-700/40 rounded-xl
 transition-all duration-300 ease-out
 hover:-translate-y-1 hover:border-cyan-400/70
 hover:shadow-[0_0_22px_rgba(34,211,238,0.20)]
@@ -1084,23 +1252,23 @@ after:shadow-[0_0_12px_rgba(34,211,238,0.85)]
 after:transition-all after:duration-500 after:ease-out
 after:pointer-events-none hover:after:w-[82%]">
           <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">
+            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">
               Today's On-Chain Interactions
             </span>
             <ShieldCheck className="w-4 h-4 text-blue-400" />
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold text-white">
+            <span className="text-2xl sm:text-3xl font-extrabold text-white leading-none">
               {todayInteractions}
             </span>
             <span className="text-xs text-blue-400 font-medium">Verified</span>
           </div>
-          <div className="mt-2 text-[11px] text-slate-400">
+          <div className="mt-1.5 sm:mt-2 text-[9px] sm:text-[11px] text-slate-400 leading-relaxed">
             Confirmed fb_live contract events
           </div>
         </div>
 
-        <div className="group relative overflow-hidden p-4 bg-slate-800/40 border border-slate-700/40 rounded-xl
+        <div className="group relative overflow-hidden p-3 sm:p-4 bg-slate-800/40 border border-slate-700/40 rounded-xl
 transition-all duration-300 ease-out
 hover:-translate-y-1 hover:border-cyan-400/70
 hover:shadow-[0_0_22px_rgba(34,211,238,0.20)]
@@ -1111,18 +1279,18 @@ after:shadow-[0_0_12px_rgba(34,211,238,0.85)]
 after:transition-all after:duration-500 after:ease-out
 after:pointer-events-none hover:after:w-[82%]">
           <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">
+            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">
               Soroban RPC Latency
             </span>
             <Zap className="w-4 h-4 text-purple-400" />
           </div>
           <div className="flex items-baseline gap-1">
-            <span className="text-3xl font-extrabold text-white">
+            <span className="text-2xl sm:text-3xl font-extrabold text-white leading-none">
               {Number.isFinite(latency) ? latency : "--"}
             </span>
             <span className="text-sm font-normal text-slate-400">ms</span>
           </div>
-          <div className="mt-2 text-[11px] text-slate-400">
+          <div className="mt-1.5 sm:mt-2 text-[9px] sm:text-[11px] text-slate-400 leading-relaxed">
             Real browser → Stellar Testnet RPC round-trip
           </div>
         </div>
@@ -1136,10 +1304,38 @@ after:pointer-events-none hover:after:w-[82%]">
 
       {/* STREAM TABLE */}
       <div className="mt-6 border border-slate-800 rounded-xl overflow-hidden bg-slate-950/40">
-        <div className="px-4 py-3 bg-slate-800/60 border-b border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
-            Verified User & Contract Interaction Stream — Level 4 Proof
-          </span>
+        <div
+  className="
+    px-3
+    sm:px-4
+    py-3
+
+    bg-slate-800/60
+    border-b
+    border-slate-800
+
+    flex
+    flex-col
+    lg:flex-row
+    lg:items-center
+    justify-between
+
+    gap-3
+  "
+>
+          <span
+  className="
+    text-[10px]
+    sm:text-xs
+    font-bold
+    uppercase
+    tracking-wider
+    text-slate-300
+    leading-relaxed
+  "
+>
+  Verified User & Contract Interaction Stream — Level 4 Proof
+</span>
 
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1 p-1 bg-slate-950/70 border border-slate-700 rounded-lg">
@@ -1179,17 +1375,33 @@ after:pointer-events-none hover:after:w-[82%]">
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-300">
-            <thead className="bg-slate-900/80 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
-              <tr>
-                <th className="px-4 py-2.5">User Wallet</th>
-                <th className="px-4 py-2.5">Status</th>
-                <th className="px-4 py-2.5">Executed Action</th>
-                <th className="px-4 py-2.5">Time</th>
-                <th className="px-4 py-2.5 text-right">Proof</th>
-              </tr>
-            </thead>
+        <div
+  className="
+    w-full
+    overflow-x-auto
+    scrollbar-thin
+    scrollbar-thumb-slate-700
+    scrollbar-track-transparent
+  "
+>
+<table
+  className="
+    w-full
+    min-w-[680px]
+    text-left
+    text-xs
+    text-slate-300
+  "
+>
+  <thead className="bg-slate-900/60 text-slate-500 uppercase tracking-wider text-[10px]">
+    <tr>
+      <th className="px-4 py-2.5">User Wallet</th>
+      <th className="px-4 py-2.5">Status</th>
+      <th className="px-4 py-2.5">Executed Action</th>
+      <th className="px-4 py-2.5">Time</th>
+      <th className="px-4 py-2.5 text-right">Proof</th>
+    </tr>
+  </thead>
             <tbody className="divide-y divide-slate-800/50 font-mono">
               {loading && displayedUserLogs.length === 0 && (
                 <tr>
@@ -1259,25 +1471,58 @@ hover:-translate-y-[1px]"
       {/* ============================================================ */}
       {/* CANLI HİBRİT TOPLULUK GERİ BİLDİRİM & YORUM TABLOSU */}
       {/* ============================================================ */}
-      <div className="mt-8 border border-slate-800 rounded-xl overflow-hidden bg-slate-950/60 p-5
+      <div className="mt-6 md:mt-8 border border-slate-800 rounded-xl overflow-hidden bg-slate-950/60 p-3 sm:p-4 md:p-5
 transition-all duration-300
 hover:border-cyan-500/30 hover:shadow-[0_0_22px_rgba(34,211,238,0.10)]">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-4 border-b border-slate-800">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-cyan-400" />
-            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-200">
-              Community Feedback & Reviews (Hybrid Feed)
-            </h3>
-          </div>
+      <div className="flex items-start gap-3">
+  <MessageSquare className="w-5 h-5 text-cyan-400 mt-1 shrink-0" />
+  <div className="min-w-0">
+    <h3 className="text-white font-bold leading-tight">
+      COMMUNITY FEEDBACK & REVIEWS
+    </h3>
+    <p className="text-white font-bold leading-tight">(HYBRID FEED)</p>
+  </div>
+</div>
 
           {/* FİLTRE BUTONLARI */}
-          <div className="flex flex-wrap gap-1.5 bg-slate-900 p-1 rounded-lg border border-slate-800 text-xs font-mono">
+          <div
+  className="
+    flex
+    flex-nowrap
+    md:flex-wrap
+
+    items-center
+    gap-1.5
+
+    w-full
+    md:w-auto
+
+    overflow-x-auto
+    md:overflow-visible
+
+    bg-slate-900
+    p-1
+    rounded-lg
+    border
+    border-slate-800
+
+    text-xs
+    font-mono
+
+    scrollbar-thin
+    scrollbar-thumb-slate-700
+    scrollbar-track-transparent
+  "
+>
             <button
               type="button"
               onClick={() => setFeedbackFilter("ALL")}
-              className={`px-2.5 py-1 rounded transition-all cursor-pointer ${
-                feedbackFilter === "ALL" ? "bg-cyan-500/20 text-cyan-400 font-bold" : "text-slate-400 hover:text-slate-200"
-              }`}
+             className={`shrink-0 whitespace-nowrap px-2.5 py-1 rounded transition-all cursor-pointer ${
+  feedbackFilter === "ALL"
+    ? "bg-cyan-500/20 text-cyan-400 font-bold"
+    : "text-slate-400 hover:text-slate-200"
+}`}
             >
               All ({allFeedbacks.length})
             </button>
@@ -1286,7 +1531,7 @@ hover:border-cyan-500/30 hover:shadow-[0_0_22px_rgba(34,211,238,0.10)]">
   onClick={() =>
     setFeedbackFilter("TESTERS")
   }
-  className={`px-2.5 py-1 rounded transition-all cursor-pointer flex items-center gap-1 ${
+  className={`shrink-0 whitespace-nowrap px-2.5 py-1 rounded transition-all cursor-pointer flex items-center gap-1 ${
     feedbackFilter === "TESTERS"
       ? "bg-purple-500/20 text-purple-300 font-bold border border-purple-500/30"
       : "text-slate-400 hover:text-purple-300 hover:bg-purple-500/10"
@@ -1298,7 +1543,7 @@ hover:border-cyan-500/30 hover:shadow-[0_0_22px_rgba(34,211,238,0.10)]">
             <button
               type="button"
               onClick={() => setFeedbackFilter("ON_CHAIN")}
-              className={`px-2.5 py-1 rounded transition-all cursor-pointer flex items-center gap-1 ${
+              className={`shrink-0 whitespace-nowrappx-2.5 py-1 rounded transition-all cursor-pointer flex items-center gap-1 ${
                 feedbackFilter === "ON_CHAIN" ? "bg-emerald-500/20 text-emerald-400 font-bold" : "text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/10"
               }`}
             >
@@ -1316,7 +1561,7 @@ hover:border-cyan-500/30 hover:shadow-[0_0_22px_rgba(34,211,238,0.10)]">
             <button
               type="button"
               onClick={() => setFeedbackFilter("POSITIVE")}
-              className={`px-2.5 py-1 rounded transition-all cursor-pointer ${
+              className={`shrink-0 whitespace-nowrappx-2.5 py-1 rounded transition-all cursor-pointer ${
                 feedbackFilter === "POSITIVE" ? "bg-emerald-500/20 text-emerald-400 font-bold" : "text-slate-400 hover:text-slate-200"
               }`}
             >
@@ -1325,7 +1570,7 @@ hover:border-cyan-500/30 hover:shadow-[0_0_22px_rgba(34,211,238,0.10)]">
             <button
               type="button"
               onClick={() => setFeedbackFilter("NEGATIVE")}
-               className={`px-2.5 py-1 rounded transition-all cursor-pointer ${
+               className={`shrink-0 whitespace-nowrap px-2.5 py-1 rounded transition-all cursor-pointer ${
                 feedbackFilter === "NEGATIVE" ? "bg-rose-500/20 text-rose-400 font-bold" : "text-slate-400 hover:text-rose-300 hover:bg-rose-500/10"
               }`}
             >
@@ -1340,14 +1585,43 @@ transition-all duration-300
 hover:border-cyan-500/30 hover:shadow-[0_0_18px_rgba(34,211,238,0.10)]">
           
           {/* Yorum Türü Seçimi (Cüzdanlı vs Normal) */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800/60">
-            <div className="flex items-center gap-2">
+          <div
+  className="
+    flex
+    flex-col
+    sm:flex-row
+    sm:items-center
+    sm:justify-between
+
+    gap-3
+
+    pb-3
+    border-b
+    border-slate-800/60
+  "
+>
+            <div className="w-full sm:w-auto flex flex-col sm:flex-row sm:items-center gap-2">
               <span className="text-xs text-slate-400 font-mono">Post As:</span>
-              <div className="flex gap-1.5 bg-slate-950 p-1 rounded-lg border border-slate-800">
+              <div
+  className="
+    grid
+    grid-cols-2
+    gap-1.5
+
+    w-full
+    sm:w-auto
+
+    bg-slate-950
+    p-1
+    rounded-lg
+    border
+    border-slate-800
+  "
+>
                 <button
                   type="button"
                   onClick={() => setCommentType("ON_CHAIN")}
-                  className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                  className={`justify-center whitespace-nowrap flex items-center gap-1 text-xs px-2.5 py-1 rounded-md transition-all cursor-pointer ${
                     commentType === "ON_CHAIN"
                       ? "bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30"
                       : "text-slate-400 hover:text-slate-200"
@@ -1358,7 +1632,7 @@ hover:border-cyan-500/30 hover:shadow-[0_0_18px_rgba(34,211,238,0.10)]">
                 <button
                   type="button"
                   onClick={() => setCommentType("OFF_CHAIN")}
-                  className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                  className={`flex items-center justify-center whitespace-nowrap gap-1 text-xs px-2.5 py-1 rounded-md transition-all cursor-pointer ${
                     commentType === "OFF_CHAIN"
                       ? "bg-blue-500/20 text-blue-400 font-bold border border-blue-500/30"
                       : "text-slate-400 hover:text-slate-200"
@@ -1370,7 +1644,7 @@ hover:border-cyan-500/30 hover:shadow-[0_0_18px_rgba(34,211,238,0.10)]">
             </div>
 
             {/* Yıldız ve Duygu Seçimi */}
-            <div className="flex items-center gap-3">
+            <div className="w-full sm:w-auto flex items-center justify-between sm:justify-start gap-3">
               <div className="flex items-center gap-0.5">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -1475,15 +1749,42 @@ hover:-translate-y-[1px] hover:shadow-[0_0_14px_rgba(34,211,238,0.28)]`}
             filteredFeedbacks.map((fb) => (
               <div
                 key={fb.id}
-                className="group/comment p-3 bg-slate-900/50 border border-slate-800/80 rounded-xl
-flex items-start justify-between gap-4 text-xs font-mono
-transition-all duration-300 ease-out
-hover:-translate-y-[2px]
-hover:border-cyan-500/40
-hover:bg-slate-900/80
-hover:shadow-[0_0_16px_rgba(34,211,238,0.12)]"
+  className="
+  group/comment
+  relative
+
+  p-3
+  pr-20
+  sm:pr-3
+
+  bg-slate-900/50
+  border
+  border-slate-800/80
+  rounded-xl
+
+  flex
+  flex-col
+  sm:flex-row
+  sm:items-start
+  sm:justify-between
+
+  gap-3
+  sm:gap-4
+
+  text-xs
+  font-mono
+
+  transition-all
+  duration-300
+  ease-out
+
+  hover:-translate-y-[2px]
+  hover:border-cyan-500/40
+  hover:bg-slate-900/80
+  hover:shadow-[0_0_16px_rgba(34,211,238,0.12)]
+"
               >
-                <div className="space-y-1">
+                <div className="space-y-1 min-w-0 w-full">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold text-slate-200">{fb.author}</span>
                     <span className="text-[10px] text-slate-500">{fb.date}</span>
@@ -1515,7 +1816,21 @@ hover:shadow-[0_0_16px_rgba(34,211,238,0.12)]"
                   <p className="text-slate-300 font-sans leading-relaxed">{fb.comment}</p>
                 </div>
 
-                <div className="shrink-0 flex flex-col items-end gap-1">
+                <div
+  className="
+    absolute
+    top-3
+    right-3
+
+    sm:static
+    sm:shrink-0
+
+    flex
+    flex-col
+    items-end
+    gap-1
+  "
+>
                   {fb.type === "POSITIVE" ? (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-sans">
                       <ThumbsUp className="w-3 h-3" /> Positive
