@@ -2353,7 +2353,49 @@ function Header({
   overflow-y-auto
 "
       >
-        {!connected ? (
+        {activeTab === "user-guide" ? (
+          <div className="w-full min-h-[calc(100vh-6rem)]">
+            {/* BACK BUTTON */}
+            <div className="w-full max-w-4xl mx-auto mb-4">
+              <button
+                type="button"
+                onClick={() => setActiveTab("dashboard")}
+                className="
+          inline-flex
+          items-center
+          gap-2
+
+          px-3
+          py-2
+
+          rounded-lg
+
+          bg-slate-900/60
+          border
+          border-slate-800
+
+          text-[11px]
+          font-bold
+          text-slate-400
+
+          hover:text-cyan-400
+          hover:border-cyan-500/30
+          hover:bg-cyan-500/5
+
+          transition-all
+        "
+              >
+                <span className="text-sm">←</span>
+                {connected ? "BACK TO DASHBOARD" : "BACK TO WEB3 GATEWAY"}
+              </button>
+            </div>
+
+            {/* USER GUIDE */}
+            <div className="w-full max-w-4xl mx-auto animate-in fade-in zoom-in-95 duration-300">
+              <UserGuide darkMode={darkMode} />
+            </div>
+          </div>
+        ) : !connected ? (
           <div className="max-w-xl mx-auto my-auto text-center space-y-6">
             <div className="w-16 h-16 bg-cyan-500/10 text-cyan-400 rounded-2xl flex items-center justify-center mx-auto mb-2">
               <Wallet size={32} />
@@ -2370,10 +2412,41 @@ function Header({
               <button
                 onClick={() => connectWallet("Freighter")}
                 disabled={loading}
-                className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-cyan-500/20 transition-all text-center group flex flex-col items-center justify-center space-y-3"
+                className="relative p-5 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-cyan-500/40 transition-all text-center group flex flex-col items-center justify-center space-y-3"
               >
-                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center group-hover:scale-110 transition">
-                  <Wallet size={20} />
+                <div className="relative">
+                  <div className="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center group-hover:scale-110 transition">
+                    <Wallet size={20} />
+                  </div>
+
+                  <span
+                    className="
+      absolute
+      -top-1
+      -right-1
+
+      w-4
+      h-4
+
+      rounded-full
+      bg-cyan-500
+      border-2
+      border-slate-950
+
+      flex
+      items-center
+      justify-center
+
+      text-[8px]
+      text-slate-950
+      font-black
+
+      shadow-[0_0_8px_rgba(34,211,238,0.45)]
+    "
+                    title="Recommended Wallet"
+                  >
+                    ★
+                  </span>
                 </div>
                 <span className="text-sm font-bold block text-slate-200">
                   Freighter
@@ -2412,6 +2485,114 @@ function Header({
                   Web Intent API
                 </span>
               </button>
+            </div>
+
+            {/* GATEWAY QUICK LINKS */}
+            <div className="pt-1 space-y-2">
+              <p className="text-[10px] text-slate-400">
+                First time using Stellar Shield or need Testnet tools?
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+                {/* USER GUIDE */}
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("user-guide")}
+                  className="
+                  w-[180px]
+        px-4
+        py-2.5
+
+        rounded-lg
+
+        inline-flex
+        items-center
+        justify-center
+        gap-2
+
+        bg-cyan-500/5
+        border
+        border-cyan-500/20
+
+        text-[10px]
+        font-bold
+        text-cyan-400
+
+        hover:bg-cyan-500/10
+        hover:border-cyan-500/40
+        hover:shadow-[0_0_14px_rgba(34,211,238,0.10)]
+
+        transition-all
+      "
+                >
+                  <BookOpen size={14} />
+                  OPEN USER GUIDE
+                </button>
+
+                {/* STELLAR TESTNET LAB */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    window.open(
+                      "https://lab.stellar.org/account/create?$=network$id=testnet&label=Testnet&horizonUrl=https:////horizon-testnet.stellar.org&rpcUrl=https:////soroban-testnet.stellar.org&passphrase=Test%20SDF%20Network%20/;%20September%202015;;",
+                      "_blank",
+                      "noopener,noreferrer",
+                    )
+                  }
+                  className="
+                  w-[180px]
+        px-4
+        py-2.5
+
+        rounded-lg
+
+        inline-flex
+        items-center
+        justify-center
+        gap-2
+
+        bg-indigo-500/5
+        border
+        border-indigo-500/20
+
+        text-[10px]
+        font-bold
+        text-indigo-400
+
+        hover:bg-indigo-500/10
+        hover:border-indigo-500/40
+        hover:shadow-[0_0_14px_rgba(99,102,241,0.12)]
+
+        transition-all
+      "
+                >
+                  <Laptop size={14} />
+                  STELLAR TESTNET LAB ↗
+                </button>
+              </div>
+            </div>
+
+            {/* GATEWAY ACCESS NOTE */}
+            <div
+              className="
+    flex
+    items-center
+    justify-center
+    gap-2
+
+    text-[9px]
+    sm:text-[10px]
+
+    font-mono
+    text-slate-500
+  "
+            >
+              <ShieldCheck size={12} className="text-cyan-500 shrink-0" />
+
+              <span>
+                Connect a wallet to unlock Dashboard, Transfer, Security Audit
+                and Live Analytics.
+              </span>
             </div>
 
             {loading && connectedWalletType === "Freighter" && (
@@ -6945,15 +7126,6 @@ disabled:hover:border-slate-800
           </div>
         )}
       </div>
-
-      {/* USER GUIDE TAB */}
-      {activeTab === "user-guide" && (
-        <div className="w-full min-h-[calc(100vh-6rem)] flex items-center justify-center">
-          <div className="w-full max-w-4xl mx-auto animate-in fade-in zoom-in-95 duration-300">
-            <UserGuide darkMode={darkMode} />
-          </div>
-        </div>
-      )}
 
       {/* ========================================================================= */}
       {/* GLOBAL SECURITY AND APPROVAL MODAL (OUTERMOST – ACCESSIBLE FROM EVERYWHERE) */}
