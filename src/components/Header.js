@@ -565,15 +565,16 @@ function Header({
   const [transferAsset, setTransferAsset] = useState("XLM");
   // ============================================================
   // WALLET-SPECIFIC TRANSACTION HISTORY
-  // Her wallet kendi local history alanını kullanır.
+  // Each wallet uses its own local history storage.
   // ============================================================
 
   const [transactions, setTransactions] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [historyFilter, setHistoryFilter] = useState("ALL");
-
+  const [selectedHistoryTx, setSelectedHistoryTx] = useState(null);
+  const [copiedHistoryHash, setCopiedHistoryHash] = useState("");
   const [loadedHistoryKey, setLoadedHistoryKey] = useState(null);
-
+  const [historyReady, setHistoryReady] = useState(false);
   const transactionStorageKey = useMemo(() => {
     const walletAddress = String(pubKey || "").trim();
 
@@ -624,15 +625,67 @@ function Header({
     }
   }, [transactions, transactionStorageKey, loadedHistoryKey]);
 
-  const [addressBook, setAddressBook] = useState([
-    { id: 1, name: "Jüri İnceleme Cüzdanı", address: "GBJURI777...TESTNET" },
-    { id: 2, name: "Siber Güvenlik Kasası", address: "GASHIELD99...TESTNET" },
+  // ============================================================
+  // PERSISTENT ADDRESS BOOK
+  // Contacts + Trusted status survive page refresh
+  // ============================================================
+
+  const ADDRESS_BOOK_STORAGE_KEY = "stellar_shield_address_book_v1";
+
+  const defaultAddressBook = [
+    {
+      id: 1,
+      name: "Jüri İnceleme Cüzdanı",
+      address: "GBJURI777...TESTNET",
+      trusted: true,
+    },
+    {
+      id: 2,
+      name: "Siber Güvenlik Kasası",
+      address: "GASHIELD99...TESTNET",
+      trusted: true,
+    },
     {
       id: 3,
       name: "My Account 2",
       address: "GAQVXWJ6QWNVNM3OWK4MREYSK52WM76RSJQS2TKV2KUH47CCULBY4UN4",
+      trusted: false,
     },
-  ]);
+  ];
+
+  const [addressBook, setAddressBook] = useState(() => {
+    try {
+      const savedAddressBook = localStorage.getItem(ADDRESS_BOOK_STORAGE_KEY);
+
+      if (savedAddressBook) {
+        const parsedAddressBook = JSON.parse(savedAddressBook);
+
+        if (Array.isArray(parsedAddressBook)) {
+          return parsedAddressBook;
+        }
+      }
+    } catch (error) {
+      console.warn("Address Book could not be loaded:", error);
+    }
+
+    return defaultAddressBook;
+  });
+
+  const [copiedContactId, setCopiedContactId] = useState(null);
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        ADDRESS_BOOK_STORAGE_KEY,
+        JSON.stringify(addressBook),
+      );
+    } catch (error) {
+      console.warn("Address Book could not be saved:", error);
+    }
+  }, [addressBook]);
+
+  const [contactSearch, setContactSearch] = useState("");
+  const [contactFilter, setContactFilter] = useState("ALL");
+
   const [newContact, setNewContact] = useState({ name: "", address: "" });
   const [terminalMessage, setTerminalMessage] = useState(
     "Ready to broadcast transaction.",
@@ -1237,6 +1290,48 @@ function Header({
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+  const copyHistoryHash = async (hash) => {
+    if (!hash) return;
+
+    try {
+      await navigator.clipboard.writeText(hash);
+
+      setCopiedHistoryHash(hash);
+
+      setTimeout(() => {
+        setCopiedHistoryHash("");
+      }, 1800);
+    } catch (error) {
+      console.warn("Transaction hash could not be copied:", error);
+    }
+  };
+
+  const getHistoryTxType = (tx) => {
+    if (tx?.isSorobanInteraction) {
+      return "SOROBAN";
+    }
+
+    return "SENT";
+  };
+
+  const getHistorySecurityStatus = (tx) => {
+    const hash = String(tx?.hash || tx?.txHash || tx?.transactionHash || "");
+
+    const successful =
+      String(tx?.status || "").toUpperCase() === "SUCCESS" || hash.length > 20;
+
+    return successful ? "SHIELD OK" : "REVIEW";
+  };
+
+  const getHistoryTxHash = (tx) => {
+    return String(
+      tx?.hash || tx?.txHash || tx?.transactionHash || tx?.id || "",
+    );
+  };
+
+  const getHistoryDestination = (tx) => {
+    return String(tx?.to || tx?.destination || tx?.address || "Unknown");
+  };
 
   const handleAddContact = (e) => {
     e.preventDefault();
@@ -1244,9 +1339,9 @@ function Header({
     const trimmedName = newContact.name.trim();
     const trimmedAddress = newContact.address.trim();
 
-    if (trimmedAddress.length !== 56) {
+    if (!isValidContactAddress(trimmedAddress)) {
       setErrorMessage(
-        "Invalid wallet address! The address must be exactly 56 characters long.",
+        "Invalid Stellar wallet address! Checksum verification failed.",
       );
       return;
     }
@@ -1277,12 +1372,80 @@ function Header({
       id: Date.now(),
       name: trimmedName,
       address: trimmedAddress,
+      trusted: false,
     };
 
     setAddressBook([...addressBook, newEntry]);
     setNewContact({ name: "", address: "" });
     setErrorMessage("");
   };
+  const isValidContactAddress = (address) => {
+    const value = String(address || "").trim();
+
+    try {
+      return StrKey.isValidEd25519PublicKey(value);
+    } catch (error) {
+      return false;
+    }
+  };
+
+  const shortContactAddress = (address) => {
+    const value = String(address || "");
+
+    if (value.length <= 24) {
+      return value;
+    }
+
+    return `${value.slice(0, 12)}...${value.slice(-10)}`;
+  };
+
+  const handleCopyContactAddress = async (contact) => {
+    try {
+      await navigator.clipboard.writeText(contact.address);
+
+      setCopiedContactId(contact.id);
+
+      setTimeout(() => {
+        setCopiedContactId(null);
+      }, 1800);
+    } catch (error) {
+      console.warn("Contact address could not be copied:", error);
+    }
+  };
+
+  const toggleTrustedContact = (contactId) => {
+    setAddressBook((prev) =>
+      prev.map((contact) =>
+        contact.id === contactId
+          ? {
+              ...contact,
+              trusted: !contact.trusted,
+            }
+          : contact,
+      ),
+    );
+  };
+  const filteredContacts = useMemo(() => {
+    const query = contactSearch.trim().toLowerCase();
+
+    return addressBook.filter((contact) => {
+      const matchesSearch =
+        !query ||
+        String(contact.name || "")
+          .toLowerCase()
+          .includes(query) ||
+        String(contact.address || "")
+          .toLowerCase()
+          .includes(query);
+
+      const matchesFilter =
+        contactFilter === "ALL" ||
+        (contactFilter === "TRUSTED" && contact.trusted) ||
+        (contactFilter === "STANDARD" && !contact.trusted);
+
+      return matchesSearch && matchesFilter;
+    });
+  }, [addressBook, contactSearch, contactFilter]);
 
   const handleTransfer = async (e) => {
     e.preventDefault();
@@ -1534,7 +1697,94 @@ function Header({
   const isValidStellarAddress = /^G[A-Z2-7]{55}$|^C[A-Z0-9]{55}$/i.test(
     destination,
   );
+  // ============================================================
+  // TRANSFER UI ENHANCEMENTS
+  // ============================================================
 
+  const numericTransferAmount = Number(amount) || 0;
+  const numericWalletBalance = Number(balance) || 0;
+
+  const currentNetworkFee = Number(networkFeeStats?.feeXlm || 0.00001);
+
+  const hasEnoughBalance =
+    selectedAsset !== "XLM" ||
+    numericTransferAmount + currentNetworkFee <= numericWalletBalance;
+
+  const shortWalletAddress = (address) => {
+    if (!address) return "Waiting for recipient...";
+
+    if (address.length <= 20) return address;
+
+    return `${address.slice(0, 8)}...${address.slice(-8)}`;
+  };
+
+  const handlePasteDestination = async () => {
+    try {
+      const clipboardText = await navigator.clipboard.readText();
+
+      if (clipboardText) {
+        setDestination(clipboardText.trim());
+      }
+    } catch (error) {
+      console.warn("Clipboard access failed:", error);
+    }
+  };
+
+  const handleMaxAmount = () => {
+    if (selectedAsset !== "XLM") {
+      setAmount(balance || "");
+      return;
+    }
+
+    const safeMaximum = Math.max(0, numericWalletBalance - currentNetworkFee);
+
+    setAmount(safeMaximum.toFixed(7));
+  };
+
+  const transferRiskLevel = (() => {
+    if (!destination) {
+      return {
+        label: "WAITING",
+        color: "text-slate-400",
+        bg: "bg-slate-500/10",
+        border: "border-slate-500/20",
+      };
+    }
+
+    if (!isValidStellarAddress) {
+      return {
+        label: "HIGH RISK",
+        color: "text-rose-400",
+        bg: "bg-rose-500/10",
+        border: "border-rose-500/30",
+      };
+    }
+
+    if (!hasEnoughBalance) {
+      return {
+        label: "BLOCKED",
+        color: "text-rose-400",
+        bg: "bg-rose-500/10",
+        border: "border-rose-500/30",
+      };
+    }
+
+    if (numericTransferAmount >= 1000) {
+      return {
+        label: "ELEVATED",
+        color: "text-amber-400",
+        bg: "bg-amber-500/10",
+        border: "border-amber-500/30",
+      };
+    }
+
+    return {
+      label: "LOW RISK",
+      color: "text-emerald-400",
+      bg: "bg-emerald-500/10",
+      border: "border-emerald-500/30",
+    };
+  })();
   // 2. DYNAMIC TRUSTLINE
   let trustlineStatus = "PENDING (Check Address)";
   let trustlineClass = "text-amber-400 font-bold animate-pulse";
@@ -1802,12 +2052,12 @@ function Header({
   return (
     <div
       translate="no"
-      className={`notranslate min-h-screen w-full transition-colors duration-300 ${
-        darkMode ? "bg-slate-950 text-slate-100" : "bg-slate-50 text-slate-900"
-      } flex flex-col md:flex-row overflow-x-hidden md:overflow-hidden`}
+      className={`notranslate min-h-screen md:h-screen w-full transition-colors duration-300 ${
+        darkMode ? "bg-slate-950 text-slate-100" : "bg-[#eef3f8] text-slate-900"
+      } flex flex-col md:flex-row overflow-x-hidden`}
     >
       <div
-        className={`w-full md:w-72 md:min-w-72 md:shrink-0 border-b md:border-b-0 md:border-r flex flex-col justify-between p-4 md:p-6 ${darkMode ? "bg-slate-900/60 border-slate-900" : "bg-white border-slate-200"}`}
+        className={`w-full md:w-72 md:min-w-72 md:shrink-0 border-b md:border-b-0 md:border-r flex flex-col justify-between p-4 md:p-6 md:h-screen md:sticky md:top-0 overflow-y-auto ${darkMode ? "bg-slate-900/60 border-slate-900" : "bg-[#f8fafc] border-slate-200"}`}
       >
         <div className="space-y-4 md:space-y-8">
           <div className="flex items-center justify-between">
@@ -1957,7 +2207,7 @@ function Header({
       </div>
 
       {/* MAIN CONTENT */}
-      <div className="p-8 lg:p-12 min-w-0 w-full max-w-5xl mx-auto flex-1 flex flex-col justify-start overflow-y-auto">
+      <div className="p-8 lg:p-12 min-w-0 w-full max-w-5xl mx-auto flex-1 min-h-0 flex flex-col justify-start overflow-y-auto">
         {!connected ? (
           <div className="max-w-xl mx-auto my-auto text-center space-y-6">
             <div className="w-16 h-16 bg-cyan-500/10 text-cyan-400 rounded-2xl flex items-center justify-center mx-auto mb-2">
@@ -2465,14 +2715,14 @@ function Header({
             {activeTab === "transfer" && (
               <div
                 className={`relative group overflow-hidden flex flex-col p-6 md:p-8 rounded-xl
-  shadow-2xl font-sans animate-in fade-in zoom-in-95 h-full
+  shadow-2xl font-sans animate-in fade-in zoom-in-95
   transition-all duration-300 ease-out
   hover:-translate-y-1
   hover:shadow-[0_0_30px_rgba(34,211,238,0.30)]
   ${
     darkMode
       ? "bg-[#090d16] border border-emerald-900/30 hover:border-cyan-400/80 text-slate-300"
-      : "bg-black border border-emerald-100 hover:border-cyan-400/80 text-slate-700"
+      : "bg-[#f8fafc] border border-slate-200 hover:border-cyan-400/70 text-slate-700 shadow-[0_15px_40px_rgba(15,23,42,0.08)]"
   }`}
               >
                 <div
@@ -2524,7 +2774,11 @@ function Header({
                         );
                       }
                     }}
-                    className="md:col-span-2 space-y-5"
+                    className={`md:col-span-2 space-y-5 rounded-xl transition-all ${
+                      darkMode
+                        ? "bg-transparent"
+                        : "bg-[#07101d] border border-slate-800/80 p-5 shadow-lg"
+                    }`}
                   >
                     {/* ASSET SELECTOR AND AMOUNT GRID */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -2602,19 +2856,72 @@ function Header({
                       </div>
 
                       <div>
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
-                          Amount
-                        </label>
-                        <input
-                          type="number"
-                          step="any"
-                          placeholder="0.00"
-                          value={amount}
-                          onChange={(e) =>
-                            setAmount && setAmount(e.target.value)
-                          }
-                          className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-xs font-mono focus:outline-none focus:border-cyan-500 text-slate-200"
-                        />
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                            Amount
+                          </label>
+
+                          <span className="text-[9px] font-mono text-slate-500">
+                            Balance:{" "}
+                            <span className="text-cyan-400 font-bold">
+                              {Number(balance || 0).toFixed(4)} XLM
+                            </span>
+                          </span>
+                        </div>
+
+                        <div className="relative">
+                          <input
+                            type="number"
+                            min="0"
+                            step="any"
+                            placeholder="0.00"
+                            value={amount}
+                            onChange={(e) => {
+                              if (setAmount) {
+                                setAmount(e.target.value);
+                              }
+                            }}
+                            className={`w-full bg-slate-950 border rounded-xl pl-4 pr-20 py-3.5 text-xs font-mono focus:outline-none transition-all text-slate-200 ${
+                              !hasEnoughBalance && numericTransferAmount > 0
+                                ? "border-rose-500/70 focus:border-rose-400"
+                                : "border-slate-800 focus:border-cyan-500"
+                            }`}
+                          />
+
+                          <button
+                            type="button"
+                            onClick={handleMaxAmount}
+                            className="
+        absolute
+        right-2
+        top-1/2
+        -translate-y-1/2
+        px-3
+        py-1.5
+        rounded-lg
+        text-[9px]
+        font-black
+        tracking-wider
+        text-cyan-400
+        bg-cyan-500/10
+        border
+        border-cyan-500/20
+        hover:bg-cyan-500
+        hover:text-slate-950
+        hover:border-cyan-400
+        transition-all
+      "
+                          >
+                            MAX
+                          </button>
+                        </div>
+
+                        {!hasEnoughBalance && numericTransferAmount > 0 && (
+                          <div className="mt-1.5 flex items-center gap-1.5 text-[9px] font-mono text-rose-400">
+                            <span>⚠</span>
+                            Insufficient XLM balance including network fee.
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -2633,15 +2940,69 @@ function Header({
                           <BookUser size={12} /> Select from Contacts
                         </div>
                       </div>
-                      <input
-                        type="text"
-                        placeholder="G..."
-                        value={destination}
-                        onChange={(e) =>
-                          setDestination && setDestination(e.target.value)
-                        }
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-xs font-mono focus:outline-none focus:border-cyan-500 text-slate-200"
-                      />
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="G..."
+                          value={destination}
+                          onChange={(e) => {
+                            if (setDestination) {
+                              setDestination(e.target.value.trim());
+                            }
+                          }}
+                          className={`w-full bg-slate-950 border rounded-xl pl-4 pr-20 py-3.5 text-xs font-mono focus:outline-none transition-all text-slate-200 ${
+                            destination && !isValidStellarAddress
+                              ? "border-rose-500/60 focus:border-rose-400"
+                              : destination && isValidStellarAddress
+                                ? "border-emerald-500/40 focus:border-emerald-400"
+                                : "border-slate-800 focus:border-cyan-500"
+                          }`}
+                        />
+
+                        <button
+                          type="button"
+                          onClick={handlePasteDestination}
+                          className="
+      absolute
+      right-2
+      top-1/2
+      -translate-y-1/2
+      px-2.5
+      py-1.5
+      rounded-lg
+      text-[9px]
+      font-bold
+      text-cyan-400
+      bg-cyan-500/10
+      border
+      border-cyan-500/20
+      hover:bg-cyan-500/20
+      hover:border-cyan-400/50
+      transition-all
+    "
+                        >
+                          PASTE
+                        </button>
+                      </div>
+
+                      {destination && (
+                        <div className="mt-2 flex items-center justify-between text-[9px] font-mono">
+                          <span className="text-slate-500">
+                            {shortWalletAddress(destination)}
+                          </span>
+
+                          {isValidStellarAddress ? (
+                            <span className="text-emerald-400 font-bold flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                              VALID ADDRESS
+                            </span>
+                          ) : (
+                            <span className="text-rose-400 font-bold">
+                              INVALID ADDRESS
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* QUICK CONTACTS ACCORDION PANEL */}
@@ -2708,9 +3069,32 @@ function Header({
                     {/* TRANSFER SUBMIT BUTTON */}
                     <button
                       type="submit"
-                      className="w-full py-3.5 rounded-xl bg-cyan-500 text-slate-950 font-black text-xs tracking-wider uppercase hover:bg-cyan-400 transition shadow-lg shadow-cyan-500/10 focus:outline-none"
+                      disabled={
+                        !destination ||
+                        !amount ||
+                        !isValidStellarAddress ||
+                        !hasEnoughBalance ||
+                        numericTransferAmount <= 0
+                      }
+                      className={`w-full py-3.5 rounded-xl font-black text-xs tracking-wider uppercase transition-all focus:outline-none ${
+                        destination &&
+                        amount &&
+                        isValidStellarAddress &&
+                        hasEnoughBalance &&
+                        numericTransferAmount > 0
+                          ? "bg-cyan-500 text-slate-950 hover:bg-cyan-400 shadow-lg shadow-cyan-500/10 hover:shadow-cyan-500/20"
+                          : "bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed"
+                      }`}
                     >
-                      Sign & Send Transaction
+                      {!destination
+                        ? "ENTER RECIPIENT ADDRESS"
+                        : !isValidStellarAddress
+                          ? "INVALID RECIPIENT ADDRESS"
+                          : !amount || numericTransferAmount <= 0
+                            ? "ENTER TRANSFER AMOUNT"
+                            : !hasEnoughBalance
+                              ? "INSUFFICIENT BALANCE"
+                              : "🛡 REVIEW & SIGN TRANSACTION"}
                     </button>
                   </form>
 
@@ -2721,6 +3105,37 @@ function Header({
                         Compliance & Network Info
                       </span>
                       <div className="space-y-2 text-[11px] font-mono">
+                        {/* NETWORK */}
+                        <div className="flex justify-between border-b border-slate-950 pb-1.5 items-center">
+                          <span className="text-slate-500">Network:</span>
+
+                          <span className="text-blue-400 font-bold flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
+                            STELLAR TESTNET
+                          </span>
+                        </div>
+
+                        {/* AVAILABLE BALANCE */}
+                        <div className="flex justify-between border-b border-slate-950 pb-1.5 items-center">
+                          <span className="text-slate-500">
+                            Available Balance:
+                          </span>
+
+                          <span className="text-cyan-400 font-bold">
+                            {Number(balance || 0).toFixed(4)} XLM
+                          </span>
+                        </div>
+
+                        {/* NETWORK FEE */}
+                        <div className="flex justify-between border-b border-slate-950 pb-1.5 items-center">
+                          <span className="text-slate-500">Network Fee:</span>
+
+                          <span className="text-emerald-400 font-bold">
+                            {networkFeeStats?.loading
+                              ? "SYNC..."
+                              : `~${networkFeeStats?.feeXlm || "0.0000100"} XLM`}
+                          </span>
+                        </div>
                         {/* Memo Type Line */}
                         <div className="flex justify-between border-b border-slate-950 pb-1.5 items-center">
                           <span className="text-slate-500">Memo Type:</span>
@@ -2952,30 +3367,217 @@ function Header({
                       </div>
 
                       {/* Details */}
+                      {/* TRANSACTION SECURITY PREVIEW */}
                       <div className="space-y-3 text-sm mb-5">
-                        <div className="flex justify-between items-center bg-slate-950/40 p-2.5 rounded-lg border border-slate-900">
-                          <span className="text-slate-400">Amount:</span>
-                          <span className="font-bold text-slate-100">
-                            {amount} XLM
+                        {/* NETWORK + RISK */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-slate-950/50 p-3 rounded-xl border border-slate-900">
+                            <span className="text-[9px] uppercase tracking-wider text-slate-500 block mb-1">
+                              Network
+                            </span>
+
+                            <div className="flex items-center gap-2">
+                              <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-50"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-400"></span>
+                              </span>
+
+                              <span className="font-bold text-blue-400 text-[11px]">
+                                STELLAR TESTNET
+                              </span>
+                            </div>
+                          </div>
+
+                          <div
+                            className={`p-3 rounded-xl border ${transferRiskLevel.bg} ${transferRiskLevel.border}`}
+                          >
+                            <span className="text-[9px] uppercase tracking-wider text-slate-500 block mb-1">
+                              Risk Level
+                            </span>
+
+                            <span
+                              className={`text-[11px] font-black ${transferRiskLevel.color}`}
+                            >
+                              ● {transferRiskLevel.label}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* ASSET + AMOUNT */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-slate-950/50 p-3 rounded-xl border border-slate-900">
+                            <span className="text-[9px] uppercase tracking-wider text-slate-500 block mb-1">
+                              Asset
+                            </span>
+
+                            <span className="font-black text-cyan-400">
+                              {selectedAsset || "XLM"}
+                            </span>
+                          </div>
+
+                          <div className="bg-slate-950/50 p-3 rounded-xl border border-slate-900">
+                            <span className="text-[9px] uppercase tracking-wider text-slate-500 block mb-1">
+                              Amount
+                            </span>
+
+                            <span className="font-black text-slate-100">
+                              {amount || fundAmount || "0"}{" "}
+                              {selectedAsset || "XLM"}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* RECIPIENT */}
+                        <div className="bg-slate-950/50 p-3 rounded-xl border border-slate-900">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[9px] uppercase tracking-wider text-slate-500">
+                              Recipient
+                            </span>
+
+                            {isValidStellarAddress ? (
+                              <span className="text-[9px] font-bold text-emerald-400 flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                VERIFIED FORMAT
+                              </span>
+                            ) : (
+                              <span className="text-[9px] font-bold text-rose-400">
+                                INVALID FORMAT
+                              </span>
+                            )}
+                          </div>
+
+                          <span className="font-mono text-[10px] text-cyan-400 break-all block">
+                            {destination ||
+                              "CDQUFGNQGT3CYQYNM4DUNZRLBARAXWNGJQW466OYZOODPHLXT2Z3AXMI"}
                           </span>
                         </div>
-                        <div className="bg-slate-950/40 p-3 rounded-lg border border-slate-900">
-                          <span className="text-slate-400 block text-xs mb-1">
-                            Recipient:
-                          </span>
-                          <span className="font-mono text-[11px] text-cyan-400 break-all block">
-                            {destination}
-                          </span>
+
+                        {/* BALANCE + NETWORK FEE */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-slate-950/50 p-3 rounded-xl border border-slate-900">
+                            <span className="text-[9px] uppercase tracking-wider text-slate-500 block mb-1">
+                              Available Balance
+                            </span>
+
+                            <span
+                              className={`font-bold text-[11px] ${
+                                hasEnoughBalance
+                                  ? "text-emerald-400"
+                                  : "text-rose-400"
+                              }`}
+                            >
+                              {Number(balance || 0).toFixed(4)} XLM
+                            </span>
+                          </div>
+
+                          <div className="bg-slate-950/50 p-3 rounded-xl border border-slate-900">
+                            <span className="text-[9px] uppercase tracking-wider text-slate-500 block mb-1">
+                              Network Fee
+                            </span>
+
+                            <span className="font-bold text-[11px] text-cyan-400">
+                              {networkFeeStats?.loading
+                                ? "SYNCING..."
+                                : `~${networkFeeStats?.feeXlm || "0.0000100"} XLM`}
+                            </span>
+                          </div>
                         </div>
                       </div>
 
                       {/* Warning */}
-                      <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-900 text-xs text-slate-400 mb-5 flex gap-2">
-                        <span className="text-amber-500 shrink-0">⚠️</span>
-                        <p>
-                          This transaction cannot be undone. Network fees will
-                          be deducted from your wallet.
-                        </p>
+                      {/* STELLAR SHIELD PREFLIGHT CHECK */}
+                      <div className="p-4 bg-slate-950/70 rounded-xl border border-slate-900 mb-5">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <ShieldCheck size={15} className="text-cyan-400" />
+
+                            <span className="text-[10px] font-black text-cyan-400 tracking-wider uppercase">
+                              Stellar Shield Pre-Flight Check
+                            </span>
+                          </div>
+
+                          <span className="text-[8px] px-2 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold">
+                            ACTIVE
+                          </span>
+                        </div>
+
+                        <div className="space-y-2 font-mono text-[10px]">
+                          {/* ADDRESS */}
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-500">
+                              Address Structure
+                            </span>
+
+                            <span
+                              className={
+                                isValidStellarAddress
+                                  ? "text-emerald-400 font-bold"
+                                  : "text-rose-400 font-bold"
+                              }
+                            >
+                              {isValidStellarAddress ? "✓ PASSED" : "✕ FAILED"}
+                            </span>
+                          </div>
+
+                          {/* BALANCE */}
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-500">
+                              Balance Check
+                            </span>
+
+                            <span
+                              className={
+                                hasEnoughBalance
+                                  ? "text-emerald-400 font-bold"
+                                  : "text-rose-400 font-bold"
+                              }
+                            >
+                              {hasEnoughBalance
+                                ? "✓ SUFFICIENT"
+                                : "✕ INSUFFICIENT"}
+                            </span>
+                          </div>
+
+                          {/* SIGNING */}
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-500">
+                              Signing Provider
+                            </span>
+
+                            <span className="text-emerald-400 font-bold">
+                              ✓ FREIGHTER
+                            </span>
+                          </div>
+
+                          {/* PRIVATE KEY */}
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-500">
+                              Private Key Exposure
+                            </span>
+
+                            <span className="text-emerald-400 font-bold">
+                              ✓ NONE
+                            </span>
+                          </div>
+
+                          {/* NETWORK */}
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-500">Network</span>
+
+                            <span className="text-blue-400 font-bold">
+                              TESTNET
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="mt-3 pt-3 border-t border-slate-900 text-[9px] text-amber-400/80 flex items-start gap-2">
+                          <span>⚠</span>
+
+                          <span>
+                            Blockchain transactions are irreversible after
+                            ledger confirmation.
+                          </span>
+                        </div>
                       </div>
 
                       {/* Approval Checkbox */}
@@ -2988,9 +3590,11 @@ function Header({
                           }
                           className="mt-0.5 rounded border-slate-800 bg-slate-950 text-cyan-500 focus:ring-0 w-4 h-4 cursor-pointer"
                         />
-                        <span>
-                          I have reviewed the cyber security risk analysis of
-                          the address and confirm its validity.
+                        <span className="leading-relaxed">
+                          I reviewed the transaction details and Stellar Shield
+                          pre-flight security analysis, and I authorize this
+                          transaction to be presented to my wallet for
+                          signature.
                         </span>
                       </label>
 
@@ -3249,7 +3853,11 @@ function Header({
                               : "bg-slate-900 text-slate-600 border border-slate-800/50 cursor-not-allowed"
                           }`}
                         >
-                          Sign Transaction
+                          <div className="flex items-center justify-center gap-2">
+                            <ShieldCheck size={14} />
+
+                            <span>VERIFY & SIGN</span>
+                          </div>
                         </button>
                       </div>
                     </div>
@@ -3302,7 +3910,7 @@ function Header({
         ${
           darkMode
             ? "bg-[#090d16] border border-emerald-900/30 hover:border-cyan-400/80 text-slate-300"
-            : "bg-black border border-emerald-100 hover:border-cyan-400/80 text-slate-700"
+            : "bg-[#f8fafc] border border-slate-200 hover:border-cyan-400/70 text-slate-700 shadow-[0_15px_40px_rgba(15,23,42,0.08)]"
         }`}
                 >
                   {/* HOVER BACKGROUND */}
@@ -3475,21 +4083,23 @@ function Header({
 
                     <div className="bg-[#090d16] border border-slate-800/80 rounded-xl overflow-hidden shadow-inner w-full">
                       <div className="w-full overflow-x-auto scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
-                        <table className="w-full text-left border-collapse min-w-[768px]">
+                        <table className="w-full text-left border-collapse min-w-[950px]">
                           <thead>
                             <tr className="border-b border-slate-900 text-[10px] uppercase font-bold text-slate-400 font-mono tracking-wider bg-slate-950/80">
-                              <th className="p-4 w-[22%]">
+                              <th className="p-4 w-[20%]">
                                 Transaction ID / Hash
                               </th>
 
-                              <th className="p-4 w-[28%]">Target Address</th>
+                              <th className="p-4 w-[24%]">Target Address</th>
 
-                              <th className="p-4 w-[20%]">Amount / Asset</th>
+                              <th className="p-4 w-[16%]">Amount / Asset</th>
 
-                              <th className="p-4 w-[15%]">Time</th>
+                              <th className="p-4 w-[14%]">Type / Security</th>
 
-                              <th className="p-4 text-right w-[15%]">
-                                Network Summary
+                              <th className="p-4 w-[14%]">Time</th>
+
+                              <th className="p-4 text-right w-[12%]">
+                                Network
                               </th>
                             </tr>
                           </thead>
@@ -3498,7 +4108,7 @@ function Header({
                             {filteredTransactions.length === 0 ? (
                               <tr>
                                 <td
-                                  colSpan="5"
+                                  colSpan="6"
                                   className="p-8 text-center text-slate-400 bg-slate-950/30"
                                 >
                                   {historyFilter === "ALL"
@@ -3510,40 +4120,79 @@ function Header({
                               filteredTransactions.map((tx) => (
                                 <tr
                                   key={tx.id}
+                                  onClick={() => setSelectedHistoryTx(tx)}
                                   className="
-                        hover:bg-cyan-500/5
-                        hover:shadow-[inset_3px_0_0_rgba(34,211,238,0.75)]
-                        transition-all
-                        duration-200
-                        group
-                      "
+    hover:bg-cyan-500/5
+    hover:shadow-[inset_3px_0_0_rgba(34,211,238,0.75)]
+    transition-all
+    duration-200
+    group
+    cursor-pointer
+  "
                                 >
                                   {/* HASH */}
-                                  <td className="p-4 text-cyan-400 font-bold whitespace-nowrap">
-                                    <span
-                                      className="
-                            cursor-pointer
-                            border-b
-                            border-dashed
-                            border-cyan-400/30
-                            hover:border-cyan-400
-                            transition-colors
-                          "
-                                      onClick={() => copyToClipboard(tx.hash)}
-                                      title="Click to copy"
-                                    >
-                                      {tx.hash.slice(0, 8)}...
-                                      {tx.hash.slice(-6)}
-                                    </span>
+                                  {/* HASH */}
+                                  <td className="p-4 whitespace-nowrap">
+                                    <div className="flex items-center gap-2">
+                                      <span
+                                        className="
+        text-cyan-400
+        font-bold
+        border-b
+        border-dashed
+        border-cyan-400/30
+        group-hover:border-cyan-400
+        transition-colors
+      "
+                                      >
+                                        {getHistoryTxHash(tx).slice(0, 8)}...
+                                        {getHistoryTxHash(tx).slice(-6)}
+                                      </span>
+
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          copyHistoryHash(getHistoryTxHash(tx));
+                                        }}
+                                        title="Copy transaction hash"
+                                        className="
+        w-7 h-7
+        rounded-md
+        flex
+        items-center
+        justify-center
+        bg-slate-950
+        border
+        border-slate-800
+        text-slate-500
+        hover:text-cyan-400
+        hover:border-cyan-500/40
+        hover:bg-cyan-500/10
+        transition-all
+      "
+                                      >
+                                        {copiedHistoryHash ===
+                                        getHistoryTxHash(tx) ? (
+                                          <Check
+                                            size={13}
+                                            className="text-emerald-400"
+                                          />
+                                        ) : (
+                                          <Copy size={13} />
+                                        )}
+                                      </button>
+                                    </div>
                                   </td>
 
                                   {/* TARGET ADDRESS */}
                                   <td
                                     className="p-4 text-slate-300 whitespace-nowrap"
-                                    title={tx.to}
+                                    title={getHistoryDestination(tx)}
                                   >
-                                    {tx.to.slice(0, 12)}...
-                                    {tx.to.slice(-10)}
+                                    {getHistoryDestination(tx).length > 24
+                                      ? `${getHistoryDestination(tx).slice(0, 12)}...${getHistoryDestination(tx).slice(-10)}`
+                                      : getHistoryDestination(tx)}
                                   </td>
 
                                   {/* AMOUNT */}
@@ -3561,6 +4210,59 @@ function Header({
                                       </span>
                                     )}
                                   </td>
+                                  {/* TYPE + SECURITY */}
+                                  <td className="p-4 whitespace-nowrap">
+                                    <div className="flex flex-col items-start gap-1.5">
+                                      {getHistoryTxType(tx) === "SOROBAN" ? (
+                                        <span
+                                          className="
+          px-2
+          py-1
+          rounded-md
+          text-[9px]
+          font-black
+          tracking-wider
+          bg-violet-500/10
+          border
+          border-violet-500/30
+          text-violet-400
+        "
+                                        >
+                                          ◈ SOROBAN
+                                        </span>
+                                      ) : (
+                                        <span
+                                          className="
+          px-2
+          py-1
+          rounded-md
+          text-[9px]
+          font-black
+          tracking-wider
+          bg-cyan-500/10
+          border
+          border-cyan-500/30
+          text-cyan-400
+        "
+                                        >
+                                          ↗ SENT
+                                        </span>
+                                      )}
+
+                                      {getHistorySecurityStatus(tx) ===
+                                      "SHIELD OK" ? (
+                                        <span className="text-[8px] font-bold text-emerald-400 flex items-center gap-1">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                          SHIELD OK
+                                        </span>
+                                      ) : (
+                                        <span className="text-[8px] font-bold text-amber-400 flex items-center gap-1">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                                          REVIEW
+                                        </span>
+                                      )}
+                                    </div>
+                                  </td>
 
                                   {/* TIME */}
                                   <td className="p-4 text-slate-400 whitespace-nowrap">
@@ -3574,7 +4276,8 @@ function Header({
                                   {/* STELLAR EXPERT */}
                                   <td className="p-4 text-right whitespace-nowrap">
                                     <a
-                                      href={`https://stellar.expert/explorer/testnet/tx/${tx.hash}`}
+                                      href={`https://stellar.expert/explorer/testnet/tx/${getHistoryTxHash(tx)}`}
+                                      onClick={(e) => e.stopPropagation()}
                                       target="_blank"
                                       rel="noreferrer"
                                       className="
@@ -3613,6 +4316,300 @@ function Header({
                     </div>
                   </div>
                 </div>
+                {/* ========================================================= */}
+                {/* TRANSACTION DETAIL MODAL */}
+                {/* ========================================================= */}
+
+                {selectedHistoryTx && (
+                  <div
+                    className="
+      fixed
+      inset-0
+      z-[9999]
+      flex
+      items-center
+      justify-center
+      p-4
+      bg-slate-950/85
+      backdrop-blur-sm
+      animate-in
+      fade-in
+      duration-200
+    "
+                    onClick={() => setSelectedHistoryTx(null)}
+                  >
+                    <div
+                      className="
+        w-full
+        max-w-xl
+        rounded-2xl
+        bg-[#070d19]
+        border
+        border-cyan-500/20
+        shadow-[0_0_60px_rgba(34,211,238,0.10)]
+        overflow-hidden
+        animate-in
+        zoom-in-95
+        duration-200
+      "
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {/* MODAL HEADER */}
+                      <div className="flex items-center justify-between p-5 border-b border-slate-800">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="
+              w-10
+              h-10
+              rounded-xl
+              bg-cyan-500/10
+              border
+              border-cyan-500/20
+              flex
+              items-center
+              justify-center
+              text-cyan-400
+            "
+                          >
+                            <History size={18} />
+                          </div>
+
+                          <div>
+                            <h3 className="text-sm font-black text-slate-100 tracking-wide">
+                              Transaction Details
+                            </h3>
+
+                            <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                              Stellar Shield Ledger Inspection
+                            </p>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => setSelectedHistoryTx(null)}
+                          className="
+            px-3
+            py-1.5
+            rounded-lg
+            bg-slate-900
+            border
+            border-slate-800
+            text-slate-400
+            text-[11px]
+            font-bold
+            hover:text-white
+            hover:border-slate-600
+            transition
+          "
+                        >
+                          CLOSE
+                        </button>
+                      </div>
+
+                      {/* SECURITY SUMMARY */}
+                      <div className="grid grid-cols-2 gap-3 p-5 pb-0">
+                        <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl">
+                          <span className="text-[11px] uppercase tracking-wider text-slate-500 block mb-1.5">
+                            Operation Type
+                          </span>
+
+                          <span
+                            className={`text-[11px] font-black ${
+                              getHistoryTxType(selectedHistoryTx) === "SOROBAN"
+                                ? "text-violet-400"
+                                : "text-cyan-400"
+                            }`}
+                          >
+                            {getHistoryTxType(selectedHistoryTx)}
+                          </span>
+                        </div>
+
+                        <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl">
+                          <span className="text-[11px] uppercase tracking-wider text-slate-500 block mb-1.5">
+                            Security Status
+                          </span>
+
+                          <span
+                            className={`text-[11px] font-black ${
+                              getHistorySecurityStatus(selectedHistoryTx) ===
+                              "SHIELD OK"
+                                ? "text-emerald-400"
+                                : "text-amber-400"
+                            }`}
+                          >
+                            ● {getHistorySecurityStatus(selectedHistoryTx)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* DETAILS */}
+                      <div className="p-5 space-y-3 font-mono">
+                        {/* HASH */}
+                        <div className="p-3 bg-slate-950/70 border border-slate-800 rounded-xl">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[11px] uppercase tracking-wider text-slate-500">
+                              Transaction Hash
+                            </span>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                copyHistoryHash(
+                                  getHistoryTxHash(selectedHistoryTx),
+                                )
+                              }
+                              className="
+                flex
+                items-center
+                gap-1.5
+                text-[11px]
+                text-cyan-400
+                hover:text-cyan-300
+                transition
+              "
+                            >
+                              {copiedHistoryHash ===
+                              getHistoryTxHash(selectedHistoryTx) ? (
+                                <>
+                                  <Check size={12} />
+                                  COPIED
+                                </>
+                              ) : (
+                                <>
+                                  <Copy size={12} />
+                                  COPY
+                                </>
+                              )}
+                            </button>
+                          </div>
+
+                          <p className="text-[11px] text-cyan-400 break-all leading-relaxed">
+                            {getHistoryTxHash(selectedHistoryTx)}
+                          </p>
+                        </div>
+
+                        {/* DESTINATION */}
+                        <div className="p-3 bg-slate-950/70 border border-slate-800 rounded-xl">
+                          <span className="text-[11px] uppercase tracking-wider text-slate-500 block mb-2">
+                            Destination
+                          </span>
+
+                          <p className="text-[11px] text-slate-300 break-all">
+                            {getHistoryDestination(selectedHistoryTx)}
+                          </p>
+                        </div>
+
+                        {/* GRID */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="p-3 bg-slate-950/70 border border-slate-800 rounded-xl">
+                            <span className="text-[11px] uppercase text-slate-500 block mb-1.5">
+                              Amount
+                            </span>
+
+                            <span
+                              className={`text-xs font-black ${
+                                selectedHistoryTx?.isSorobanInteraction
+                                  ? "text-cyan-400"
+                                  : "text-rose-400"
+                              }`}
+                            >
+                              {selectedHistoryTx?.isSorobanInteraction
+                                ? ""
+                                : "- "}
+                              {selectedHistoryTx?.amount || 0}{" "}
+                              {selectedHistoryTx?.asset || "XLM"}
+                            </span>
+                          </div>
+
+                          <div className="p-3 bg-slate-950/70 border border-slate-800 rounded-xl">
+                            <span className="text-[11px] uppercase text-slate-500 block mb-1.5">
+                              Network
+                            </span>
+
+                            <span className="text-xs font-black text-blue-400">
+                              STELLAR TESTNET
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* TIME */}
+                        <div className="flex justify-between items-center p-3 bg-slate-950/70 border border-slate-800 rounded-xl">
+                          <span className="text-[11px] uppercase text-slate-500">
+                            Ledger Time
+                          </span>
+
+                          <span className="text-[11px] text-slate-300">
+                            {selectedHistoryTx?.timestamp
+                              ? new Date(
+                                  selectedHistoryTx.timestamp,
+                                ).toLocaleString("tr-TR")
+                              : selectedHistoryTx?.date || "Unknown"}
+                          </span>
+                        </div>
+
+                        {/* OPTIONAL DESCRIPTION */}
+                        {selectedHistoryTx?.description && (
+                          <div className="p-3 bg-violet-500/5 border border-violet-500/20 rounded-xl">
+                            <span className="text-[11px] uppercase text-violet-400 block mb-1.5">
+                              Soroban Operation
+                            </span>
+
+                            <p className="text-[11px] text-slate-400">
+                              {selectedHistoryTx.description}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* FOOTER */}
+                      <div className="grid grid-cols-2 gap-3 p-5 pt-0">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedHistoryTx(null)}
+                          className="
+            py-2.5
+            rounded-xl
+            bg-slate-900
+            border
+            border-slate-800
+            text-slate-400
+            text-[11px]
+            font-bold
+            hover:bg-slate-800
+            hover:text-white
+            transition
+          "
+                        >
+                          CLOSE
+                        </button>
+
+                        <a
+                          href={`https://stellar.expert/explorer/testnet/tx/${getHistoryTxHash(
+                            selectedHistoryTx,
+                          )}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="
+            py-2.5
+            rounded-xl
+            bg-cyan-500
+            text-slate-950
+            text-[11px]
+            font-black
+            text-center
+            hover:bg-cyan-400
+            transition
+            shadow-lg
+            shadow-cyan-500/10
+          "
+                        >
+                          VIEW ON STELLAR EXPERT ↗
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -3656,7 +4653,7 @@ function Header({
   ${
     darkMode
       ? "bg-[#090d16] border border-emerald-900/30 hover:border-cyan-400/80 text-slate-300"
-      : "bg-black border border-emerald-100 hover:border-cyan-400/80 text-slate-700"
+      : "bg-[#f8fafc] border border-slate-200 hover:border-cyan-400/70 text-slate-700 shadow-[0_15px_40px_rgba(15,23,42,0.08)]"
   }`}
               >
                 <div
@@ -3664,7 +4661,7 @@ function Header({
                     ${darkMode ? "bg-emerald-500/5" : "bg-emerald-500/10"}`}
                 ></div>
 
-                <div className="relative z-10 space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   {/* Header */}
                   <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 tracking-wide flex items-center gap-2">
                     <BookUser
@@ -3678,6 +4675,17 @@ function Header({
                     />
                     Address Book
                   </h3>
+
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-[9px] font-mono font-bold text-cyan-400">
+                      {addressBook.length} CONTACTS
+                    </span>
+
+                    <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-mono font-bold text-emerald-400">
+                      {addressBook.filter((contact) => contact.trusted).length}{" "}
+                      TRUSTED
+                    </span>
+                  </div>
                 </div>
 
                 {/* Form Area */}
@@ -3723,41 +4731,312 @@ function Header({
                     </div>
                   )}
                 </div>
+                {/* CONTACT SEARCH & FILTER */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                  {/* SEARCH */}
+                  <div className="relative flex-1">
+                    <Search
+                      size={14}
+                      className="
+        absolute
+        left-3
+        top-1/2
+        -translate-y-1/2
+        text-slate-500
+      "
+                    />
+
+                    <input
+                      type="text"
+                      value={contactSearch}
+                      onChange={(e) => setContactSearch(e.target.value)}
+                      placeholder="Search name or Stellar address..."
+                      className="
+        w-full
+        bg-slate-950
+        border
+        border-slate-800
+        rounded-lg
+        pl-9
+        pr-3
+        py-2.5
+        text-[11px]
+        font-mono
+        text-slate-300
+        placeholder:text-slate-600
+        focus:outline-none
+        focus:border-cyan-500
+        focus:shadow-[0_0_12px_rgba(34,211,238,0.10)]
+        transition-all
+      "
+                    />
+                  </div>
+
+                  {/* FILTERS */}
+                  <div
+                    className="
+      flex
+      items-center
+      gap-1
+      p-1
+      rounded-lg
+      bg-slate-950
+      border
+      border-slate-800
+      shrink-0
+    "
+                  >
+                    {[
+                      { id: "ALL", label: "ALL" },
+                      { id: "TRUSTED", label: "TRUSTED" },
+                      { id: "STANDARD", label: "STANDARD" },
+                    ].map((filter) => (
+                      <button
+                        key={filter.id}
+                        type="button"
+                        onClick={() => setContactFilter(filter.id)}
+                        className={`px-3 py-1.5 rounded-md text-[9px] font-black transition-all ${
+                          contactFilter === filter.id
+                            ? "bg-cyan-500 text-slate-950"
+                            : "text-slate-500 hover:text-cyan-400 hover:bg-cyan-500/10"
+                        }`}
+                      >
+                        {filter.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
                 {/* Address List Grid Structure */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {addressBook.map((contact) => (
+                  {filteredContacts.length === 0 && (
+                    <div
+                      className="
+      md:col-span-2
+      py-10
+      text-center
+      rounded-xl
+      border
+      border-dashed
+      border-slate-800
+      bg-slate-950/30
+    "
+                    >
+                      <Search
+                        size={22}
+                        className="mx-auto text-slate-600 mb-2"
+                      />
+
+                      <p className="text-xs font-bold text-slate-400">
+                        No contacts found
+                      </p>
+
+                      <p className="text-[9px] font-mono text-slate-600 mt-1">
+                        Try another name, address or filter.
+                      </p>
+                    </div>
+                  )}
+
+                  {filteredContacts.map((contact) => (
                     <div
                       key={contact.id}
-                      className="p-5 bg-slate-950 border border-slate-900 rounded-xl flex flex-col justify-between shadow-lg"
+                      className="
+    relative
+    group/contact
+    p-5
+    bg-slate-950
+    border
+    border-slate-900
+    hover:border-cyan-500/30
+    rounded-xl
+    flex
+    flex-col
+    justify-between
+    shadow-lg
+    transition-all
+    duration-300
+    hover:-translate-y-0.5
+    hover:shadow-[0_10px_30px_rgba(34,211,238,0.06)]
+  "
                     >
+                      {/* CONTACT HEADER */}
                       <div>
-                        <h4 className="font-bold text-slate-200 mb-1">
-                          {contact.name}
-                        </h4>
-                        <p className="font-mono text-[10px] text-slate-400 break-all mb-4">
-                          {contact.address}
-                        </p>
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-bold text-slate-200 truncate">
+                                {contact.name}
+                              </h4>
+
+                              {contact.trusted && (
+                                <span
+                                  className="
+                px-2
+                py-0.5
+                rounded-md
+                bg-emerald-500/10
+                border
+                border-emerald-500/20
+                text-[8px]
+                font-black
+                tracking-wider
+                text-emerald-400
+                whitespace-nowrap
+              "
+                                >
+                                  ✓ TRUSTED
+                                </span>
+                              )}
+                            </div>
+
+                            {/* ADDRESS STATUS */}
+                            {isValidContactAddress(contact.address) ? (
+                              <span className="text-[8px] text-emerald-400 font-mono flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                VALID STELLAR ADDRESS
+                              </span>
+                            ) : (
+                              <span className="text-[8px] text-amber-400 font-mono flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                                DEMO / PLACEHOLDER
+                              </span>
+                            )}
+                          </div>
+
+                          {/* TRUST BUTTON */}
+                          <button
+                            type="button"
+                            onClick={() => toggleTrustedContact(contact.id)}
+                            title={
+                              contact.trusted
+                                ? "Remove trusted status"
+                                : "Mark as trusted"
+                            }
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all shrink-0 ${
+                              contact.trusted
+                                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20"
+                                : "bg-slate-900 border-slate-800 text-slate-500 hover:text-cyan-400 hover:border-cyan-500/30"
+                            }`}
+                          >
+                            <Shield size={14} />
+                          </button>
+                        </div>
+
+                        {/* ADDRESS BOX */}
+                        <div
+                          className="
+        flex
+        items-center
+        justify-between
+        gap-3
+        p-3
+        mb-4
+        rounded-lg
+        bg-[#090d16]
+        border
+        border-slate-900
+      "
+                        >
+                          <span
+                            title={contact.address}
+                            className="font-mono text-[10px] text-slate-400 truncate"
+                          >
+                            {shortContactAddress(contact.address)}
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() => handleCopyContactAddress(contact)}
+                            title="Copy wallet address"
+                            className="
+          w-7
+          h-7
+          shrink-0
+          rounded-md
+          flex
+          items-center
+          justify-center
+          bg-slate-950
+          border
+          border-slate-800
+          text-slate-500
+          hover:text-cyan-400
+          hover:border-cyan-500/30
+          transition
+        "
+                          >
+                            {copiedContactId === contact.id ? (
+                              <Check size={13} className="text-emerald-400" />
+                            ) : (
+                              <Copy size={13} />
+                            )}
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex gap-2">
+
+                      {/* ACTIONS */}
+                      <div className="grid grid-cols-[1fr_auto] gap-2">
                         <button
                           type="button"
+                          disabled={!isValidContactAddress(contact.address)}
                           onClick={() => {
+                            if (!isValidContactAddress(contact.address)) {
+                              return;
+                            }
+
                             setDestination(contact.address);
                             setActiveTab("transfer");
                           }}
-                          className="flex-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 py-2 rounded-lg text-xs font-bold transition"
+                          className="
+        flex
+        items-center
+        justify-center
+        gap-2
+        bg-slate-900
+        hover:bg-cyan-500
+        border
+        border-slate-800
+        hover:border-cyan-400
+        text-slate-300
+        hover:text-slate-950
+        py-2.5
+        rounded-lg
+        text-xs
+        font-bold
+        transition-all
+        disabled:opacity-40
+disabled:cursor-not-allowed
+disabled:hover:bg-slate-900
+disabled:hover:text-slate-300
+disabled:hover:border-slate-800
+      "
                         >
-                          Send Money
+                          <Send size={13} />
+
+                          {isValidContactAddress(contact.address)
+                            ? "QUICK TRANSFER"
+                            : "DEMO ADDRESS"}
                         </button>
+
                         <button
                           type="button"
                           onClick={() =>
-                            setAddressBook(
-                              addressBook.filter((c) => c.id !== contact.id),
+                            setAddressBook((prev) =>
+                              prev.filter((c) => c.id !== contact.id),
                             )
                           }
-                          className="p-2 bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500 hover:text-white rounded-lg transition shrink-0"
+                          title="Delete contact"
+                          className="
+        px-3
+        bg-rose-500/10
+        text-rose-400
+        border
+        border-rose-500/20
+        hover:bg-rose-500
+        hover:text-white
+        rounded-lg
+        transition
+      "
                         >
                           <Trash2 size={14} />
                         </button>
@@ -3803,7 +5082,7 @@ function Header({
         ${
           darkMode
             ? "bg-[#090d16] border border-emerald-900/30 hover:border-cyan-400/80 text-slate-300"
-            : "bg-black border border-emerald-100 hover:border-cyan-400/80 text-slate-700"
+            : "bg-[#f8fafc] border border-slate-200 hover:border-cyan-400/70 text-slate-700 shadow-[0_15px_40px_rgba(15,23,42,0.08)]"
         }`}
                 >
                   {/* HOVER GLOW */}
@@ -3867,7 +5146,11 @@ function Header({
                       Account QR Code
                     </h3>
 
-                    <p className="text-xs text-slate-400 max-w-xs mx-auto mt-1 pb-6">
+                    <p
+                      className={`text-xs max-w-xs mx-auto mt-1 pb-6 ${
+                        darkMode ? "text-slate-400" : "text-slate-600"
+                      }`}
+                    >
                       Scan this QR code to quickly receive Stellar Testnet
                       assets.
                     </p>
@@ -4128,9 +5411,41 @@ function Header({
             )}
             {/* SECURITY AUDIT & JURY VERIFICATION MATRIX */}
             {activeTab === "security" && (
-              <div className="relative group overflow-hidden w-full max-w-5xl mx-auto space-y-6 text-slate-300 font-sans p-4 sm:p-6 pb-32 rounded-2xl bg-[#030712] border border-slate-900 shadow-2xl animate-in fade-in zoom-in-95 transition-all duration-300 ease-out hover:-translate-y-1 hover:border-cyan-400/80 hover:shadow-[0_0_30px_rgba(34,211,238,0.30)] after:content-[''] after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-0 after:h-[2px] after:bg-gradient-to-r after:from-transparent after:via-cyan-300 after:to-transparent after:shadow-[0_0_16px_rgba(34,211,238,0.9)] after:transition-all after:duration-500 after:ease-out after:pointer-events-none hover:after:w-[88%]">
+              <div
+                className={`relative group w-full max-w-5xl mx-auto space-y-6 font-sans
+  p-4 sm:p-6 pb-10 rounded-2xl shadow-2xl
+  animate-in fade-in zoom-in-95
+  transition-all duration-300 ease-out
+  hover:-translate-y-1
+  hover:border-cyan-400/80
+  hover:shadow-[0_0_30px_rgba(34,211,238,0.22)]
+  after:content-['']
+  after:absolute
+  after:bottom-0
+  after:left-1/2
+  after:-translate-x-1/2
+  after:w-0
+  after:h-[2px]
+  after:bg-gradient-to-r
+  after:from-transparent
+  after:via-cyan-300
+  after:to-transparent
+  after:transition-all
+  after:duration-500
+  after:pointer-events-none
+  hover:after:w-[88%]
+  ${
+    darkMode
+      ? "bg-[#030712] border border-slate-900 text-slate-300"
+      : "bg-[#f8fafc] border border-slate-200 text-slate-700 shadow-[0_15px_45px_rgba(15,23,42,0.08)]"
+  }`}
+              >
                 {/* Top Header and Scan Button */}
-                <div className="border-b border-slate-900 pb-4 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                <div
+                  className={`border-b pb-4 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 ${
+                    darkMode ? "border-slate-900" : "border-slate-300"
+                  }`}
+                >
                   <div className="flex items-start gap-3 w-full lg:w-auto">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -4335,12 +5650,14 @@ function Header({
                   </div>
                 )}
 
-                <hr className="border-slate-900" />
+                <hr
+                  className={darkMode ? "border-slate-900" : "border-slate-300"}
+                />
 
                 {/* Soroban Method Interface & Live Event Stream */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Left Card: Soroban Contract Method Interface */}
-                  <div className="p-5 rounded-xl bg-[#090d16] border border-slate-900 flex flex-col justify-between min-h-[260px] md:h-[250px] w-full">
+                  <div className="p-5 rounded-xl bg-[#090d16] border border-slate-900 flex flex-col justify-between min-h-[260px] w-full">
                     <div className="space-y-3">
                       <div className="flex items-center justify-between gap-2">
                         <h3 className="text-xs font-bold text-cyan-400 uppercase tracking-wider truncate">
@@ -4498,7 +5815,7 @@ function Header({
                     )}
                   </div>
                   {/* Right Card: Live Contract Event Stream */}
-                  <div className="p-5 rounded-xl bg-[#090d16] border border-slate-900 flex flex-col h-[250px]">
+                  <div className="p-5 rounded-xl bg-[#090d16] border border-slate-900 flex flex-col min-h-[260px]">
                     <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3">
                       📡 Live Ledger Contract Event Stream
                     </h3>
@@ -4559,7 +5876,17 @@ function Header({
 
             {/* FEEDBACK TAB MATRIX */}
             {activeTab === "feedback" && (
-              <div className="w-full max-w-5xl mx-auto space-y-6 text-slate-300 font-sans p-6 pb-32 rounded-2xl bg-[#030712] border border-slate-900 shadow-2xl animate-in fade-in zoom-in-95 duration-300">
+              <div
+                className={`w-full max-w-5xl mx-auto space-y-6 font-sans
+  p-6 pb-12 rounded-2xl shadow-2xl
+  animate-in fade-in zoom-in-95 duration-300
+  transition-all
+  ${
+    darkMode
+      ? "bg-[#030712] border border-slate-900 text-slate-300"
+      : "bg-[#f8fafc] border border-slate-200 text-slate-700 shadow-[0_15px_45px_rgba(15,23,42,0.08)]"
+  }`}
+              >
                 {/* Üst Başlık */}
                 <div className="border-b border-slate-900 pb-4">
                   <h2 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-400 tracking-wide">
@@ -4580,7 +5907,11 @@ function Header({
                   {/* Feedback Retrieval Component */}
                   <FetchFeedback />
                 </div>
-                <div className="w-full pt-4 border-t border-slate-900">
+                <div
+                  className={`w-full pt-4 border-t ${
+                    darkMode ? "border-slate-900" : "border-slate-300"
+                  }`}
+                >
                   <LiveAnalyticsPanel />
                 </div>
               </div>
