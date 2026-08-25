@@ -539,6 +539,7 @@ function Header({
   const [errorMessage, setErrorMessage] = useState("");
   const [qrAmount, setQrAmount] = useState("");
   const [qrMemo, setQrMemo] = useState("");
+  const [copiedPaymentUri, setCopiedPaymentUri] = useState(false);
   const [realTxHash, setRealTxHash] = useState("");
   const [sorobanError, setSorobanError] = useState("");
 
@@ -672,6 +673,7 @@ function Header({
   });
 
   const [copiedContactId, setCopiedContactId] = useState(null);
+
   useEffect(() => {
     try {
       localStorage.setItem(
@@ -697,6 +699,9 @@ function Header({
   const [sorobanContractId, setSorobanContractId] = useState(
     "CDQUFGNQGT3CYQYNM4DUNZRLBARAXWNGJQW466OYZOODPHLXT2Z3AXMI",
   );
+  // CONTRACT ID COPY STATUS
+  const [copiedContractId, setCopiedContractId] = useState(false);
+
   const [totalRaised, setTotalRaised] = useState(1240);
   const [fundAmount, setFundAmount] = useState("");
   const [liveEvents, setLiveEvents] = useState([
@@ -1290,6 +1295,23 @@ function Header({
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const handleCopyContractId = async () => {
+    if (!sorobanContractId) return;
+
+    try {
+      await navigator.clipboard.writeText(sorobanContractId);
+
+      setCopiedContractId(true);
+
+      setTimeout(() => {
+        setCopiedContractId(false);
+      }, 1800);
+    } catch (error) {
+      console.warn("Contract ID could not be copied:", error);
+    }
+  };
+
   const copyHistoryHash = async (hash) => {
     if (!hash) return;
 
@@ -1845,6 +1867,51 @@ function Header({
       setQrMemo(cleanedValue.slice(0, 28));
     }
   };
+
+  // ============================================================
+  // QR PAYMENT REQUEST UI HELPERS
+  // ============================================================
+
+  const stellarPaymentUri = useMemo(() => {
+    if (!pubKey) return "";
+
+    const params = new URLSearchParams();
+
+    params.set("destination", pubKey);
+
+    if (qrAmount && Number(qrAmount) > 0) {
+      params.set("amount", qrAmount);
+    }
+
+    if (qrMemo.trim()) {
+      params.set("memo", qrMemo.trim());
+      params.set("memo_type", "MEMO_TEXT");
+    }
+
+    return `web+stellar:pay?${params.toString()}`;
+  }, [pubKey, qrAmount, qrMemo]);
+
+  const handleCopyPaymentUri = async () => {
+    if (!stellarPaymentUri) return;
+
+    try {
+      await navigator.clipboard.writeText(stellarPaymentUri);
+
+      setCopiedPaymentUri(true);
+
+      setTimeout(() => {
+        setCopiedPaymentUri(false);
+      }, 1800);
+    } catch (error) {
+      console.warn("Payment URI could not be copied:", error);
+    }
+  };
+
+  const handleResetPaymentRequest = () => {
+    setQrAmount("");
+    setQrMemo("");
+  };
+
   // ====================================================================
   //1. REAL SOROBAN DEPOSIT BRIDGE (Opens the ‘Confirm Transaction’ menu)
   // ====================================================================
@@ -2319,10 +2386,8 @@ function Header({
           <div
             className={`space-y-6 transition-all duration-500 ${
               activeTab === "receive"
-                ? `w-fit max-w-full mx-auto p-2 rounded-2xl ${
-                    darkMode
-                      ? "bg-slate-900/40 border border-slate-800"
-                      : "bg-slate-100 border border-slate-200 shadow-[0_8px_24px_rgba(15,23,42,0.10)]"
+                ? `w-full max-w-4xl mx-auto p-2 rounded-2xl ${
+                    darkMode ? "bg-transparent" : "bg-slate-100 shadow-inner"
                   }`
                 : `w-full p-4 rounded-3xl ${
                     darkMode ? "bg-transparent" : "bg-slate-100 shadow-inner"
@@ -3107,7 +3172,7 @@ function Header({
                       <div className="space-y-2 text-[11px] font-mono">
                         {/* NETWORK */}
                         <div className="flex justify-between border-b border-slate-950 pb-1.5 items-center">
-                          <span className="text-slate-500">Network:</span>
+                          <span className="text-slate-400">Network:</span>
 
                           <span className="text-blue-400 font-bold flex items-center gap-1.5">
                             <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
@@ -5049,10 +5114,10 @@ disabled:hover:border-slate-800
 
             {/* RECEIVE */}
             {activeTab === "receive" && (
-              <div className="w-full max-w-2xl mx-auto">
+              <div className="w-full max-w-2xl mx-auto space-y-2 mt-5">
                 {/* SİYAH QR PANEL */}
                 <div
-                  className={`w-full mx-auto relative group overflow-hidden p-6 rounded-xl
+                  className={`w-full mx-auto relative group overflow-hidden p-8 rounded-2xl
         shadow-2xl font-sans
         animate-in fade-in zoom-in-95
 
@@ -5133,7 +5198,7 @@ disabled:hover:border-slate-800
 
                     <h3
                       className="
-            text-xl
+            text-2xl
             font-bold
             text-transparent
             bg-clip-text
@@ -5184,7 +5249,7 @@ disabled:hover:border-slate-800
                                 }`
                               : pubKey
                           }
-                          size={220}
+                          size={260}
                           level="H"
                           includeMargin={true}
                         />
@@ -5296,7 +5361,7 @@ disabled:hover:border-slate-800
                     className="
           text-left
           w-full
-          max-w-md
+          max-w-2xl
           mx-auto
           p-4
           rounded-xl
@@ -5406,6 +5471,180 @@ disabled:hover:border-slate-800
                       </div>
                     </div>
                   </div>
+
+                  {/* PAYMENT REQUEST PREVIEW */}
+                  <div className="w-full max-w-2xl mx-auto mt-5 space-y-4">
+                    <div className="p-4 rounded-xl bg-[#090d16] border border-slate-900">
+                      {/* HEADER */}
+                      <div className="flex items-center justify-between gap-3 mb-4">
+                        <div>
+                          <p className="text-[9px] font-black tracking-[0.16em] text-cyan-400">
+                            PAYMENT REQUEST PREVIEW
+                          </p>
+
+                          <p className="text-[10px] text-slate-500 mt-1 font-mono">
+                            Stellar Testnet Payment URI
+                          </p>
+                        </div>
+
+                        <span
+                          className="
+          px-2.5
+          py-1
+          rounded-md
+          bg-emerald-500/10
+          border
+          border-emerald-500/20
+          text-[8px]
+          font-black
+          text-emerald-400
+          whitespace-nowrap
+        "
+                        >
+                          ● TESTNET
+                        </span>
+                      </div>
+
+                      {/* AMOUNT + MEMO */}
+                      <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div className="p-3 bg-slate-950 rounded-lg border border-slate-900">
+                          <span className="text-[8px] uppercase tracking-wider text-slate-500 block mb-1">
+                            Requested Amount
+                          </span>
+
+                          <span className="text-xs font-bold text-cyan-400">
+                            {qrAmount && Number(qrAmount) > 0
+                              ? `${qrAmount} XLM`
+                              : "Any Amount"}
+                          </span>
+                        </div>
+
+                        <div className="p-3 bg-slate-950 rounded-lg border border-slate-900">
+                          <span className="text-[8px] uppercase tracking-wider text-slate-600 block mb-1">
+                            Memo
+                          </span>
+
+                          <span
+                            title={qrMemo}
+                            className="text-xs font-mono text-slate-300 block truncate"
+                          >
+                            {qrMemo || "None"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* PAYMENT URI */}
+                      <div>
+                        <span className="text-[8px] uppercase tracking-wider text-slate-600 block mb-1.5">
+                          Payment URI
+                        </span>
+
+                        <div className="flex items-center gap-2 p-2.5 bg-slate-950 border border-slate-900 rounded-lg">
+                          <span className="flex-1 min-w-0 truncate text-[9px] font-mono text-slate-500">
+                            {stellarPaymentUri || "Waiting for wallet..."}
+                          </span>
+
+                          <button
+                            type="button"
+                            disabled={!stellarPaymentUri}
+                            onClick={handleCopyPaymentUri}
+                            title="Copy payment URI"
+                            className="
+            w-8
+            h-8
+            shrink-0
+            rounded-md
+            flex
+            items-center
+            justify-center
+            bg-slate-900
+            border
+            border-slate-800
+            text-slate-500
+            hover:text-cyan-400
+            hover:border-cyan-500/30
+            disabled:opacity-40
+            disabled:cursor-not-allowed
+            transition-all
+          "
+                          >
+                            {copiedPaymentUri ? (
+                              <Check size={13} className="text-emerald-400" />
+                            ) : (
+                              <Copy size={13} />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* ACTION BUTTONS */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => pubKey && copyToClipboard(pubKey)}
+                        disabled={!pubKey}
+                        className={`
+    py-2.5
+    rounded-xl
+    flex
+    items-center
+    justify-center
+    gap-2
+    border
+    text-[10px]
+    font-bold
+    disabled:opacity-40
+    transition-all
+
+    ${
+      copied
+        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+        : "bg-slate-900 border-slate-800 text-slate-400 hover:text-cyan-400 hover:border-cyan-500/30"
+    }
+  `}
+                      >
+                        {copied ? (
+                          <>
+                            <Check size={13} />
+                            COPIED ✓
+                          </>
+                        ) : (
+                          <>
+                            <Copy size={13} />
+                            COPY ADDRESS
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleResetPaymentRequest}
+                        disabled={!qrAmount && !qrMemo}
+                        className="
+        py-2.5
+        rounded-xl
+        flex
+        items-center
+        justify-center
+        gap-2
+        bg-slate-900
+        border
+        border-slate-800
+        text-slate-400
+        text-[10px]
+        font-bold
+        hover:text-rose-400
+        hover:border-rose-500/30
+        disabled:opacity-40
+        disabled:cursor-not-allowed
+        transition-all
+      "
+                      >
+                        RESET REQUEST
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -5441,51 +5680,185 @@ disabled:hover:border-slate-800
   }`}
               >
                 {/* Top Header and Scan Button */}
+                {/* SECURITY AUDIT HEADER */}
                 <div
-                  className={`border-b pb-4 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 ${
+                  className={`pb-5 border-b ${
                     darkMode ? "border-slate-900" : "border-slate-300"
                   }`}
                 >
-                  <div className="flex items-start gap-3 w-full lg:w-auto">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="28"
-                      height="28"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="text-cyan-400 shrink-0 mt-1"
+                  {/* TOP ROW */}
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    {/* TITLE */}
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div
+                        className="
+          w-11
+          h-11
+          shrink-0
+          rounded-xl
+          bg-cyan-500/10
+          border
+          border-cyan-500/20
+          flex
+          items-center
+          justify-center
+          text-cyan-400
+          shadow-[0_0_20px_rgba(34,211,238,0.06)]
+        "
+                      >
+                        <ShieldCheck size={21} />
+                      </div>
+
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h2
+                            className="
+              text-lg
+              sm:text-xl
+              font-black
+              text-transparent
+              bg-clip-text
+              bg-gradient-to-r
+              from-cyan-400
+              to-blue-400
+              tracking-wide
+            "
+                          >
+                            Security Audit Center
+                          </h2>
+
+                          <span
+                            className="
+              px-2
+              py-1
+              rounded-md
+              bg-emerald-500/10
+              border
+              border-emerald-500/20
+              text-[8px]
+              font-black
+              text-emerald-400
+              tracking-wider
+            "
+                          >
+                            ● SHIELD ACTIVE
+                          </span>
+                        </div>
+
+                        <p className="text-[11px] text-slate-400 mt-1 max-w-2xl leading-relaxed">
+                          Inspect wallet exception handlers, Soroban activity
+                          and Stellar Shield security diagnostics.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* SCAN BUTTON */}
+                    <button
+                      type="button"
+                      onClick={runSecurityScan}
+                      disabled={isScanning}
+                      className={`
+        min-w-[210px]
+        px-5
+        py-3
+        rounded-xl
+        border
+        text-[10px]
+        font-black
+        tracking-wider
+        uppercase
+        flex
+        items-center
+        justify-center
+        gap-2
+        shrink-0
+        transition-all
+        ${
+          isScanning
+            ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/30 cursor-wait"
+            : "bg-cyan-500 text-slate-950 border-cyan-400 hover:bg-cyan-400 hover:shadow-[0_0_20px_rgba(34,211,238,0.25)]"
+        }
+      `}
                     >
-                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                    </svg>
-                    {/* Metinleri dikeyde toplamak için flex-col verdik */}
-                    <div className="flex flex-col min-w-0">
-                      <h2 className="text-lg sm:text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 tracking-wide break-words">
-                        Level 2 Security Audit & Jury Verification Matrix
-                      </h2>
-                      <p className="text-xs text-slate-400 mt-1 break-words">
-                        Mandatory Level 2 Evaluation: Trigger wallet exception
-                        handlers and run core smart contract scans.
-                      </p>
+                      {isScanning ? (
+                        <>
+                          <Activity size={14} className="animate-pulse" />
+                          SCANNING LEDGER...
+                        </>
+                      ) : (
+                        <>
+                          <ShieldCheck size={14} />
+                          RUN SECURITY SCAN
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* STATUS STRIP */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-5">
+                    <div className="px-3 py-2.5 rounded-lg bg-slate-950 border border-slate-900">
+                      <span className="text-[8px] text-slate-500 uppercase tracking-wider block">
+                        Network
+                      </span>
+
+                      <span className="text-[10px] font-bold text-blue-400 flex items-center gap-1.5 mt-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                        STELLAR TESTNET
+                      </span>
+                    </div>
+
+                    <div className="px-3 py-2.5 rounded-lg bg-slate-950 border border-slate-900">
+                      <span className="text-[8px] text-slate-500 uppercase tracking-wider block">
+                        Scanner
+                      </span>
+
+                      <span
+                        className={`text-[10px] font-bold flex items-center gap-1.5 mt-1 ${
+                          isScanning ? "text-cyan-400" : "text-emerald-400"
+                        }`}
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            isScanning
+                              ? "bg-cyan-400 animate-pulse"
+                              : "bg-emerald-400"
+                          }`}
+                        />
+
+                        {isScanning ? "SCANNING" : "READY"}
+                      </span>
+                    </div>
+
+                    <div className="px-3 py-2.5 rounded-lg bg-slate-950 border border-slate-900">
+                      <span className="text-[8px] text-slate-500 uppercase tracking-wider block">
+                        Audit Logs
+                      </span>
+
+                      <span className="text-[10px] font-bold text-cyan-400 mt-1 block">
+                        {auditLogs.length} EVENTS
+                      </span>
+                    </div>
+
+                    <div className="px-3 py-2.5 rounded-lg bg-slate-950 border border-slate-900">
+                      <span className="text-[8px] text-slate-500 uppercase tracking-wider block">
+                        Wallet
+                      </span>
+
+                      <span
+                        className={`text-[10px] font-bold flex items-center gap-1.5 mt-1 ${
+                          connected ? "text-emerald-400" : "text-rose-400"
+                        }`}
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            connected ? "bg-emerald-400" : "bg-rose-400"
+                          }`}
+                        />
+
+                        {connected ? "CONNECTED" : "DISCONNECTED"}
+                      </span>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={runSecurityScan}
-                    disabled={isScanning}
-                    className={`w-full lg:w-auto px-4 py-2.5 rounded-xl text-xs font-bold transition-all border shrink-0 ${
-                      isScanning
-                        ? "bg-cyan-950/20 text-cyan-400 border-cyan-900 animate-pulse"
-                        : "bg-blue-500 text-slate-950 hover:bg-cyan-400 shadow-lg shadow-cyan-500/10"
-                    }`}
-                  >
-                    {isScanning
-                      ? "Scanning Ledger..."
-                      : "Run Automated Vulnerability Scan"}
-                  </button>
                 </div>
 
                 {/* Automated Code and Extension Audit Trail */}
@@ -5518,127 +5891,335 @@ disabled:hover:border-slate-800
                   </div>
                 </div>
 
-                <div className="flex flex-col md:flex-row items-stretch gap-4 w-full">
-                  {/* Live Transaction Monitor */}
-                  <div className="p-4 rounded-xl bg-[#090d16] border border-slate-900 flex flex-col justify-between space-y-3 flex-1 w-full">
-                    <div className="flex items-center gap-2">
-                      <div className="relative flex h-2 w-2 shrink-0">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
+                <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.6fr] gap-4 w-full">
+                  {/* LIVE TRANSACTION MONITOR */}
+                  <div
+                    className="
+    p-4
+    rounded-xl
+    bg-[#090d16]
+    border
+    border-slate-900
+    flex
+    flex-col
+    justify-between
+    w-full
+    min-h-[190px]
+  "
+                  >
+                    {/* HEADER */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="relative flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-40" />
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+                        </span>
+
+                        <span className="text-[9px] font-black uppercase tracking-wider text-emerald-400">
+                          Live Transaction Monitor
+                        </span>
                       </div>
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.4)]">
-                        Live Transaction Monitor
+
+                      <span className="text-[8px] font-mono text-slate-500">
+                        REAL-TIME
                       </span>
                     </div>
-                    <div className="flex-1 flex items-center w-full mt-2">
-                      {juryTxStatus === "IDLE" &&
-                        !(typeof txHash !== "undefined" && txHash) &&
-                        !(typeof realTxHash !== "undefined" && realTxHash) && (
-                          <div className="px-3 py-2 w-full rounded-lg bg-slate-950 border border-slate-800/50 text-xs font-mono text-slate-400 flex items-center gap-3">
-                            <span className="w-2.5 h-2.5 rounded-full bg-slate-600"></span>
-                            <span>
-                              Status: <span className="font-bold">IDLE</span>
-                            </span>
-                          </div>
-                        )}
 
-                      {juryTxStatus === "PENDING" &&
-                        !(typeof txHash !== "undefined" && txHash) &&
-                        !(typeof realTxHash !== "undefined" && realTxHash) && (
-                          <div className="px-3 py-2 w-full rounded-lg bg-cyan-950/40 border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.2)] text-xs font-mono text-cyan-400 flex items-center gap-3">
-                            <div className="relative flex h-2.5 w-2.5">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-                              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.8)]"></span>
-                            </div>
-                            <span>
-                              Status:{" "}
-                              <span className="font-bold animate-pulse">
-                                PENDING...
-                              </span>
-                            </span>
-                          </div>
-                        )}
+                    {/* MAIN STATUS */}
+                    <div
+                      className={`
+      mt-4
+      p-3
+      rounded-xl
+      border
 
-                      {(juryTxStatus === "SUCCESS" ||
-                        (typeof txHash !== "undefined" && txHash) ||
-                        (typeof realTxHash !== "undefined" && realTxHash)) && (
-                        <div className="px-3 py-2 w-full rounded-lg bg-emerald-950/40 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.15)] text-xs font-mono text-emerald-400 flex items-center gap-3">
-                          <div className="relative flex h-2.5 w-2.5">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-40"></span>
-                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
-                          </div>
-                          <span>
-                            Status:{" "}
-                            <span className="font-bold text-emerald-400 drop-shadow-[0_0_10px_rgba(16,185,129,0.6)]">
-                              SUCCESS
-                            </span>
-                          </span>
-                        </div>
-                      )}
+      ${
+        juryTxStatus === "SUCCESS"
+          ? "bg-emerald-500/5 border-emerald-500/30"
+          : juryTxStatus === "PENDING"
+            ? "bg-cyan-500/5 border-cyan-500/30"
+            : juryTxStatus === "FAILED"
+              ? "bg-rose-500/5 border-rose-500/30"
+              : "bg-slate-950 border-slate-800"
+      }
+    `}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`
+          w-2
+          h-2
+          rounded-full
 
-                      {juryTxStatus === "FAILED" &&
-                        !(typeof txHash !== "undefined" && txHash) &&
-                        !(typeof realTxHash !== "undefined" && realTxHash) && (
-                          <div className="px-3 py-2 w-full rounded-lg bg-rose-950/40 border border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.15)] text-xs font-mono text-rose-400 flex items-center gap-3">
-                            <div className="relative flex h-2.5 w-2.5">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]"></span>
-                            </div>
-                            <span>
-                              Status: <span className="font-bold">FAILED</span>
-                            </span>
-                          </div>
-                        )}
+          ${
+            juryTxStatus === "SUCCESS"
+              ? "bg-emerald-400"
+              : juryTxStatus === "PENDING"
+                ? "bg-cyan-400 animate-pulse"
+                : juryTxStatus === "FAILED"
+                  ? "bg-rose-400"
+                  : "bg-slate-500"
+          }
+        `}
+                        />
+
+                        <span
+                          className={`
+          text-[10px]
+          font-black
+          font-mono
+
+          ${
+            juryTxStatus === "SUCCESS"
+              ? "text-emerald-400"
+              : juryTxStatus === "PENDING"
+                ? "text-cyan-400"
+                : juryTxStatus === "FAILED"
+                  ? "text-rose-400"
+                  : "text-slate-300"
+          }
+        `}
+                        >
+                          STATUS: {juryTxStatus}
+                        </span>
+                      </div>
+
+                      <p className="text-[8px] font-mono text-slate-500 mt-1.5">
+                        {juryTxStatus === "SUCCESS"
+                          ? "Ledger-confirmed activity detected."
+                          : juryTxStatus === "PENDING"
+                            ? "Transaction confirmation in progress."
+                            : juryTxStatus === "FAILED"
+                              ? "Exception handler captured the operation."
+                              : "Waiting for transaction activity."}
+                      </p>
+                    </div>
+
+                    {/* DETAILS */}
+                    <div className="grid grid-cols-2 gap-2 mt-3">
+                      {/* NETWORK */}
+                      <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-900">
+                        <span className="text-[8px] uppercase tracking-wider text-slate-500 block">
+                          Network
+                        </span>
+
+                        <span className="text-[9px] font-bold text-blue-400 mt-1 block">
+                          STELLAR TESTNET
+                        </span>
+                      </div>
+
+                      {/* WALLET */}
+                      <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-900">
+                        <span className="text-[8px] uppercase tracking-wider text-slate-500 block">
+                          Wallet
+                        </span>
+
+                        <span className="text-[9px] font-bold text-cyan-400 mt-1 block">
+                          {connectedWalletType || "UNKNOWN"}
+                        </span>
+                      </div>
+
+                      {/* LATEST EVENT */}
+                      <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-900">
+                        <span className="text-[8px] uppercase tracking-wider text-slate-500 block">
+                          Latest Event
+                        </span>
+
+                        <span className="text-[9px] font-bold text-amber-400 mt-1 block">
+                          {liveEvents?.[0]?.type || "NONE"}
+                        </span>
+                      </div>
+
+                      {/* LAST TX */}
+                      <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-900">
+                        <span className="text-[8px] uppercase tracking-wider text-slate-500 block">
+                          Last Confirmed TX
+                        </span>
+
+                        <span
+                          title={realTxHash || ""}
+                          className="text-[9px] font-mono font-bold text-emerald-400 mt-1 block truncate"
+                        >
+                          {realTxHash
+                            ? `${realTxHash.slice(0, 7)}...${realTxHash.slice(-6)}`
+                            : "NONE"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* FOOTER */}
+                    <div className="pt-3 mt-3 border-t border-slate-900 flex items-center justify-between">
+                      <span className="text-[8px] font-mono text-slate-500">
+                        SHIELD_MONITOR
+                      </span>
+
+                      <span className="text-[7px] font-mono text-emerald-500">
+                        ONLINE
+                      </span>
                     </div>
                   </div>
+                  {/* WALLET EXCEPTION TEST MATRIX */}
+                  <div className="p-4 rounded-xl bg-[#090d16] border border-slate-900 flex-1 w-full space-y-3">
+                    {/* HEADER */}
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <ShieldAlert size={14} className="text-amber-400" />
 
-                  {/* Exception Handlers Box */}
-                  <div className="p-4 rounded-xl bg-[#090d16] border border-slate-900 flex-2 w-full space-y-3">
-                    <span className="text-[10px] font-bold text-amber-500 uppercase block">
-                      ⚠️ Trigger Wallet Exception Handlers:
-                    </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <span className="text-[10px] font-black text-amber-400 uppercase tracking-wider">
+                          Wallet Exception Test Matrix
+                        </span>
+                      </div>
+
+                      <span
+                        className="
+        px-2
+        py-1
+        rounded-md
+        bg-amber-500/10
+        border
+        border-amber-500/20
+        text-[8px]
+        font-black
+        text-amber-400
+        tracking-wider
+      "
+                      >
+                        SIMULATION ONLY
+                      </span>
+                    </div>
+
+                    {/* EXCEPTION CARDS */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {/* WALLET 404 */}
                       <button
                         type="button"
                         disabled={juryTxStatus === "PENDING"}
                         onClick={() => simulateJuryErrors("WALLET_NOT_FOUND")}
-                        className="text-[10px] p-2.5 rounded-lg bg-slate-950 border border-slate-900 hover:border-rose-500/50 transition-all font-semibold text-center group w-full"
+                        className="
+        relative
+        overflow-hidden
+        group
+        p-3.5
+        rounded-xl
+        bg-slate-950
+        border
+        border-slate-800
+        hover:border-rose-500/50
+        hover:bg-rose-500/5
+        hover:shadow-[0_0_18px_rgba(244,63,94,0.10)]
+        disabled:opacity-40
+        disabled:cursor-not-allowed
+        transition-all
+        text-left
+      "
                       >
-                        <div className="text-rose-400 font-bold mb-0.5 group-hover:text-rose-300">
-                          1. Wallet 404
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-black text-rose-400">
+                            WALLET 404
+                          </span>
+
+                          <span className="w-2 h-2 rounded-full bg-rose-400/70 group-hover:bg-rose-400 group-hover:shadow-[0_0_8px_rgba(251,113,133,0.8)] transition-all" />
                         </div>
-                        <span className="text-slate-500 text-[10px] block">
+
+                        <p className="text-[10px] font-bold text-slate-300">
                           Missing Extension
-                        </span>
+                        </p>
+
+                        <p className="text-[10px] font-mono text-slate-500 mt-1">
+                          Provider unavailable
+                        </p>
                       </button>
+
+                      {/* REJECT 401 */}
                       <button
                         type="button"
                         disabled={juryTxStatus === "PENDING"}
                         onClick={() => simulateJuryErrors("USER_REJECTED")}
-                        className="text-[10px] p-2.5 rounded-lg bg-slate-950 border border-slate-900 hover:border-amber-500/50 transition-all font-semibold text-center group w-full"
+                        className="
+        relative
+        overflow-hidden
+        group
+        p-3.5
+        rounded-xl
+        bg-slate-950
+        border
+        border-slate-800
+        hover:border-amber-500/50
+        hover:bg-amber-500/5
+        hover:shadow-[0_0_18px_rgba(245,158,11,0.10)]
+        disabled:opacity-40
+        disabled:cursor-not-allowed
+        transition-all
+        text-left
+      "
                       >
-                        <div className="text-amber-400 font-bold mb-0.5 group-hover:text-amber-300">
-                          2. Reject 401
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-black text-amber-400">
+                            REJECT 401
+                          </span>
+
+                          <span className="w-2 h-2 rounded-full bg-amber-400/70 group-hover:bg-amber-400 group-hover:shadow-[0_0_8px_rgba(251,191,36,0.8)] transition-all" />
                         </div>
-                        <span className="text-slate-500 text-[10px] block">
+
+                        <p className="text-[10px] font-bold text-slate-300">
                           User Aborted
-                        </span>
+                        </p>
+
+                        <p className="text-[10px] font-mono text-slate-500 mt-1">
+                          Signature rejected
+                        </p>
                       </button>
+
+                      {/* BALANCE 402 */}
                       <button
                         type="button"
                         disabled={juryTxStatus === "PENDING"}
                         onClick={() =>
                           simulateJuryErrors("INSUFFICIENT_BALANCE")
                         }
-                        className="text-[10px] p-2.5 rounded-lg bg-slate-950 border border-slate-900 hover:border-red-500/50 transition-all font-semibold text-center group w-full"
+                        className="
+        relative
+        overflow-hidden
+        group
+        p-3.5
+        rounded-xl
+        bg-slate-950
+        border
+        border-slate-800
+        hover:border-orange-500/50
+        hover:bg-orange-500/5
+        hover:shadow-[0_0_18px_rgba(249,115,22,0.10)]
+        disabled:opacity-40
+        disabled:cursor-not-allowed
+        transition-all
+        text-left
+      "
                       >
-                        <div className="text-red-400 font-bold mb-0.5 group-hover:text-red-300">
-                          3. Balance 402
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-black text-orange-400">
+                            BALANCE 402
+                          </span>
+
+                          <span className="w-2 h-2 rounded-full bg-orange-400/70 group-hover:bg-orange-400 group-hover:shadow-[0_0_8px_rgba(251,146,60,0.8)] transition-all" />
                         </div>
-                        <span className="text-slate-500 text-[9px] block">
+
+                        <p className="text-[10px] font-bold text-slate-300">
                           Low Gas Reserve
-                        </span>
+                        </p>
+
+                        <p className="text-[10px] font-mono text-slate-500 mt-1">
+                          Insufficient balance
+                        </p>
                       </button>
+                    </div>
+
+                    {/* INFO */}
+                    <div className="pt-2 border-t border-slate-900">
+                      <p className="text-[9px] font-mono text-slate-500 leading-relaxed">
+                        These controls simulate wallet-side failure scenarios
+                        for UI and exception-handler testing. No transaction is
+                        broadcast.
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -5671,12 +6252,63 @@ disabled:hover:border-slate-800
                           Testnet Active
                         </div>
                       </div>
-                      <p className="text-[11px] text-slate-400 break-all">
-                        Contract ID:{" "}
-                        <code className="text-blue-400 font-mono text-[10px] bg-slate-950 px-1.5 py-0.5 rounded">
-                          {sorobanContractId || "CC...JURYTEST2026CROWDFUNDING"}
-                        </code>
-                      </p>
+                      {/* CONTRACT ID */}
+                      <div className="mt-2">
+                        <span className="text-[8px] uppercase tracking-wider text-slate-600 block mb-1.5">
+                          Contract ID
+                        </span>
+
+                        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-slate-950 border border-slate-900">
+                          <code
+                            title={sorobanContractId}
+                            className="
+        flex-1
+        min-w-0
+        truncate
+        text-[9px]
+        font-mono
+        text-cyan-400
+      "
+                          >
+                            {sorobanContractId || "Contract unavailable"}
+                          </code>
+
+                          <button
+                            type="button"
+                            onClick={handleCopyContractId}
+                            title="Copy contract ID"
+                            className={`
+        w-8
+        h-8
+        shrink-0
+        rounded-md
+        flex
+        items-center
+        justify-center
+        border
+        transition-all
+
+        ${
+          copiedContractId
+            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+            : "bg-slate-900 border-slate-800 text-slate-500 hover:text-cyan-400 hover:border-cyan-500/30"
+        }
+      `}
+                          >
+                            {copiedContractId ? (
+                              <Check size={13} />
+                            ) : (
+                              <Copy size={13} />
+                            )}
+                          </button>
+                        </div>
+
+                        {copiedContractId && (
+                          <p className="mt-1.5 text-[8px] font-mono text-emerald-400">
+                            ✓ CONTRACT ID COPIED
+                          </p>
+                        )}
+                      </div>
 
                       {/* Advanced Live Crowdfunding Progress Dashboard */}
                       <div className="p-3 rounded-xl bg-slate-950 border border-slate-900 space-y-2">
@@ -6054,6 +6686,8 @@ disabled:hover:border-slate-800
                       "Soroban Flow Triggered. Amount:",
                       depositAmount,
                     );
+                    setJurySorobanError("");
+                    setJuryTxStatus("PENDING");
 
                     // Realistic transaction mix simulation
                     let currentTxHash = `80128f0fff9f1e4f8941ffbd9ba24a556167ce7c5ddd92a6e040e67e024fb396`;
@@ -6069,29 +6703,35 @@ disabled:hover:border-slate-800
                           ? setSorobanError
                           : undefined,
                       );
-
-                      // If the wallet has been cancelled or the operation was unsuccessful, terminate the function here!
                       if (!result || !result.success) {
                         if (result?.pending) {
+                          setJuryTxStatus("PENDING");
+
                           console.warn(
                             "⏳ Transaction submitted, but ledger confirmation is still pending:",
                             result.hash,
                           );
                         } else if (result?.cancelled) {
+                          setJuryTxStatus("IDLE");
+
                           console.warn(
                             "🚫 Wallet signature was cancelled by the user.",
                           );
                         } else {
+                          setJuryTxStatus("FAILED");
+
                           console.error(
                             "❌ Soroban transaction failed.",
                             result?.error,
                           );
                         }
 
-                        // Başarılı ledger confirmation olmadan
-                        // balance/chart/history güncellenmez.
                         return;
                       }
+
+                      // Real ledger confirmation received
+                      setJuryTxStatus("SUCCESS");
+                      setJurySorobanError("");
 
                       // CODE THAT UPDATES THE LIVE STREAM PANEL ON THE RIGHT
                       if (typeof setLiveEvents === "function") {
@@ -6146,7 +6786,8 @@ disabled:hover:border-slate-800
                     const uniqueNextPercent =
                       window.sorobanPercent ||
                       ((1240 + depositAmount) / 1500) * 100;
-
+                    // Sync real React crowdfunding state with global Soroban amount
+                    setTotalRaised(Math.min(uniqueNextFunded, 1500));
                     // STATE TRIGGERS
                     try {
                       if (typeof setCrowdfundedAmount === "function")
@@ -6240,494 +6881,6 @@ disabled:hover:border-slate-800
 
                     if (typeof setActiveTab === "function")
                       setActiveTab("dashboard");
-
-                    // SEAMLESS SYNCHRONISATION
-                    if (
-                      typeof window !== "undefined" &&
-                      !window.sorobanGlobalWorkerActive
-                    ) {
-                      window.sorobanGlobalWorkerActive = true;
-
-                      setInterval(() => {
-                        try {
-                          const liveFunded = window.sorobanFundedAmount || 1500;
-                          const liveKalan =
-                            window.sorobanRemaining !== undefined
-                              ? window.sorobanRemaining
-                              : 0;
-                          const livePercent = window.sorobanPercent || 100;
-                          const livePercentStr = livePercent.toFixed(1);
-
-                          // AMENDMENTS TO THE HEADINGS OF THE CONTRACT
-                          document
-                            .querySelectorAll("div, span, p, h1, h2, h3, h4")
-                            .forEach((el) => {
-                              if (
-                                el.textContent &&
-                                el.textContent.includes(
-                                  "SOROBAN CONTRACT STATUS:",
-                                )
-                              ) {
-                                el.innerHTML = el.innerHTML.replace(
-                                  "SOROBAN CONTRACT STATUS:",
-                                  "BARON CONTRACT STATUS:",
-                                );
-                              }
-                              if (
-                                el.textContent &&
-                                el.textContent.includes(
-                                  "SOROBAN SÖZLEŞME DURUMU:",
-                                )
-                              ) {
-                                el.innerHTML = el.innerHTML.replace(
-                                  "SOROBAN SÖZLEŞME DURUMU:",
-                                  "BARON SÖZLEŞME DURUMU:",
-                                );
-                              }
-                            });
-
-                          // TEXT UPDATES TO ALL PAGES
-                          document
-                            .querySelectorAll(
-                              "div, span, p, h1, h2, h3, font, b",
-                            )
-                            .forEach((el) => {
-                              if (
-                                el.id?.includes("soroban-live") ||
-                                el.closest?.("#baron-dashboard-success-box") ||
-                                el.closest?.(
-                                  "#baron-soroban-menu-success-box",
-                                ) ||
-                                el.closest?.("thead") ||
-                                el.closest?.("tbody")
-                              )
-                                return;
-
-                              // PERFECT TEXT PRESERVATION: Isolate both the Turkish and English card fields
-                              let checkParent = el;
-                              let inForbiddenZone = false;
-                              while (
-                                checkParent &&
-                                checkParent !== document.body
-                              ) {
-                                const pText = checkParent.textContent || "";
-                                if (
-                                  pText.includes("ANLIK AĞ İŞLEM ÜCRETİ") ||
-                                  pText.includes("TRANSACTION FEE") ||
-                                  pText.includes("YALNIZCA TEST AĞI") ||
-                                  pText.includes("TEST NETWORK ONLY") ||
-                                  pText.includes("Hesap QR Kodu") ||
-                                  pText.includes("Account QR Code")
-                                ) {
-                                  inForbiddenZone = true;
-                                  break;
-                                }
-                                checkParent = checkParent.parentNode;
-                              }
-                              if (inForbiddenZone) return;
-
-                              if (
-                                el.querySelector("div") ||
-                                el.querySelector("section") ||
-                                el.children.length > 2
-                              )
-                                return;
-
-                              const txt = (el.textContent || "").trim();
-
-                              // CAPTURING THE VALUE FROM THE FUND
-                              const isFundedNumber = /^\d{4}(\s*XLM)?$/.test(
-                                txt.trim(),
-                              );
-
-                              if (
-                                isFundedNumber &&
-                                !txt.includes("AMAÇ") &&
-                                !txt.includes("Goal") &&
-                                !txt.includes("Kalan") &&
-                                !txt.includes("oranı")
-                              ) {
-                                el.textContent = `${Math.min(liveFunded, 1500)} XLM`;
-                              }
-
-                              // FINANCING RATIO COMPLETION CHECK
-                              if (
-                                txt.includes("Finansman oranı:") ||
-                                txt.includes("Funded:") ||
-                                txt.includes("COMPLETED")
-                              ) {
-                                if (liveFunded >= 1500) {
-                                  el.textContent =
-                                    "COMPLETED (1500 / 1.500 XLM)";
-                                  el.classList.remove(
-                                    "text-blue-400",
-                                    "text-cyan-400",
-                                    "text-slate-400",
-                                  );
-                                  el.classList.add(
-                                    "text-emerald-400",
-                                    "font-bold",
-                                  );
-                                } else {
-                                  const lbl = txt.includes("Funded:")
-                                    ? "Funded:"
-                                    : "Finansman oranı:";
-                                  el.textContent = `${lbl} % ${livePercentStr}`;
-                                }
-                              }
-
-                              // CHECKING THE REMAINING QUANTITY
-                              if (
-                                txt.includes("Kalan:") ||
-                                txt.includes("Kalan :") ||
-                                txt.includes("Remaining:")
-                              ) {
-                                const lbl = txt.includes("Remaining:")
-                                  ? "Remaining:"
-                                  : "Kalan:";
-                                el.textContent = `${lbl} ${liveKalan} XLM`;
-                              }
-                            });
-
-                          // PROGRESS BAR VISUALISATION
-                          document
-                            .querySelectorAll("div, span")
-                            .forEach((el) => {
-                              if (!el) return;
-
-                              let isBarForbidden = false;
-                              let current = el;
-                              while (current && current !== document.body) {
-                                const currentTxt = current.textContent || "";
-                                if (
-                                  currentTxt.includes(
-                                    "ANLIK AĞ İŞLEM ÜCRETİ",
-                                  ) ||
-                                  currentTxt.includes("TRANSACTION FEE") ||
-                                  currentTxt.includes("YALNIZCA TEST AĞI") ||
-                                  currentTxt.includes("TEST NETWORK ONLY") ||
-                                  currentTxt.includes("Hesap QR Kodu") ||
-                                  currentTxt.includes("Account QR Code") ||
-                                  currentTxt.includes("Soroban Auth Matrix") ||
-                                  currentTxt.includes("ENFORCED")
-                                ) {
-                                  isBarForbidden = true;
-                                  break;
-                                }
-                                current = current.parentElement;
-                              }
-                              if (isBarForbidden) return; // If it’s in these areas, don’t touch the bar – leave it alone!
-                              let isLiveBadgeComponent = false;
-                              let badgeParent = el;
-                              for (let j = 0; j < 3; j++) {
-                                if (
-                                  !badgeParent ||
-                                  badgeParent === document.body
-                                )
-                                  break;
-                                const bTxt = badgeParent.textContent || "";
-                                if (
-                                  bTxt.includes("LIVE") ||
-                                  bTxt.includes("CANLI")
-                                ) {
-                                  isLiveBadgeComponent = true;
-                                  break;
-                                }
-                                badgeParent = badgeParent.parentElement;
-                              }
-                              if (isLiveBadgeComponent) return;
-                              if (
-                                el.children.length > 0 ||
-                                (el.textContent &&
-                                  el.textContent.trim().length > 0)
-                              )
-                                return;
-
-                              const currentWidth = el.style.width || "";
-                              const isProgressBarTrack =
-                                el.className?.includes("h-1") ||
-                                el.className?.includes("h-2") ||
-                                el.className?.includes("h-3") ||
-                                el.className?.includes("rounded-full") ||
-                                currentWidth.includes("82") ||
-                                currentWidth.includes("83") ||
-                                currentWidth.includes("117");
-
-                              if (isProgressBarTrack) {
-                                el.style.width = `${Math.min(livePercent, 100).toFixed(2)}%`;
-                                if (liveFunded >= 1500) {
-                                  el.style.background =
-                                    "linear-gradient(to right, #10b981, #059669)";
-                                  el.classList.remove(
-                                    "from-blue-500",
-                                    "to-indigo-500",
-                                    "bg-blue-600",
-                                    "bg-cyan-500",
-                                  );
-                                  el.classList.add("bg-emerald-500");
-                                }
-                              }
-                            });
-
-                          // TRANSFER MOTOR INPUT CLEARANCE MECHANISM (BULLETPROOF Framework State Crusher)
-                          const allInputs = document.querySelectorAll("input");
-                          let addressField = null;
-                          let amountField = null;
-
-                          allInputs.forEach((inp) => {
-                            const ph = (inp.placeholder || "").toLowerCase();
-                            const name = (inp.name || "").toLowerCase();
-                            const id = (inp.id || "").toLowerCase();
-                            const type = (inp.type || "").toLowerCase();
-
-                            // Text map of the surrounding area of the element
-                            const parentText =
-                              inp.parentElement?.textContent || "";
-                            const grandParentText =
-                              inp.parentElement?.parentElement?.textContent ||
-                              "";
-                            const combinedText = (
-                              parentText +
-                              " " +
-                              grandParentText
-                            ).toUpperCase();
-
-                            // 1. Address Field Identification
-                            if (
-                              ph.includes("g...") ||
-                              ph.includes("address") ||
-                              ph.includes("adres") ||
-                              name.includes("address") ||
-                              id.includes("address") ||
-                              combinedText.includes("ADRES") ||
-                              combinedText.includes("ADDRESS") ||
-                              combinedText.includes("ALICI")
-                            ) {
-                              addressField = inp;
-                            }
-
-                            // 2. Quantity Determination
-                            if (
-                              type === "number" ||
-                              ph.includes("amount") ||
-                              ph.includes("miktar") ||
-                              ph.includes("tutar") ||
-                              name.includes("amount") ||
-                              id.includes("amount") ||
-                              combinedText.includes("MİKTAR") ||
-                              combinedText.includes("AMOUNT") ||
-                              combinedText.includes("TUTAR")
-                            ) {
-                              amountField = inp;
-                            }
-                          });
-
-                          // If it cannot be found in the tags, treat the other input field on the form (other than the address field) as the quantity
-                          if (!amountField && allInputs.length >= 2) {
-                            amountField =
-                              allInputs[0] === addressField
-                                ? allInputs[1]
-                                : allInputs[0];
-                          }
-
-                          // TRANSFER MOTOR: A DYNAMIC AND SAFE CLEANING MOTOR
-                          {
-                            if (window._prevLiveFunded === undefined) {
-                              window._prevLiveFunded = liveFunded;
-                            }
-
-                            const fonArtti =
-                              liveFunded > window._prevLiveFunded;
-
-                            if (fonArtti) {
-                              let executionCounter = 0;
-                              const clearInputInterval = setInterval(() => {
-                                const currentInputs =
-                                  document.querySelectorAll("input");
-
-                                currentInputs.forEach((inp) => {
-                                  if (!inp) return;
-
-                                  const ph = (
-                                    inp.placeholder || ""
-                                  ).toLowerCase();
-                                  const name = (inp.name || "").toLowerCase();
-                                  const id = (inp.id || "").toLowerCase();
-                                  const type = (inp.type || "").toLowerCase();
-
-                                  const parentText =
-                                    inp.parentElement?.textContent || "";
-                                  const grandParentText =
-                                    inp.parentElement?.parentElement
-                                      ?.textContent || "";
-                                  const combinedText = (
-                                    parentText +
-                                    " " +
-                                    grandParentText
-                                  ).toUpperCase();
-
-                                  if (
-                                    type === "number" ||
-                                    ph.includes("amount") ||
-                                    ph.includes("miktar") ||
-                                    ph.includes("tutar") ||
-                                    name.includes("amount") ||
-                                    id.includes("amount") ||
-                                    combinedText.includes("MİKTAR") ||
-                                    combinedText.includes("AMOUNT") ||
-                                    combinedText.includes("TUTAR")
-                                  ) {
-                                    inp.value = "";
-
-                                    if (inp._valueTracker)
-                                      inp._valueTracker.setValue("");
-                                    if (inp.__reactValueTracker)
-                                      inp.__reactValueTracker.setValue("");
-
-                                    const nativeSetter =
-                                      Object.getOwnPropertyDescriptor(
-                                        window.HTMLInputElement.prototype,
-                                        "value",
-                                      )?.set;
-                                    if (nativeSetter) {
-                                      nativeSetter.call(inp, "");
-                                    }
-
-                                    inp.dispatchEvent(
-                                      new Event("input", { bubbles: true }),
-                                    );
-                                    inp.dispatchEvent(
-                                      new Event("change", { bubbles: true }),
-                                    );
-                                    inp.dispatchEvent(
-                                      new Event("blur", { bubbles: true }),
-                                    );
-                                  }
-                                });
-
-                                executionCounter++;
-                                if (executionCounter > 20) {
-                                  clearInterval(clearInputInterval);
-                                }
-                              }, 100);
-                            }
-
-                            //We isolated the variable causing the error by making it completely unique
-                            let _simulasyonAdresAlani = null;
-                            document
-                              .querySelectorAll("input")
-                              .forEach((inp) => {
-                                const ph = (
-                                  inp.placeholder || ""
-                                ).toLowerCase();
-                                if (
-                                  ph.includes("g...") ||
-                                  ph.includes("address") ||
-                                  ph.includes("adres")
-                                ) {
-                                  _simulasyonAdresAlani = inp;
-                                }
-                              });
-
-                            window._prevLiveFunded = liveFunded;
-                            if (_simulasyonAdresAlani) {
-                              window._prevAddressValue =
-                                _simulasyonAdresAlani.value;
-                            }
-                          }
-                          // INJECTION OF SUCCESS BOXES
-                          if (liveFunded >= 1500) {
-                            let dbSuccessBox = document.getElementById(
-                              "baron-dashboard-success-box",
-                            );
-                            let dbTargetButton = null;
-                            document
-                              .querySelectorAll("button, div")
-                              .forEach((btn) => {
-                                const t = btn.textContent || "";
-                                if (
-                                  (t.includes("Simulate Live Gas Spend") ||
-                                    t.includes("Canlı Yakıt Tüketimi")) &&
-                                  (btn.tagName === "BUTTON" ||
-                                    btn.className.includes("cursor-pointer"))
-                                ) {
-                                  dbTargetButton = btn;
-                                }
-                              });
-                            if (
-                              dbTargetButton &&
-                              dbTargetButton.parentNode &&
-                              !dbSuccessBox
-                            ) {
-                              dbSuccessBox = document.createElement("div");
-                              dbSuccessBox.id = "baron-dashboard-success-box";
-                              dbSuccessBox.className =
-                                "my-3 p-3 rounded-xl border border-emerald-500/20 bg-emerald-950/25 text-emerald-400 flex items-start gap-2.5 w-full text-left clear-both transition-all duration-300 animate-bounce";
-                              dbSuccessBox.innerHTML = `
-                                <div class="mt-0.5 select-none text-xs">🎉</div>
-                                <div class="flex flex-col text-left">
-                                  <span class="text-[11px] font-bold tracking-wide text-emerald-400 uppercase">BARON CONTRACT STATUS:</span>
-                                  <span class="text-[11px] text-emerald-300/90 font-medium mt-0.5 leading-relaxed">Target reached! On-chain contract interaction confirmed.</span>
-                                </div>
-                              `;
-                              dbTargetButton.parentNode.insertBefore(
-                                dbSuccessBox,
-                                dbTargetButton,
-                              );
-                            }
-
-                            // 2. Location: Directly above the ‘Quantity’ field in the Soroban Contract menu
-                            let sorobanMenuSuccessBox = document.getElementById(
-                              "baron-soroban-menu-success-box",
-                            );
-                            let sorobanTargetInput = null;
-
-                            document
-                              .querySelectorAll("input")
-                              .forEach((input) => {
-                                if (
-                                  input.placeholder &&
-                                  (input.placeholder.includes("Miktar") ||
-                                    input.placeholder.includes("50") ||
-                                    input.placeholder.includes("Amount"))
-                                ) {
-                                  sorobanTargetInput =
-                                    input.closest(".flex") || input.parentNode;
-                                }
-                              });
-
-                            if (
-                              sorobanTargetInput &&
-                              sorobanTargetInput.parentNode &&
-                              !sorobanMenuSuccessBox
-                            ) {
-                              sorobanMenuSuccessBox =
-                                document.createElement("div");
-                              sorobanMenuSuccessBox.id =
-                                "baron-soroban-menu-success-box";
-                              sorobanMenuSuccessBox.className =
-                                "my-3 p-3 rounded-xl border border-emerald-500/20 bg-emerald-950/25 text-emerald-400 flex items-start gap-2.5 w-full text-left clear-both transition-all duration-300 animate-bounce";
-                              sorobanMenuSuccessBox.innerHTML = `
-                                <div class="mt-0.5 select-none text-xs">🎉</div>
-                                <div class="flex flex-col text-left">
-                                  <span class="text-[11px] font-bold tracking-wide text-emerald-400 uppercase">BARON CONTRACT STATUS:</span>
-                                  <span class="text-[11px] text-emerald-300/90 font-medium mt-0.5 leading-relaxed">Target reached! On-chain contract interaction confirmed.</span>
-                                </div>
-                              `;
-                              sorobanTargetInput.parentNode.insertBefore(
-                                sorobanMenuSuccessBox,
-                                sorobanTargetInput,
-                              );
-                            }
-                          }
-                        } catch (domErr) {
-                          console.error(
-                            "Global background engine error:",
-                            domErr,
-                          );
-                        }
-                      }, 40);
-                    }
                   } else {
                     if (typeof triggerTransferApproval === "function") {
                       triggerTransferApproval(e);
