@@ -3,6 +3,8 @@ import {
   Horizon,
   TransactionBuilder,
   Networks,
+  Asset,
+  BASE_FEE,
   Contract,
   xdr,
   Operation,
@@ -13,12 +15,7 @@ import {
 } from "@stellar/stellar-sdk";
 import { Dashboard, BookOpen, Shield, MessageSquare } from "lucide-react";
 import { signTransaction, isConnected } from "@stellar/freighter-api";
-import {
-  checkConnection,
-  retrievePublicKey,
-  getBalance,
-  sendXlmTransaction,
-} from "./Freighter";
+import { checkConnection, retrievePublicKey, getBalance } from "./Freighter";
 
 import { QRCodeSVG } from "qrcode.react";
 import {
@@ -55,6 +52,212 @@ import {
 import LiveAnalyticsPanel from "./LiveAnalyticsPanel";
 import UserGuide from "./UserGuide";
 import { ShieldCheck } from "lucide-react";
+
+const STELLAR_TESTNET_ASSETS = {
+  XLM: {
+    code: "XLM",
+    issuer: null,
+    asset: Asset.native(),
+  },
+
+  USDC: {
+    code: "USDC",
+    issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+    asset: new Asset(
+      "USDC",
+      "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+    ),
+  },
+
+  EURC: {
+    code: "EURC",
+    issuer: "GB3Q6QDZYTHWT7E5PVS3W7FUT5GVAFC5KSZFFLPU25GO7VTC3NM2ZTVO",
+    asset: new Asset(
+      "EURC",
+      "GB3Q6QDZYTHWT7E5PVS3W7FUT5GVAFC5KSZFFLPU25GO7VTC3NM2ZTVO",
+    ),
+  },
+};
+
+const sendStellarAssetTransaction = async (
+  destination,
+  amount,
+  assetCode = "XLM",
+) => {
+  try {
+    const code = String(assetCode || "XLM").toUpperCase();
+    const config = STELLAR_TESTNET_ASSETS[code];
+
+    if (!config) {
+      return {
+        success: false,
+        error: `Desteklenmeyen asset: ${code}`,
+      };
+    }
+
+    if (!StrKey.isValidEd25519PublicKey(destination)) {
+      return {
+        success: false,
+        error: "Geçersiz Stellar alıcı adresi.",
+      };
+    }
+
+    const amountText = String(amount || "").trim();
+
+    if (!/^\d+(\.\d{1,7})?$/.test(amountText) || Number(amountText) <= 0) {
+      return {
+        success: false,
+        error: "Geçerli bir transfer tutarı girin.",
+      };
+    }
+
+    const sourcePublicKey = await retrievePublicKey();
+
+    if (!sourcePublicKey) {
+      return {
+        success: false,
+        error: "Freighter cüzdanı bağlı değil.",
+      };
+    }
+
+    const server = new Horizon.Server("https://horizon-testnet.stellar.org");
+
+    const sourceAccount = await server.loadAccount(sourcePublicKey);
+    const destinationAccount = await server.loadAccount(destination);
+
+    if (code !== "XLM") {
+      const sourceTrustline = sourceAccount.balances.find(
+        (item) =>
+          item.asset_code === code && item.asset_issuer === config.issuer,
+      );
+
+      if (!sourceTrustline) {
+        return {
+          success: false,
+          error: `Cüzdanınızda ${code} trustline bulunmuyor.`,
+        };
+      }
+
+      if (Number(sourceTrustline.balance) < Number(amountText)) {
+        return {
+          success: false,
+          error: `Yetersiz ${code} bakiyesi.`,
+        };
+      }
+
+      const destinationTrustline = destinationAccount.balances.find(
+        (item) =>
+          item.asset_code === code && item.asset_issuer === config.issuer,
+      );
+
+      if (!destinationTrustline) {
+        return {
+          success: false,
+          error: `Alıcı cüzdanda ${code} trustline bulunmuyor.`,
+        };
+      }
+    }
+
+    const transaction = new TransactionBuilder(sourceAccount, {
+      fee: BASE_FEE,
+      networkPassphrase: Networks.TESTNET,
+    })
+      .addOperation(
+        Operation.payment({
+          destination,
+          asset: config.asset,
+          amount: amountText,
+        }),
+      )
+      .setTimeout(30)
+      .build();
+
+    let signResult;
+
+    try {
+      signResult = await signTransaction(transaction.toXDR(), {
+        network: "TESTNET",
+        address: sourcePublicKey,
+      });
+
+      if (signResult?.error) {
+        throw new Error(
+          signResult.error.message || "The user rejected this request.",
+        );
+      }
+    } catch (signErr) {
+      console.error(
+        "🚫Wallet signature was canceled by the user or transaction failed.",
+        signErr,
+      );
+
+      return {
+        success: false,
+        cancelled: true,
+        error: "Transaction cancelled by user.",
+      };
+    }
+
+    if (signResult?.error) {
+      throw new Error(signResult.error.message || "Freighter imzalama hatası.");
+    }
+
+    // Supports both current and legacy Freighter API return formats.
+    const signedTxXdr =
+      typeof signResult === "string" ? signResult : signResult?.signedTxXdr;
+
+    if (!signedTxXdr) {
+      return {
+        success: false,
+        error: "İşlem imzası alınamadı.",
+      };
+    }
+
+    const signedTransaction = TransactionBuilder.fromXDR(
+      signedTxXdr,
+      Networks.TESTNET,
+    );
+
+    const result = await server.submitTransaction(signedTransaction);
+
+    return {
+      success: true,
+      hash: result.hash,
+      asset: code,
+    };
+  } catch (error) {
+    console.error("Asset transfer error:", error);
+
+    const operationCode =
+      error?.response?.data?.extras?.result_codes?.operations?.[0];
+
+    if (operationCode === "op_no_trust") {
+      return {
+        success: false,
+        error: "Alıcı cüzdanda gerekli asset trustline bulunmuyor.",
+      };
+    }
+
+    if (operationCode === "op_underfunded") {
+      return {
+        success: false,
+        error: "Transfer için yeterli bakiye bulunmuyor.",
+      };
+    }
+
+    if (operationCode === "op_no_destination") {
+      return {
+        success: false,
+        error: "Alıcı Stellar hesabı bulunamadı.",
+      };
+    }
+
+    return {
+      success: false,
+      error: error?.message || "Asset transferi başarısız oldu.",
+    };
+  }
+};
 
 const securityAlerts = [
   {
@@ -187,7 +390,14 @@ export const handleTrueSorobanDeposit = async (
           address: userPublicKey,
         });
       } catch (signErr) {
-        console.warn("Freighter signature cancelled by user:", signErr);
+        console.error(
+          "Wallet signature was canceled by the user or transaction failed. The user rejected this request.",
+          signErr,
+        );
+
+        if (typeof setSorobanError === "function") {
+          setSorobanError("Transaction cancelled by user.");
+        }
 
         return {
           success: false,
@@ -510,6 +720,11 @@ function Header({
   // ---------------- STATE MANAGEMENT ----------------
   const [connectedWalletType, setConnectedWalletType] = useState("");
   const [balance, setBalance] = useState("0");
+  const [assetBalances, setAssetBalances] = useState({
+    XLM: "0",
+    USDC: "0",
+    EURC: "0",
+  });
   const [loading, setLoading] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showAddressBook, setShowAddressBook] = useState(true);
@@ -726,18 +941,70 @@ function Header({
   // REAL STELLAR BALANCE SYNC
   // Refresh the real Testnet balance after Soroban transactions.
   // ============================================================
+
+  const refreshAssetBalances = async (walletAddress = pubKey) => {
+    if (!walletAddress) return;
+
+    try {
+      const server = new Horizon.Server("https://horizon-testnet.stellar.org");
+
+      const account = await server.loadAccount(walletAddress);
+      console.table(
+        account.balances.map((item) => ({
+          type: item.asset_type,
+          code: item.asset_code || "XLM",
+          issuer: item.asset_issuer || "native",
+          balance: item.balance,
+        })),
+      );
+      const nextBalances = {
+        XLM: "0",
+        USDC: "0",
+        EURC: "0",
+      };
+
+      account.balances.forEach((item) => {
+        if (item.asset_type === "native") {
+          nextBalances.XLM = item.balance;
+          return;
+        }
+
+        if (
+          item.asset_code === "USDC" &&
+          item.asset_issuer === STELLAR_TESTNET_ASSETS.USDC.issuer
+        ) {
+          nextBalances.USDC = item.balance;
+        }
+
+        if (
+          item.asset_code === "EURC" &&
+          item.asset_issuer === STELLAR_TESTNET_ASSETS.EURC.issuer
+        ) {
+          nextBalances.EURC = item.balance;
+        }
+      });
+
+      setAssetBalances(nextBalances);
+    } catch (error) {
+      console.warn("Asset balances could not be loaded:", error);
+    }
+  };
+
   const syncRealBalanceToChart = async () => {
     try {
       const realBalance = await getBalance();
       const numericBalance = Number(realBalance);
 
       if (!Number.isFinite(numericBalance)) {
-        console.warn("Real balance could not be parsed:", realBalance);
         return;
       }
 
-      // Use the real Testnet balance.
       setBalance(realBalance);
+
+      setAssetBalances((prev) => ({
+        ...prev,
+        XLM: String(realBalance),
+      }));
 
       if (typeof setWalletAsset === "function") {
         setWalletAsset(numericBalance);
@@ -749,12 +1016,10 @@ function Header({
         second: "2-digit",
       });
 
-      // Add only network-fetched balances to the chart.
       setBalanceData((prev) => {
         const current = Array.isArray(prev) ? prev : [];
         const lastBalance = Number(current[current.length - 1]?.balance);
 
-        // Skip duplicate balance points.
         if (
           Number.isFinite(lastBalance) &&
           Math.abs(lastBalance - numericBalance) < 0.0000001
@@ -773,12 +1038,16 @@ function Header({
           },
         ];
       });
-
-      console.log("✅ Real Stellar balance synced:", numericBalance);
     } catch (error) {
-      console.error("❌ Real balance sync failed:", error);
+      console.error("Real balance sync failed:", error);
     }
   };
+
+  useEffect(() => {
+    if (!connected || !pubKey) return;
+
+    refreshAssetBalances(pubKey);
+  }, [connected, pubKey]);
 
   const handleAssetChange = (assetName) => {
     setSelectedAsset(assetName);
@@ -829,7 +1098,6 @@ function Header({
     }
     return null;
   };
-
   const triggerTransferApproval = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
 
@@ -857,67 +1125,49 @@ function Header({
       hash: "",
     });
 
-    const result = await sendXlmTransaction(destination, amount);
+    const result = await sendStellarAssetTransaction(
+      destination,
+      amount,
+      selectedAsset,
+    );
 
     if (result.success) {
       setTxStatus({
         type: "success",
         message:
-          "🎉 Transaction successfully signed and mined on Stellar Testnet!",
+          "🎉 Transaction successfully signed and confirmed on Stellar Testnet!",
         hash: result.hash,
       });
 
       const newTx = {
         id: Date.now(),
-
         timestamp: Date.now(),
         date: new Date().toLocaleString("tr-TR"),
-
         ownerWallet: pubKey || "",
         from: pubKey || "",
-
         to: destination,
-        amount: amount,
+        amount,
         asset: selectedAsset || "XLM",
         hash: result.hash,
       };
+
       setTransactions((prev) => [newTx, ...prev]);
 
-      const sentAmount = parseFloat(amount);
-      if (balance) {
-        const currentBal = parseFloat(balance) - sentAmount;
-        setBalance(currentBal.toFixed(4));
+      const newBalance = await getBalance();
 
-        if (typeof setWalletAsset === "function") {
-          setWalletAsset((prev) => prev - sentAmount);
-        }
-
-        const nowStr = new Date().toLocaleTimeString("tr-TR", {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-        });
-
-        setBalanceData((prev) => [
-          ...prev,
-          { time: nowStr, balance: currentBal },
-        ]);
-        if (typeof setChartData === "function") {
-          setChartData((prev) => [
-            ...prev,
-            { name: nowStr, balance: currentBal },
-          ]);
-        }
+      if (newBalance !== undefined && newBalance !== null) {
+        setBalance(newBalance);
       }
 
       setAmount("");
       setDestination("");
 
-      const newBalance = await getBalance();
-      if (newBalance) setBalance(newBalance);
-
       setTimeout(() => {
-        setTxStatus({ type: "", message: "", hash: "" });
+        setTxStatus({
+          type: "",
+          message: "",
+          hash: "",
+        });
       }, 30000);
     } else {
       setTxStatus({
@@ -927,7 +1177,6 @@ function Header({
       });
     }
   };
-
   useEffect(() => {
     let cancelled = false;
 
@@ -1453,124 +1702,7 @@ function Header({
   }, [addressBook, contactSearch, contactFilter]);
 
   const handleTransfer = async (e) => {
-    e.preventDefault();
-    if (!destination || !amount) {
-      setTxStatus({
-        type: "error",
-        message: "Please fill in all fields!",
-        hash: "",
-      });
-      return;
-    }
-
-    setTxStatus({
-      type: "info",
-      message: "Waiting for cryptographic signature...",
-      hash: "",
-    });
-
-    if (selectedAsset !== "XLM") {
-      setTimeout(() => {
-        setTxStatus({
-          type: "error",
-          message: `❌ Error: ${selectedAsset} is not supported on the Stellar network.`,
-          hash: "",
-        });
-      }, 1200);
-      return;
-    }
-
-    if (connectedWalletType !== "Freighter") {
-      setTimeout(() => {
-        const mockHash = Math.random().toString(16).substring(2, 18) + "ffffff";
-        setTxStatus({
-          type: "success",
-          message: `🎉 [${connectedWalletType}] The transaction was successfully processed on the network!`,
-          hash: mockHash,
-        });
-
-        const parsedBalance = parseFloat(balance);
-        if (!isNaN(parsedBalance)) {
-          const currentBal = parsedBalance - parseFloat(amount);
-          setBalance(currentBal.toFixed(4));
-          const nowStr = new Date().toLocaleTimeString("tr-TR", {
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-          });
-          setBalanceData((prev) => [
-            ...prev,
-            { time: nowStr, balance: currentBal },
-          ]);
-        }
-
-        setTransactions((prev) => [
-          {
-            id: Date.now(),
-
-            timestamp: Date.now(),
-            date: new Date().toLocaleString("tr-TR"),
-
-            ownerWallet: pubKey || "",
-            from: pubKey || "",
-
-            to: destination,
-            amount,
-            asset: selectedAsset,
-            hash: mockHash,
-          },
-          ...prev,
-        ]);
-        setDestination("");
-        setAmount("");
-      }, 1500);
-      return;
-    }
-
-    const result = await sendXlmTransaction(destination, amount);
-    if (result.success) {
-      setTxStatus({
-        type: "success",
-        message: `🎉 The transaction was successfully processed on the network!`,
-        hash: result.hash,
-      });
-      const newBalance = await getBalance();
-      setBalance(newBalance);
-      const now = new Date().toLocaleTimeString("tr-TR", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      });
-      setBalanceData((prev) => [
-        ...prev,
-        { time: now, balance: parseFloat(newBalance) },
-      ]);
-      setTransactions((prev) => [
-        {
-          id: Date.now(),
-
-          timestamp: Date.now(),
-          date: new Date().toLocaleString("tr-TR"),
-
-          ownerWallet: pubKey || "",
-          from: pubKey || "",
-
-          to: destination,
-          amount,
-          asset: selectedAsset,
-          hash: result.hash,
-        },
-        ...prev,
-      ]);
-      setDestination("");
-      setAmount("");
-    } else {
-      setTxStatus({
-        type: "error",
-        message: `❌ Error: ${result.error}`,
-        hash: "",
-      });
-    }
+    return triggerTransferApproval(e);
   };
 
   // Unnecessary filtering calculations were prevented using useMemo.
@@ -1788,13 +1920,17 @@ function Header({
   // ============================================================
 
   const numericTransferAmount = Number(amount) || 0;
-  const numericWalletBalance = Number(balance) || 0;
+  const numericXlmBalance = Number(assetBalances.XLM || balance) || 0;
+
+  const numericSelectedAssetBalance = Number(assetBalances[selectedAsset] || 0);
 
   const currentNetworkFee = Number(networkFeeStats?.feeXlm || 0.00001);
 
   const hasEnoughBalance =
-    selectedAsset !== "XLM" ||
-    numericTransferAmount + currentNetworkFee <= numericWalletBalance;
+    selectedAsset === "XLM"
+      ? numericTransferAmount + currentNetworkFee <= numericXlmBalance
+      : numericTransferAmount <= numericSelectedAssetBalance &&
+        numericXlmBalance >= currentNetworkFee;
 
   const shortWalletAddress = (address) => {
     if (!address) return "Waiting for recipient...";
@@ -1818,11 +1954,11 @@ function Header({
 
   const handleMaxAmount = () => {
     if (selectedAsset !== "XLM") {
-      setAmount(balance || "");
+      setAmount(assetBalances[selectedAsset] || "");
       return;
     }
 
-    const safeMaximum = Math.max(0, numericWalletBalance - currentNetworkFee);
+    const safeMaximum = Math.max(0, numericXlmBalance - currentNetworkFee);
 
     setAmount(safeMaximum.toFixed(7));
   };
@@ -3428,7 +3564,10 @@ function Header({
                           <span className="text-[9px] font-mono text-slate-500">
                             Balance:{" "}
                             <span className="text-cyan-400 font-bold">
-                              {Number(balance || 0).toFixed(4)} XLM
+                              {Number(
+                                assetBalances[selectedAsset] || 0,
+                              ).toFixed(4)}{" "}
+                              {selectedAsset}
                             </span>
                           </span>
                         </div>
@@ -3483,7 +3622,12 @@ function Header({
                         {!hasEnoughBalance && numericTransferAmount > 0 && (
                           <div className="mt-1.5 flex items-center gap-1.5 text-[9px] font-mono text-rose-400">
                             <span>⚠</span>
-                            Insufficient XLM balance including network fee.
+                            {selectedAsset === "XLM"
+                              ? "Insufficient XLM balance including network fee."
+                              : numericSelectedAssetBalance <
+                                  numericTransferAmount
+                                ? `Insufficient ${selectedAsset} balance.`
+                                : "Insufficient XLM balance for network fee."}
                           </div>
                         )}
                       </div>
@@ -3728,7 +3872,10 @@ function Header({
                           </span>
 
                           <span className="text-cyan-400 font-bold">
-                            {Number(balance || 0).toFixed(4)} XLM
+                            {Number(assetBalances[selectedAsset] || 0).toFixed(
+                              4,
+                            )}{" "}
+                            {selectedAsset}
                           </span>
                         </div>
 
