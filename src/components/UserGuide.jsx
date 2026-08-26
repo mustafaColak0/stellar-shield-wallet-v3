@@ -8,33 +8,32 @@ import {
 } from "lucide-react";
 
 export default function UserGuide({ darkMode }) {
-  const steps = [
-    {
-      icon: <Wallet className="w-6 h-6 text-cyan-400" />,
-      title: "1. Connect Freighter Wallet",
-      description:
-        "Ensure your Freighter wallet extension is set to 'Testnet' network, then click the Connect Wallet button at the top right.",
-    },
-    {
-      icon: <Send className="w-6 h-6 text-cyan-400" />,
-      title: "2. Interact with Smart Contract",
-      description:
-        "Go to the Dashboard or Feedback section. You can deposit a small amount of Test XLM to the crowdfunding contract or leave an On-Chain Guest Comment.",
-    },
-    {
-      icon: <CheckCircle2 className="w-6 h-6 text-cyan-400" />,
-      title: "3. Verify Live Transactions",
-      description:
-        "Watch your transaction reflect instantly on the Live Ledger Event Stream and track the RPC response latency in real-time.",
-    },
-    {
-      icon: <ShieldAlert className="w-6 h-6 text-cyan-400" />,
-      title: "4. Need Testnet XLM?",
-      description:
-        "If your wallet balance is empty, you can get free Testnet XLM using the official Stellar Laboratory Faucet.",
-    },
-  ];
-
+const steps = [
+  {
+    icon: <Wallet className="w-6 h-6 text-cyan-400" />,
+    title: "1. Connect Freighter Wallet",
+    description:
+      "Set your Freighter wallet to Stellar Testnet, then connect it securely to StellarShield.",
+  },
+  {
+    icon: <Send className="w-6 h-6 text-cyan-400" />,
+    title: "2. Transfer Assets & Interact with Soroban",
+    description:
+      "Send XLM, USDC, or EURC on Stellar Testnet and interact with the Soroban smart contract through the Dashboard and Feedback sections.",
+  },
+  {
+    icon: <CheckCircle2 className="w-6 h-6 text-cyan-400" />,
+    title: "3. Verify Live Transactions",
+    description:
+      "Track confirmed transactions, transaction hashes, live ledger events, and RPC performance in real time through StellarShield.",
+  },
+  {
+    icon: <ShieldAlert className="w-6 h-6 text-cyan-400" />,
+    title: "4. Need Testnet Assets?",
+    description:
+      "Use Stellar Lab for Testnet XLM and asset trustlines, then use the Circle Faucet to receive free Testnet USDC and EURC.",
+  },
+];
   return (
     <div
       className={`w-full min-h-[calc(100vh-6rem)] flex items-center justify-center px-4 py-8 transition-colors duration-300 ${
@@ -63,15 +62,15 @@ export default function UserGuide({ darkMode }) {
             </h1>
           </div>
 
-          <p
-            className={`max-w-2xl mx-auto text-sm md:text-base leading-relaxed transition-colors duration-300 ${
-              darkMode ? "text-slate-400" : "text-slate-600"
-            }`}
-          >
-            Welcome to StellarShield! Follow these simple steps to test our
-            Soroban smart contract interactions and explore live telemetry
-            data.
-          </p>
+       <p
+  className={`max-w-2xl mx-auto text-sm md:text-base leading-relaxed transition-colors duration-300 ${
+    darkMode ? "text-slate-400" : "text-slate-600"
+  }`}
+>
+  Welcome to StellarShield! Follow these steps to connect your wallet,
+  transfer Stellar Testnet assets, interact with Soroban smart contracts,
+  and monitor live network activity.
+</p>
         </div>
 
         {/* CARDS */}
