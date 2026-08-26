@@ -1701,6 +1701,87 @@ function Header({
       .sort((a, b) => getTransactionTimestamp(b) - getTransactionTimestamp(a));
   }, [transactions, searchQuery, historyFilter]);
 
+  // ============================================================
+  // TRANSACTION HISTORY CSV EXPORT
+  // Exports the currently visible search/filter results.
+  // ============================================================
+  const exportTransactionsToCsv = () => {
+    if (!filteredTransactions.length) {
+      return;
+    }
+
+    // Prevent commas, quotes and spreadsheet formula injection
+    // from breaking the exported CSV file.
+    const escapeCsvValue = (value) => {
+      let safeValue = String(value ?? "");
+
+      if (/^[=+\-@]/.test(safeValue)) {
+        safeValue = `'${safeValue}`;
+      }
+
+      return `"${safeValue.replace(/"/g, '""')}"`;
+    };
+
+    const headers = [
+      "Date",
+      "Type",
+      "From",
+      "Destination",
+      "Amount",
+      "Asset",
+      "Transaction Hash",
+      "Security Status",
+      "Network",
+    ];
+
+    const rows = filteredTransactions.map((tx) => {
+      const txTimestamp = getTransactionTimestamp(tx);
+
+      const transactionDate =
+        tx.date ||
+        (txTimestamp
+          ? new Date(txTimestamp).toLocaleString("tr-TR")
+          : "Unknown");
+
+      return [
+        transactionDate,
+        getHistoryTxType(tx),
+        tx.from || tx.ownerWallet || pubKey || "Unknown",
+        getHistoryDestination(tx),
+        tx.amount ?? "0",
+        tx.asset || "XLM",
+        getHistoryTxHash(tx),
+        getHistorySecurityStatus(tx),
+        "Stellar Testnet",
+      ];
+    });
+
+    const csvContent = [
+      "sep=;",
+      headers.map(escapeCsvValue).join(";"),
+      ...rows.map((row) => row.map(escapeCsvValue).join(";")),
+    ].join("\r\n");
+
+    // UTF-8 BOM keeps special characters readable in Excel.
+    const csvBlob = new Blob(["\uFEFF" + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    const downloadUrl = URL.createObjectURL(csvBlob);
+    const downloadLink = document.createElement("a");
+
+    const exportDate = new Date().toISOString().slice(0, 10);
+
+    downloadLink.href = downloadUrl;
+    downloadLink.download = `stellar-shield-transactions-${exportDate}.csv`;
+
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+
+    URL.revokeObjectURL(downloadUrl);
+  };
+
   // === STELLAR SHIELD LEVEL 2: ENHANCED DYNAMIC COMPLIANCE ENGINE ===
   const isAddressEntered = destination && destination.trim().length > 0;
 
@@ -4477,17 +4558,66 @@ md:static
                         ))}
                       </div>
 
-                      {/* TRANSACTION COUNTER */}
-                      <div className="text-[10px] font-mono text-slate-500">
-                        Showing{" "}
-                        <span className="text-cyan-400 font-bold">
-                          {filteredTransactions.length}
-                        </span>{" "}
-                        of{" "}
-                        <span className="text-slate-300 font-bold">
-                          {transactions.length}
-                        </span>{" "}
-                        transactions
+                      {/* TRANSACTION COUNTER + CSV EXPORT */}
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                        <div className="text-[10px] font-mono text-slate-500 whitespace-nowrap">
+                          Showing{" "}
+                          <span className="text-cyan-400 font-bold">
+                            {filteredTransactions.length}
+                          </span>{" "}
+                          of{" "}
+                          <span className="text-slate-300 font-bold">
+                            {transactions.length}
+                          </span>{" "}
+                          transactions
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={exportTransactionsToCsv}
+                          disabled={filteredTransactions.length === 0}
+                          title={
+                            filteredTransactions.length === 0
+                              ? "No transactions available to export"
+                              : "Export visible transactions as CSV"
+                          }
+                          className="
+      inline-flex
+      items-center
+      justify-center
+      gap-1.5
+
+      px-3
+      py-1.5
+
+      rounded-lg
+
+      border
+      border-cyan-500/20
+      bg-cyan-500/5
+
+      text-[9px]
+      font-mono
+      font-bold
+      tracking-wide
+      text-cyan-400
+
+      hover:bg-cyan-500/10
+      hover:border-cyan-500/40
+      hover:text-cyan-300
+
+      disabled:opacity-40
+      disabled:cursor-not-allowed
+      disabled:hover:bg-cyan-500/5
+      disabled:hover:border-cyan-500/20
+
+      transition-all
+      duration-200
+    "
+                        >
+                          <span className="text-xs leading-none">↓</span>
+                          EXPORT CSV
+                        </button>
                       </div>
                     </div>
 
