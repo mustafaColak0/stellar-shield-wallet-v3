@@ -1153,11 +1153,8 @@ function Header({
 
       setTransactions((prev) => [newTx, ...prev]);
 
-      const newBalance = await getBalance();
-
-      if (newBalance !== undefined && newBalance !== null) {
-        setBalance(newBalance);
-      }
+      await refreshAssetBalances(pubKey);
+      await syncRealBalanceToChart();
 
       setAmount("");
       setDestination("");
