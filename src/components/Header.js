@@ -209,13 +209,11 @@ export const handleTrueSorobanDeposit = async (
       // 8. Submit the fully signed transaction directly to the Soroban RPC
       console.log("Submitting transaction to network...");
 
-      // Convert the signed XDR returned by Freighter
-      // back into a Stellar Transaction object.
+      // Converts the signed XDR returned by Freighter back into a playable Stellar Transaction object.
+
       const finalTx = TransactionBuilder.fromXDR(signedTxXdr, Networks.TESTNET);
 
-      // Stellar Core may temporarily return TRY_AGAIN_LATER.
-      // In this situation, resend the SAME signed transaction instead of
-      // immediately creating a new sequence number.
+      // Retries the original signed transaction on temporary Stellar Core congestion (TRY_AGAIN_LATER) to preserve the original sequence number.
       let submitRetryCount = 0;
       let shouldRebuildTransaction = false;
 
@@ -230,8 +228,7 @@ export const handleTrueSorobanDeposit = async (
           break;
         }
 
-        // Another transaction from the same wallet may still be in memory.
-        // Wait and retry the SAME signed transaction.
+        // Waits and retries the existing signed transaction to handle sequence conflicts caused by pending transactions from the same wallet.
         if (submission.status === "TRY_AGAIN_LATER") {
           submitRetryCount++;
 
@@ -277,9 +274,7 @@ export const handleTrueSorobanDeposit = async (
 
               shouldRebuildTransaction = true;
 
-              // Exit the while loop.
-              // The continue below restarts the outer for loop
-              // and rpcServer.getAccount() will fetch a fresh sequence.
+              // Exits the retry loop to allow the outer loop to fetch a fresh sequence via rpcServer.getAccount().
               break;
             }
 
@@ -307,8 +302,7 @@ export const handleTrueSorobanDeposit = async (
       // WHILE LOOP FINISHED
       // ============================================================
 
-      // If the transaction must be rebuilt because of txBadSeq,
-      // return to the beginning of the outer for loop.
+      // Restarts the outer loop to rebuild the transaction with an updated sequence number upon receiving txBadSeq.
       if (shouldRebuildTransaction) {
         continue;
       }
@@ -628,13 +622,13 @@ function Header({
   const defaultAddressBook = [
     {
       id: 1,
-      name: "Jüri İnceleme Cüzdanı",
+      name: "Jury Review Wallet",
       address: "GBJURI777...TESTNET",
       trusted: true,
     },
     {
       id: 2,
-      name: "Siber Güvenlik Kasası",
+      name: "Cybersecurity Vault",
       address: "GASHIELD99...TESTNET",
       trusted: true,
     },
@@ -711,7 +705,7 @@ function Header({
       id: 1,
       type: "INFO",
       msg: "Stellar Shield Security Engine initialized v2.0.26",
-      time: "Sistem",
+      time: "System",
     },
     {
       id: 2,
@@ -1129,7 +1123,7 @@ function Header({
 
           setBalanceData([
             {
-              time: "Başlangıç",
+              time: "Start",
               balance: parseFloat(bal),
             },
             {
@@ -1617,7 +1611,7 @@ function Header({
       }
     }
 
-    // id Date.now() ise fallback
+    // Fallback to a Date.now()-based ID.
     if (typeof tx?.id === "number") {
       return tx.id;
     }
@@ -1771,7 +1765,7 @@ function Header({
   // === STELLAR SHIELD LEVEL 2: ENHANCED DYNAMIC COMPLIANCE ENGINE ===
   const isAddressEntered = destination && destination.trim().length > 0;
 
-  const isJuryCuzdan =
+  const isJuryWallet =
     isAddressEntered &&
     (destination.includes("GBJURI777") ||
       destination ===
@@ -1779,7 +1773,7 @@ function Header({
       destination === sorobanContractId);
 
   // 1. DYNAMIC MEMO: The jury wallet issues an immediate alert and makes the action mandatory, whereas it normally keeps it hidden.
-  const dynamicMemoType = isJuryCuzdan
+  const dynamicMemoType = isJuryWallet
     ? "MEMO_ID (REQUIRED ⚠️)"
     : isAddressEntered
       ? "MEMO_TEXT (Shielded 🛡️)"
@@ -2104,7 +2098,7 @@ function Header({
           type: "DEPOSIT",
           user: pubKey ? `${pubKey.slice(0, 5)}...${pubKey.slice(-4)}` : "You",
           amount: `${addedAmount} XLM`,
-          time: "Şimdi",
+          time: "Now",
         };
         if (typeof setLiveEvents === "function") {
           setLiveEvents((prev) => [newEvent, ...prev]);
@@ -2851,7 +2845,7 @@ function Header({
                       minute: "2-digit",
                     });
                     setBalanceData([
-                      { time: "Başlangıç", balance: 10000 },
+                      { time: "Start", balance: 10000 },
                       { time: now, balance: 10000 },
                     ]);
                     setLoading(false);
@@ -3752,7 +3746,7 @@ function Header({
                         <div className="flex justify-between border-b border-slate-950 pb-1.5 items-center">
                           <span className="text-slate-500">Memo Type:</span>
                           <span
-                            className={`transition-all duration-300 ${isJuryCuzdan ? "text-rose-400 font-black animate-pulse" : "text-slate-300"}`}
+                            className={`transition-all duration-300 ${isJuryWallet ? "text-rose-400 font-black animate-pulse" : "text-slate-300"}`}
                           >
                             {dynamicMemoType}
                           </span>
@@ -3955,7 +3949,7 @@ function Header({
                 {showSecurityCheck && (
                   <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
                     <div className="w-full max-w-md p-6 rounded-2xl bg-[#0f172a] border border-slate-800 text-slate-200 shadow-2xl">
-                      {/* Başlık */}
+                      {/* HEADER */}
                       <div className="flex items-start gap-3 mb-5">
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -4405,8 +4399,7 @@ function Header({
                                         typeof lastEntry === "object" &&
                                         lastEntry !== null
                                       ) {
-                                        // Whatever numerical values the object contains (value, balance, amount, etc.)
-                                        // we’re reducing them all at once so that whichever one the chart library reads, it drops immediately!
+                                        // Simultaneously reduces all numerical properties (value, balance, amount, etc.) to immediately reflect the drop in the chart library regardless of which key it targets.
                                         newPoint = {
                                           ...lastEntry,
                                           isSorobanNewPoint: true,
@@ -4448,7 +4441,7 @@ function Header({
                                   });
                                 }
 
-                                //After 5 seconds (60 × 80 ms), clear the loop to allow the system to stabilise
+                                // After 5 seconds (60 × 80 ms), clear the loop to allow the system to stabilise
                                 if (loopCount > 60) {
                                   clearInterval(forceUpdateInterval);
                                 }
@@ -4556,7 +4549,6 @@ function Header({
 
                       {/* RIGHT */}
                       <div className="flex flex-col items-start md:items-end gap-2.5 w-full md:w-auto pt-7 md:pt-0">
-                        {/* LIVE STATUS */}
                         {/* LIVE STATUS - TOP RIGHT */}
                         <span
                           className="
@@ -4824,7 +4816,6 @@ md:static
     cursor-pointer
   "
                                 >
-                                  {/* HASH */}
                                   {/* HASH */}
                                   <td className="p-4 whitespace-nowrap">
                                     <div className="flex items-center gap-2">
@@ -7326,9 +7317,9 @@ disabled:hover:border-slate-800
                                 +{event.amount}
                               </div>
                               <div className="text-[9px] text-slate-600 font-sans">
-                                {event.time === "Şimdi"
+                                {event.time === "Now"
                                   ? "Just now"
-                                  : event.time === "10 dk önce"
+                                  : event.time === "10 minutes ago"
                                     ? "10 minutes ago"
                                     : event.time}
                               </div>
@@ -7374,7 +7365,7 @@ disabled:hover:border-slate-800
       : "bg-[#f8fafc] border border-slate-200 text-slate-700 shadow-[0_15px_45px_rgba(15,23,42,0.08)]"
   }`}
               >
-                {/* Üst Başlık */}
+                {/* HEADER */}
                 <div className="border-b border-slate-900 pb-4">
                   <h2 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-400 tracking-wide">
                     💬 Soroban Cross-Contract Feedback Matrix
@@ -7589,7 +7580,7 @@ disabled:hover:border-slate-800
                               ? `${pubKey.slice(0, 5)}...${pubKey.slice(-4)}`
                               : "GB...X42",
                             amount: `${depositAmount} XLM`,
-                            time: "Şimdi",
+                            time: "Now",
                           };
                           const currentList = Array.isArray(prev) ? prev : [];
                           return [newEvent, ...currentList];
