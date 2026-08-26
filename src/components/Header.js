@@ -2477,7 +2477,41 @@ function Header({
             </div>
           </div>
         ) : !connected ? (
-          <div className="max-w-xl mx-auto my-auto text-center space-y-6">
+          <div
+            className={`
+    w-full
+    max-w-xl
+    mx-auto
+    my-auto
+    text-center
+    space-y-6
+
+    p-5
+    sm:p-7
+
+    rounded-[28px]
+    border
+
+    transition-all
+    duration-300
+
+    ${
+      darkMode
+        ? `
+          bg-transparent
+          border-transparent
+          shadow-none
+        `
+        : `
+          bg-white/75
+          border-sky-100
+          backdrop-blur-xl
+
+          shadow-[0_20px_55px_rgba(59,130,246,0.10)]
+        `
+    }
+  `}
+          >
             <div className="w-16 h-16 bg-cyan-500/10 text-cyan-400 rounded-2xl flex items-center justify-center mx-auto mb-2">
               <Wallet size={32} />
             </div>
@@ -2493,7 +2527,41 @@ function Header({
               <button
                 onClick={() => connectWallet("Freighter")}
                 disabled={loading}
-                className="relative p-5 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-cyan-500/40 transition-all text-center group flex flex-col items-center justify-center space-y-3"
+                className={`
+  relative
+  p-5
+  rounded-2xl
+  border
+  transition-all
+  duration-300
+
+  text-center
+  group
+  flex
+  flex-col
+  items-center
+  justify-center
+  space-y-3
+
+  ${
+    darkMode
+      ? `
+        bg-slate-900/60
+        border-slate-800
+        hover:border-cyan-500/40
+      `
+      : `
+        bg-white/90
+        border-slate-200
+
+        hover:border-cyan-400/60
+        hover:bg-cyan-50/60
+        hover:-translate-y-1
+
+        hover:shadow-[0_12px_28px_rgba(6,182,212,0.12)]
+      `
+  }
+`}
               >
                 <div className="relative">
                   <div className="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center group-hover:scale-110 transition">
@@ -2529,40 +2597,136 @@ function Header({
                     ★
                   </span>
                 </div>
-                <span className="text-sm font-bold block text-slate-200">
+                <span
+                  className={`text-sm font-bold block ${
+                    darkMode ? "text-slate-200" : "text-slate-800"
+                  }`}
+                >
                   Freighter
                 </span>
-                <span className="text-[10px] text-emerald-400 bg-emerald-950/30 px-2 py-0.5 rounded border border-emerald-900/30">
+                <span
+                  className={`text-[10px] px-2 py-0.5 rounded border font-medium transition-colors ${
+                    darkMode
+                      ? "text-emerald-400 bg-emerald-950/30 border-emerald-900/30"
+                      : "text-emerald-700 bg-emerald-50 border-emerald-200"
+                  }`}
+                >
                   Official Extension
                 </span>
               </button>
               <button
                 onClick={() => connectWallet("xBull")}
                 disabled={loading}
-                className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-orange-500/50 transition-all text-center group flex flex-col items-center justify-center space-y-3"
+                className={`
+  p-5
+  rounded-2xl
+  border
+  transition-all
+  duration-300
+
+  text-center
+  group
+  flex
+  flex-col
+  items-center
+  justify-center
+  space-y-3
+
+  ${
+    darkMode
+      ? `
+        bg-slate-900/60
+        border-slate-800
+        hover:border-orange-500/50
+      `
+      : `
+        bg-white/90
+        border-slate-200
+
+        hover:border-orange-400/60
+        hover:bg-orange-50/60
+        hover:-translate-y-1
+
+        hover:shadow-[0_12px_28px_rgba(249,115,22,0.10)]
+      `
+  }
+`}
               >
                 <div className="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-400 flex items-center justify-center group-hover:scale-110 transition">
                   <Laptop size={20} />
                 </div>
-                <span className="text-sm font-bold block text-slate-200">
+                <span
+                  className={`text-sm font-bold block ${
+                    darkMode ? "text-slate-200" : "text-slate-800"
+                  }`}
+                >
                   xBull Wallet
                 </span>
-                <span className="text-[10px] text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
+                <span
+                  className={`text-[10px] px-2 py-0.5 rounded border ${
+                    darkMode
+                      ? "text-slate-400 bg-slate-950 border-slate-800"
+                      : "text-slate-600 bg-slate-50 border-slate-200"
+                  }`}
+                >
                   Multi-Chain API
                 </span>
               </button>
               <button
                 onClick={() => connectWallet("Albedo")}
                 disabled={loading}
-                className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-indigo-500/50 transition-all text-center group flex flex-col items-center justify-center space-y-3"
+                className={`
+  p-5
+  rounded-2xl
+  border
+  transition-all
+  duration-300
+
+  text-center
+  group
+  flex
+  flex-col
+  items-center
+  justify-center
+  space-y-3
+
+  ${
+    darkMode
+      ? `
+        bg-slate-900/60
+        border-slate-800
+        hover:border-indigo-500/50
+      `
+      : `
+        bg-white/90
+        border-slate-200
+
+        hover:border-indigo-400/60
+        hover:bg-indigo-50/60
+        hover:-translate-y-1
+
+        hover:shadow-[0_12px_28px_rgba(99,102,241,0.10)]
+      `
+  }
+`}
               >
                 <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center group-hover:scale-110 transition">
                   <QrCode size={20} />
                 </div>
-                <span className="text-sm font-bold block text-slate-200">
+                <span
+                  className={`text-sm font-bold block ${
+                    darkMode ? "text-slate-200" : "text-slate-800"
+                  }`}
+                >
                   Albedo Link
                 </span>
-                <span className="text-[10px] text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
+                <span
+                  className={`text-[10px] px-2 py-0.5 rounded border ${
+                    darkMode
+                      ? "text-slate-400 bg-slate-950 border-slate-800"
+                      : "text-slate-600 bg-slate-50 border-slate-200"
+                  }`}
+                >
                   Web Intent API
                 </span>
               </button>
