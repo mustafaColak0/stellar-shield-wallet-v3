@@ -129,7 +129,6 @@ export const handleTrueSorobanDeposit = async (
     }
 
     // 3. Connect to Horizon (for account) and Soroban RPC (for simulation)
-    // 3. Connect to Horizon (for account) and Soroban RPC (for simulation)
     const horizonServer = new Horizon.Server(
       "https://horizon-testnet.stellar.org",
     );
@@ -249,10 +248,6 @@ export const handleTrueSorobanDeposit = async (
           continue;
         }
 
-        // If a stale sequence is detected, fetch the account again
-        // and rebuild the transaction once.
-        // If a stale sequence is detected, fetch the account again
-        // and rebuild the transaction with a fresh sequence.
         if (submission.status === "ERROR") {
           const submissionError = JSON.stringify(
             submission.errorResult || submission.errorResultXdr || {},
@@ -265,7 +260,7 @@ export const handleTrueSorobanDeposit = async (
             submissionError.includes('"value":-5');
 
           if (isBadSequence) {
-            // Son deneme değilse güncel sequence ile transaction'ı yeniden oluştur.
+            // Unless it is the last attempt, it recreates the transaction using the current sequence.
             if (attempt < MAX_BUILD_ATTEMPTS - 1) {
               console.warn(
                 `⚠️ txBadSeq detected. Rebuilding transaction with fresh sequence (${attempt + 1}/${MAX_BUILD_ATTEMPTS})...`,
@@ -277,14 +272,14 @@ export const handleTrueSorobanDeposit = async (
                 );
               }
 
-              // Önceki transaction'ın network queue'dan çıkmasını bekle.
+              // Wait for the previous transaction to leave the network queue.
               await new Promise((resolve) => setTimeout(resolve, 6000));
 
               shouldRebuildTransaction = true;
 
-              // while döngüsünden çık.
-              // Aşağıdaki continue ile outer for tekrar başlayacak
-              // ve rpcServer.getAccount() fresh sequence alacak.
+              // Exit the while loop.
+              // The continue below restarts the outer for loop
+              // and rpcServer.getAccount() will fetch a fresh sequence.
               break;
             }
 
@@ -293,7 +288,7 @@ export const handleTrueSorobanDeposit = async (
             );
           }
 
-          // txBadSeq dışındaki gerçek Soroban hataları
+          // Handle actual Soroban errors other than txBadSeq.
           throw new Error(
             "Soroban Execution Error: " +
               JSON.stringify(
@@ -302,23 +297,22 @@ export const handleTrueSorobanDeposit = async (
           );
         }
 
-        // Beklenmeyen başka bir submission status geldiyse dur.
+        // Stop if an unexpected submission status is returned.
         throw new Error(
           `Unexpected Soroban submission status: ${submission.status}`,
         );
       }
 
       // ============================================================
-      // WHILE LOOP BİTTİ
+      // WHILE LOOP FINISHED
       // ============================================================
 
-      // txBadSeq nedeniyle transaction yeniden oluşturulacaksa
-      // outer for döngüsünün başına dön.
+      // If the transaction must be rebuilt because of txBadSeq,
+      // return to the beginning of the outer for loop.
       if (shouldRebuildTransaction) {
         continue;
       }
 
-      // Transaction network queue'ya gerçekten alınmış olmalı.
       if (
         !submission ||
         (submission.status !== "PENDING" && submission.status !== "DUPLICATE")
@@ -334,18 +328,16 @@ export const handleTrueSorobanDeposit = async (
       );
 
       // ============================================================
-      // FINAL LEDGER CONFIRMATION
+      // LEDGER CONFIRMATION
       // ============================================================
 
-      // Stellar RPC transaction'ı ilk sorgularda NOT_FOUND döndürebilir.
-      // Bu yüzden maksimum yaklaşık 120 saniye bekliyoruz.
       for (let check = 0; check < 60; check++) {
         let txResult;
 
         try {
           txResult = await rpcServer.getTransaction(submission.hash);
         } catch (pollError) {
-          // Sadece geçici RPC/network hatalarını burada yakala.
+          //Only catch temporary RPC/network errors here.
           console.warn(
             `⚠️ Confirmation RPC check ${check + 1}/60 failed temporarily:`,
             pollError,
@@ -358,7 +350,7 @@ export const handleTrueSorobanDeposit = async (
 
         console.log(`⏳ Confirmation check ${check + 1}/60:`, txResult.status);
 
-        // Ledger confirmation başarılı
+        // Ledger confirmation successfully received
         if (txResult.status === "SUCCESS") {
           confirmedTransaction = txResult;
 
@@ -370,25 +362,22 @@ export const handleTrueSorobanDeposit = async (
           break;
         }
 
-        // Ledger'a girdi ancak contract execution başarısız
+        // The transaction reached the ledger, but contract execution failed.
         if (txResult.status === "FAILED") {
           throw new Error(
             "Soroban transaction reached the ledger but execution failed.",
           );
         }
 
-        // NOT_FOUND / henüz işlenmedi
-        // biraz bekleyip tekrar kontrol et.
         await new Promise((resolve) => setTimeout(resolve, 2000));
       }
 
-      // Başarı geldiyse outer build loop'tan çık.
+      // Exit the build loop after successful confirmation.
       if (confirmedTransaction) {
         break;
       }
 
-      // Transaction RPC'ye gönderildi fakat
-      // bizim bekleme süremiz içinde final confirmation gelmedi.
+      // Transaction was submitted, but final confirmation timed out.
       console.warn(
         "⏳ Transaction submitted but final confirmation is delayed:",
         submission.hash,
@@ -589,7 +578,7 @@ function Header({
     return `stellar_shield_transactions_v2_${walletAddress}`;
   }, [pubKey]);
 
-  // Wallet değiştiğinde o wallet'ın geçmişini yükle
+  // Load history for the active wallet.
   useEffect(() => {
     if (!transactionStorageKey) {
       setTransactions([]);
@@ -616,7 +605,7 @@ function Header({
     setLoadedHistoryKey(transactionStorageKey);
   }, [transactionStorageKey]);
 
-  // Sadece aktif wallet'ın history alanına kaydet
+  // // Save history only for the active wallet.
   useEffect(() => {
     if (!transactionStorageKey || loadedHistoryKey !== transactionStorageKey) {
       return;
@@ -741,8 +730,7 @@ function Header({
 
   // ============================================================
   // REAL STELLAR BALANCE SYNC
-  // Soroban işlemlerinde girilen "depositAmount" bakiyeden
-  // düşülmez. İşlem sonrası gerçek Testnet bakiyesi tekrar okunur.
+  // Refresh the real Testnet balance after Soroban transactions.
   // ============================================================
   const syncRealBalanceToChart = async () => {
     try {
@@ -754,7 +742,7 @@ function Header({
         return;
       }
 
-      // Ana bakiye gerçek Testnet bakiyesi olur.
+      // Use the real Testnet balance.
       setBalance(realBalance);
 
       if (typeof setWalletAsset === "function") {
@@ -767,12 +755,12 @@ function Header({
         second: "2-digit",
       });
 
-      // Grafiğe yalnızca ağdan gerçekten okunan bakiye eklenir.
+      // Add only network-fetched balances to the chart.
       setBalanceData((prev) => {
         const current = Array.isArray(prev) ? prev : [];
         const lastBalance = Number(current[current.length - 1]?.balance);
 
-        // Aynı bakiye ise gereksiz nokta oluşturma.
+        // Skip duplicate balance points.
         if (
           Number.isFinite(lastBalance) &&
           Math.abs(lastBalance - numericBalance) < 0.0000001
@@ -967,8 +955,7 @@ function Header({
               }),
             }),
 
-            // Son 6 ledger:
-            // 5 gerçek ledger-close aralığının ortalamasını alacağız.
+            // Average the latest five ledger-close intervals.
             fetch(
               "https://horizon-testnet.stellar.org/ledgers?order=desc&limit=6",
             ),
@@ -1000,7 +987,7 @@ function Header({
 
         // --------------------------------------------------------
         // NETWORK CAPACITY
-        // Horizon değeri 0.0 - 1.0 arasında.
+        //The Horizon value ranges from 0.0 to 1.0.
         // --------------------------------------------------------
 
         const capacityUsage = Number(horizonData.ledger_capacity_usage || 0);
@@ -1051,8 +1038,7 @@ function Header({
 
         // --------------------------------------------------------
         // UI STATUS
-        // Bunlar Stellar'ın resmi status isimleri değil;
-        // dashboard sınıflandırmamız.
+        // Internal dashboard statuses, not official Stellar status names.
         // --------------------------------------------------------
 
         let status = "OPTIMAL";
@@ -1595,7 +1581,7 @@ function Header({
 
   // Unnecessary filtering calculations were prevented using useMemo.
   const getTransactionTimestamp = (tx) => {
-    // Yeni kayıtlarda timestamp varsa direkt kullan
+    // If new records contain a timestamp, use it directly
     if (tx?.timestamp) {
       const numeric = Number(tx.timestamp);
 
@@ -1604,7 +1590,7 @@ function Header({
       }
     }
 
-    // Eski kayıtlardaki Türkçe tarih formatını çöz
+    // Decode the Turkish date format in old records
     if (tx?.date) {
       const normalDate = new Date(tx.date).getTime();
 
@@ -1612,7 +1598,7 @@ function Header({
         return normalDate;
       }
 
-      // Örnek: 15.08.2026 13:45:22
+      // Example: 15.08.2026 13:45:22
       const match = String(tx.date).match(
         /^(\d{1,2})[./](\d{1,2})[./](\d{4})(?:,\s*|\s+)(\d{1,2}):(\d{2})(?::(\d{2}))?/,
       );
@@ -1642,21 +1628,21 @@ function Header({
   const filteredTransactions = useMemo(() => {
     const now = new Date();
 
-    // Bugün
+    // Today
     const startOfToday = new Date(
       now.getFullYear(),
       now.getMonth(),
       now.getDate(),
     );
 
-    // Bu hafta - Pazartesi başlangıç
+    // This week, starting Monday
     const startOfWeek = new Date(startOfToday);
     const day = startOfToday.getDay();
     const difference = day === 0 ? 6 : day - 1;
 
     startOfWeek.setDate(startOfWeek.getDate() - difference);
 
-    // Bu ay
+    // This month
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     const query = searchQuery.trim().toLowerCase();
@@ -2212,7 +2198,7 @@ function Header({
       >
         <div className="space-y-4 md:space-y-8">
           <div className="flex items-center justify-between">
-            {/* SIDEBAR HEADER - LOGO BÖLÜMÜ */}
+            {/* SIDEBAR HEADER - LOGO SECTION */}
             <div
               onClick={() => setActiveTab("dashboard")}
               className="
@@ -2829,7 +2815,7 @@ function Header({
     sm:text-[10px]
 
     font-mono
-    text-slate-500
+    text-slate-400
   "
             >
               <ShieldCheck size={12} className="text-cyan-500 shrink-0" />
@@ -2924,7 +2910,7 @@ function Header({
                 </div>
                 {/* Top Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* LEFT CARD: Balance + Crowdfund + Simulation Button (NEON EFEKTLİ) */}
+                  {/* LEFT CARD: Balance + Crowdfund + Simulation Button (WITH A NEON EFFECT) */}
                   <div className="relative group p-6 rounded-2xl bg-[#030712] border border-slate-900 hover:border-cyan-500/40 transition-all duration-500 shadow-2xl flex flex-col justify-between">
                     <div className="absolute inset-0 bg-cyan-500/10 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
 
@@ -5875,7 +5861,7 @@ disabled:hover:border-slate-800
             {/* RECEIVE */}
             {activeTab === "receive" && (
               <div className="w-full max-w-2xl mx-auto space-y-2 mt-5">
-                {/* SİYAH QR PANEL */}
+                {/* BLACK QR PANEL */}
                 <div
                   className={`w-full mx-auto relative group overflow-hidden p-8 rounded-2xl
         shadow-2xl font-sans
@@ -6160,12 +6146,12 @@ disabled:hover:border-slate-800
                           value={qrAmount}
                           onChange={(e) => {
                             /*
-                             * Sadece pozitif sayısal XLM değeri:
+                             * Only positive numeric XLM values:
                              * 10
                              * 10.5
                              * 0.25
                              *
-                             * Harf, negatif sayı ve özel karakter kabul edilmez.
+                             * Letters, negative numbers and special characters are not permitted.
                              */
                             const value = e.target.value.replace(",", ".");
 

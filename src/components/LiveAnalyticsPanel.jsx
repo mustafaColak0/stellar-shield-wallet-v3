@@ -42,19 +42,18 @@ const MAX_EVENT_PAGES = 40;
 const MAX_VISIBLE_LOGS = 100;
 const MAX_VISIBLE_FEEDBACK = 100;
 
-// Doğrulanmış on-chain eventleri retention dışına çıksa bile
-// browser tarafında korumak için.
+// To preserve verified on-chain events on the browser side,
+// even if they fall outside the retention period.
 const VERIFIED_LOGS_STORAGE_KEY =
   `stellar_shield_verified_fb_live_${CONTRACT_ID}`;
 
 const MAX_PERSISTED_LOGS = 2000;
-
-// 10.000 ledger'lık çalışan canlı pencereyi koruyoruz.
-// 4 pencere = son ~40.000 ledger. Böylece anlık işlemler + dün gece
-// aynı senkronizasyonda birleştiriliyor.
+// We are maintaining a live window covering 10,000 ledgers.
+// 4 windows = the last ~40,000 ledgers. This way, real-time transactions and those from last night
+// are merged within the same synchronisation.
 const HISTORY_WINDOW_LEDGERS = 10000;
 
-// LocalStorage Anahtarı (Off-Chain yorumları tarayıcıda saklamak için)
+// LocalStorage key (for storing off-chain comments in the browser)
 const LOCAL_STORAGE_OFFCHAIN_KEY = "stellar_guest_comments_v1";
 
 // ============================================================
@@ -185,7 +184,7 @@ useEffect(() => {
   const [errorMessage, setErrorMessage] = useState("");
   const [lastUpdated, setLastUpdated] = useState(null);
 
-  // Form State'leri
+  // Form States
   const [commentType, setCommentType] = useState(activeWalletAddress ? "ON_CHAIN" : "OFF_CHAIN"); // 'ON_CHAIN' | 'OFF_CHAIN'
   const [guestName, setGuestName] = useState("");
   const [newComment, setNewComment] = useState("");
@@ -195,15 +194,15 @@ const [feedbackFilter, setFeedbackFilter] = useState("ALL");
   const [rating, setRating] = useState(5);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Interaction stream görünümü:
-  // LATEST_PER_WALLET_ACTION = aynı cüzdan + aynı action için sadece en yeni kayıt
-  // ALL = tüm eventleri göster
+// Interaction stream view:
+// LATEST_PER_WALLET_ACTION = only the most recent entry for the same wallet and the same action
+// ALL = show all events
   const [streamFilter, setStreamFilter] = useState("LATEST_PER_WALLET_ACTION");
 
   const walletCache = useRef(new Map());
   const refreshingRef = useRef(false);
 
-  // Active wallet değiştiğinde form modunu ayarla
+  // Set the form mode when the active wallet changes
   useEffect(() => {
     if (activeWalletAddress) {
       setCommentType("ON_CHAIN");
@@ -211,10 +210,7 @@ const [feedbackFilter, setFeedbackFilter] = useState("ALL");
   }, [activeWalletAddress]);
 
   // ----------------------------------------------------------
-  // OFF-CHAIN (NORMAL) YORUMLARI YÜKLE
-  // ----------------------------------------------------------
-  // ----------------------------------------------------------
-  // OFF-CHAIN (NORMAL) YORUMLARI YÜKLE
+  // Upload OFF-CHAIN (NORMAL) COMMENTS
   // ----------------------------------------------------------
   const fetchOffChainComments = useCallback(async () => {
     try {
@@ -239,10 +235,11 @@ const [feedbackFilter, setFeedbackFilter] = useState("ALL");
       return [];
     }
   }, []);
-  // Soroban RPC Event Çekme Mantığı
+  
+  // Soroban RPC Event Retrieval Logic
 const fetchSorobanEvents = async () => {
   try {
-    // Stellar Testnet RPC'sine istek
+    // Request to the Stellar Testnet RPC
     const response = await fetch(RPC_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -251,7 +248,7 @@ const fetchSorobanEvents = async () => {
         id: 1,
         method: "getEvents",
         params: {
-          startLedger: 0, // Veya son bildiğin ledger
+          startLedger: 0, // Or the last ledger you know of
           filters: [
             {
               type: "contract",
@@ -268,7 +265,7 @@ const fetchSorobanEvents = async () => {
     const data = await response.json();
 
     if (data.result && data.result.events) {
-      // GELEN EVENTLERİ TERS ÇEVİR (EN YENİ EN ÜSTE GELSİN)
+      // REVERSE THE ORDER OF UPCOMING EVENTS (SO THE NEWEST APPEAR AT THE TOP)
       const parsedEvents = data.result.events.reverse().map((ev, index) => {
         return {
           eventId: ev.id || `evt-${index}`,
@@ -291,8 +288,10 @@ const fetchSorobanEvents = async () => {
   ? parsedEvents
   : [];
 
-  // Yeni RPC kayıtları önce gelir.
-  // Retention dışına çıkmış eski doğrulanmış kayıtlar silinmez.
+
+
+// New RPC records take precedence.
+// Older, verified records that have exceeded the retention period are not deleted.
   const mergedLogs = [
     ...newLogs,
     ...oldLogs,
@@ -323,16 +322,16 @@ const fetchSorobanEvents = async () => {
   }
 };
 
-  // Initial Off-Chain yükleme
+  // Initial Off-Chain loading
   useEffect(() => {
     fetchOffChainComments().then((comments) => setOffChainComments(comments));
   }, [fetchOffChainComments]);
 
   // ----------------------------------------------------------
-  // HİBRİT BİRLEŞTİRME (ON-CHAIN + OFF-CHAIN YORUMLAR)
+  // HYBRID MERGER (ON-CHAIN + OFF-CHAIN COMMENTS)
   // ----------------------------------------------------------
   const allFeedbacks = useMemo(() => {
-    // 1. On-Chain Yorumlar (Soroban)
+    // 1. On-Chain Comments (Soroban)
     const onChainFeedbacks = userLogs
       .filter((log) => log.payload || log.action === "create_feedback" || log.action === "user_comment")
       .map((log) => {
@@ -359,7 +358,7 @@ const fetchSorobanEvents = async () => {
         };
       });
 
-    // 2. Off-Chain Yorumlar (Normal Ziyaretçiler)
+    // 2. Off-Chain Yorumlar (Regular Visitors)
     const formattedOffChainFeedbacks = offChainComments.map((off) => ({
       id: off.id,
       author: off.author || "Guest User",
@@ -374,7 +373,7 @@ const fetchSorobanEvents = async () => {
       txHash: null
     }));
 
-    // 3. Birleştir ve Tarihe Göre Yeniden Sırala
+    // 3. Merge and Reorder by Date
     const combined = [...onChainFeedbacks, ...formattedOffChainFeedbacks];
     return combined.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }, [userLogs, offChainComments]);
@@ -397,7 +396,7 @@ const fetchSorobanEvents = async () => {
   }).length;
 }, [allFeedbacks]);
 
-  // Filtrelenmiş Yorumlar
+  // Filtered Comments
   const filteredFeedbacks = useMemo(() => {
   return allFeedbacks.filter((f) => {
     if (feedbackFilter === "TESTERS") {
@@ -480,7 +479,7 @@ const todayInteractions = useMemo(() => {
 }, [userLogs]);
 
   // ----------------------------------------------------------
-  // STREAM FILTER — AYNI CÜZDAN + AYNI ACTION İÇİN EN SON KAYIT
+  //STREAM FILTER — LATEST ENTRY FOR THE SAME WALLET + THE SAME ACTION
   // ----------------------------------------------------------
   const displayedUserLogs = useMemo(() => {
     const sorted = [...userLogs].sort(
@@ -497,8 +496,8 @@ const todayInteractions = useMemo(() => {
     const latestOnly = [];
 
     for (const log of sorted) {
-      // fullWallet gerçek kullanıcı kimliği olarak öncelikli.
-      // UNKNOWN durumunda kısa wallet/event bilgisi fallback olarak kullanılır.
+     // fullWallet takes precedence as the actual user ID.
+// In the event of UNKNOWN, brief wallet/event information is used as a fallback.
       const walletKey =
         log.fullWallet && log.fullWallet !== "UNKNOWN"
           ? log.fullWallet
@@ -568,8 +567,10 @@ const todayInteractions = useMemo(() => {
           pagination: { limit: EVENT_PAGE_LIMIT },
         };
 
-        // İlk sayfada ledger aralığını kullan.
-        // Cursor geldikten sonra startLedger/endLedger göndermiyoruz.
+       
+
+// Use the ledger range on the first page.
+// We do not send startLedger/endLedger once the cursor has arrived.
         if (!cursor) {
           params.startLedger = startLedger;
 
@@ -619,8 +620,8 @@ const todayInteractions = useMemo(() => {
 
       const startTime = performance.now();
 
-      // Latest ledger canlı taraf için; getHealth ise history sınırını
-      // RPC node'un gerçekten sakladığı ledger aralığında tutmak için.
+      // For the latest ledger on the live side; whilst `getHealth` is used
+// to keep the history limit within the ledger range actually stored by the RPC node.
       const [latestLedgerResponse, healthResponse] = await Promise.all([
         rpcRequest("getLatestLedger", null, signal),
         rpcRequest("getHealth", null, signal),
@@ -676,15 +677,12 @@ console.log(
 );
 
       // --------------------------------------------------------
-      // 🟢 ÇALIŞAN 10K LIVE WINDOW + ESKİ 10K WINDOW'LAR
+      //  ACTIVE 10K LIVE WINDOW + PREVIOUS 10K WINDOWS
       // --------------------------------------------------------
-      // Window 0: latest - 10k → latest      (anlık / bugün)
+      // Window 0: latest - 10k → latest     (real-time / today)
       // Window 1: latest - 20k → latest-10k
       // Window 2: latest - 30k → latest-20k
-      // Window 3: latest - 40k → latest-30k (dün gece / daha eski)
-      //
-      // Böylece tek devasa sorgu yerine, çalışan 10k mantığını
-      // birkaç parçaya bölüp sonuçları birleştiriyoruz.
+      // Window 3: latest - 40k → latest-30k (yesterday night / older)
       const historyBatches = [];
 
       for (let i = 0; i < dynamicWindowCount; i++) {
@@ -698,7 +696,7 @@ console.log(
 
         const windowStart = Math.max(oldestLedger, rawStart);
 
-        // RPC retention sınırına ulaştıysak daha geriye gitme.
+        // If we have reached the RPC retention limit, do not go any further back.
         if (windowStart >= latestLedger) break;
 
         const windowEnd =
@@ -712,11 +710,11 @@ console.log(
 
         historyBatches.push(...batch);
 
-        // oldestLedger'a ulaştıysak sonraki pencere gereksiz.
+        // If we have reached `oldestLedger`, the next window is unnecessary.
         if (windowStart <= oldestLedger) break;
       }
 
-      // Aynı event iki pencerenin sınırında geldiyse tekilleştir.
+     // If the same event occurs on the border of two windows, deduplicate it.
       const allEvents = Array.from(
         new Map(
           historyBatches
@@ -830,8 +828,8 @@ setUserLogs((prev) => {
     ? logs
     : [];
 
-  // Yeni RPC kayıtlarını önce koy.
-  // Eski doğrulanmış kayıtlar retention dışına çıksa bile korunur.
+// Add new RPC records first.
+// Old, verified records are retained even if they fall outside the retention period.
   const combined = [
     ...networkLogs,
     ...previousLogs,
@@ -892,11 +890,9 @@ setUserLogs((prev) => {
   }, [fetchLiveAnalytics]);
 
   // ----------------------------------------------------------
-  // FORM SUBMISSION (ON-CHAIN VEYA OFF-CHAIN)
+  // FORM SUBMISSION (ON-CHAIN Or OFF-CHAIN)
   // ----------------------------------------------------------
-// ----------------------------------------------------------
-  // FORM SUBMISSION (ON-CHAIN VEYA OFF-CHAIN)
-  // ----------------------------------------------------------
+
   const handleAddComment = async (e) => {
     e.preventDefault();
     if (!newComment.trim()) return;
@@ -905,7 +901,7 @@ setUserLogs((prev) => {
 
     try {
       if (commentType === "ON_CHAIN") {
-        // --- ON-CHAIN YORUM (BURAYA DOKUNMA) ---
+        // --- ON-CHAIN COMMENT (DO NOT MODIFY) ---
         const author = activeWalletAddress || "GAQV...4UN4";
         const newLogItem = {
           eventId: `temp-${Date.now()}`,
@@ -928,7 +924,7 @@ setUserLogs((prev) => {
           console.warn("⚠️ Wallet extension not detected. Added as simulated local feedback.");
         }
       } else {
-        // --- OFF-CHAIN (NORMAL) YORUM SUPABASE KAYDI (YENİ KOD BURAYA) ---
+        // --- OFF-CHAIN (NORMAL) COMMENT SUPABASE RECORD (NEW CODE GOES HERE) ---
         const { data, error } = await supabase
           .from('guest_comments')
           .insert([
@@ -957,7 +953,7 @@ setUserLogs((prev) => {
         }
       }
 
-      // Formu temizle
+      // Clear Form
       setNewComment("");
       setGuestName("");
       setRating(5);
@@ -1014,7 +1010,7 @@ setUserLogs((prev) => {
     border-slate-800
   "
 >
-  {/* SOL TARAF */}
+  {/* LEFT Section */}
   <div className="flex items-start gap-4 min-w-0 flex-1">
     {/* ANALYTICS ICON */}
     <div
@@ -1049,7 +1045,7 @@ setUserLogs((prev) => {
     </div>
   </div>
 
-  {/* SAĞ TARAF */}
+  {/* RIGHT Section */}
   <div
     className="
       flex
@@ -1469,7 +1465,7 @@ hover:-translate-y-[1px]"
       </div>
 
       {/* ============================================================ */}
-      {/* CANLI HİBRİT TOPLULUK GERİ BİLDİRİM & YORUM TABLOSU */}
+      {/* LIVE HYBRID COMMUNITY FEEDBACK & COMMENTS TABLE */}
       {/* ============================================================ */}
       <div className="mt-6 md:mt-8 border border-slate-800 rounded-xl overflow-hidden bg-slate-950/60 p-3 sm:p-4 md:p-5
 transition-all duration-300
@@ -1479,13 +1475,13 @@ hover:border-cyan-500/30 hover:shadow-[0_0_22px_rgba(34,211,238,0.10)]">
   <MessageSquare className="w-5 h-5 text-cyan-400 mt-1 shrink-0" />
   <div className="min-w-0">
     <h3 className="text-white font-bold leading-tight">
-      COMMUNITY FEEDBACK & REVIEWS
+      LIVE HYBRID COMMUNITY FEEDBACK & REVIEWS
     </h3>
     <p className="text-white font-bold leading-tight">(HYBRID FEED)</p>
   </div>
 </div>
 
-          {/* FİLTRE BUTONLARI */}
+          {/* FILTER BUTTONS */}
           <div
   className="
     flex
@@ -1579,12 +1575,12 @@ hover:border-cyan-500/30 hover:shadow-[0_0_22px_rgba(34,211,238,0.10)]">
           </div>
         </div>
 
-        {/* YORUM FORMU */}
+        {/* COMMENT FORM */}
        <form onSubmit={handleAddComment} className="my-5 p-4 bg-slate-900/80 border border-slate-800 rounded-xl space-y-3
 transition-all duration-300
 hover:border-cyan-500/30 hover:shadow-[0_0_18px_rgba(34,211,238,0.10)]">
           
-          {/* Yorum Türü Seçimi (Cüzdanlı vs Normal) */}
+          {/* Comment Type Selection (Wallet vs Normal) */}
           <div
   className="
     flex
@@ -1643,7 +1639,7 @@ hover:border-cyan-500/30 hover:shadow-[0_0_18px_rgba(34,211,238,0.10)]">
               </div>
             </div>
 
-            {/* Yıldız ve Duygu Seçimi */}
+            {/* Star and Emotion Selection */}
             <div className="w-full sm:w-auto flex items-center justify-between sm:justify-start gap-3">
               <div className="flex items-center gap-0.5">
                 {[1, 2, 3, 4, 5].map((star) => (
@@ -1689,7 +1685,7 @@ hover:border-cyan-500/30 hover:shadow-[0_0_18px_rgba(34,211,238,0.10)]">
             </div>
           </div>
 
-          {/* Input Alanları */}
+          {/* Input Fields*/}
           <div className="flex flex-col sm:flex-row gap-2">
             {commentType === "OFF_CHAIN" ? (
               <input
@@ -1739,7 +1735,7 @@ hover:-translate-y-[1px] hover:shadow-[0_0_14px_rgba(34,211,238,0.28)]`}
           </div>
         </form>
 
-        {/* HİBRİT YORUM LİSTESİ */}
+        {/* LIVE HYBRID COMMENTS LIST */}
         <div className="space-y-2.5 max-h-80 overflow-y-auto px-1 pt-2 pb-2">
           {filteredFeedbacks.length === 0 ? (
             <div className="text-center py-8 text-xs text-slate-500 font-mono">
@@ -1789,7 +1785,7 @@ hover:-translate-y-[1px] hover:shadow-[0_0_14px_rgba(34,211,238,0.28)]`}
                     <span className="font-semibold text-slate-200">{fb.author}</span>
                     <span className="text-[10px] text-slate-500">{fb.date}</span>
 
-                    {/* Cüzdanlı vs Normal Rozeti */}
+                    {/* Verified vs Guest Badge */}
                     {fb.isOnChain ? (
                       <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-sans">
                         <ShieldCheck className="w-2.5 h-2.5" /> Verified On-Chain
@@ -1800,7 +1796,7 @@ hover:-translate-y-[1px] hover:shadow-[0_0_14px_rgba(34,211,238,0.28)]`}
                       </span>
                     )}
 
-                    {/* Yıldız Puanı */}
+                    {/* Star Rating */}
                     <div className="flex items-center gap-0.5 ml-1">
                       {[...Array(5)].map((_, i) => (
                         <Star
