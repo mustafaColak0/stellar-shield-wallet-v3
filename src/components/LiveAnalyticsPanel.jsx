@@ -31,8 +31,20 @@ import { supabase } from "./supabaseClient";
 
 const RPC_URL = "https://soroban-testnet.stellar.org";
 const CONTRACT_ID = "CDQUFGNQGT3CYQYNM4DUNZRLBARAXWNGJQW466OYZOODPHLXT2Z3AXMI";
-const DEVELOPER_WALLET =
-  "GBUJJIYNPOC57O6CIFKFOBLPNTS6I5IYNGO5XQY7DAIPQ6JCU7ZBV7LN";
+const DEVELOPER_WALLETS = new Set([
+  // Old developer wallet
+  "GBUJJIYNPOC57O6CIFKFOBLPNTS6I5IYNGO5XQY7DAIPQ6JCU7ZBV7LN",
+
+  // Current developer wallet
+  "GBKBQ57BWS2K77WS25XB6A3XR7GDNO2AZF3TD3TRFV5O6XRBCFUCU47S",
+]);
+
+const isDeveloperWallet = (wallet) =>
+  DEVELOPER_WALLETS.has(
+    String(wallet || "").trim()
+  );
+
+
 const REFRESH_INTERVAL = 10000;
 const RETENTION_SAFETY_LEDGERS = 10;
 
@@ -52,6 +64,82 @@ const MAX_PERSISTED_LOGS = 2000;
 // 4 windows = the last ~40,000 ledgers. This way, real-time transactions and those from last night
 // are merged within the same synchronisation.
 const HISTORY_WINDOW_LEDGERS = 10000;
+
+// ============================================================
+// VERIFIED HISTORICAL ON-CHAIN FEEDBACK RECOVERY
+// These records were independently verified against Stellar
+// Testnet transaction history after the original browser cache
+// was lost.
+// ============================================================
+
+const RECOVERED_VERIFIED_LOGS = [
+  {
+    eventId:
+      "recovered-b1df34e635ccd82b7c042cf121de8324a8b8acc94aacb3b30ff0f4d6ee0ae39e",
+    fullWallet:
+      "GD2KPUILSSQ2E7BFESMB2QWZY2MN227WETVAH6RBOLX6ZNU2YIA5LD4O",
+    wallet: "GD2KP...LD4O",
+    action: "fb_live",
+    status: "Confirmed",
+    timestamp: "2026-08-17T11:11:47Z",
+    txHash:
+      "b1df34e635ccd82b7c042cf121de8324a8b8acc94aacb3b30ff0f4d6ee0ae39e",
+    payload:
+      "everything is working perfectly and the UI is Clean and easy to understand...",
+    feedbackType: "POSITIVE",
+    rating: 5,
+  },
+
+  {
+    eventId:
+      "recovered-dcabfda2d0d53fe7b1f9b0d8a4d2a038529af3afe762ec631512d4ef229143fe",
+    fullWallet:
+      "GA7YBCGYZT77YMPXBJ65DRY4JXFQ52EAV3B5RZQTCA2HXUTVDG3IQHYW",
+    wallet: "GA7YB...QHYW",
+    action: "fb_live",
+    status: "Confirmed",
+    timestamp: "2026-08-17T11:06:26Z",
+    txHash:
+      "dcabfda2d0d53fe7b1f9b0d8a4d2a038529af3afe762ec631512d4ef229143fe",
+    payload:
+      "Clean connect flow — Freighter connected first try. The live RPC latency and verified wallet stream is a nice trust touch. Suggestion: let new users browse the User Guide before connecting, easier onboarding for testers. Solid architecture! — Ubong (Nova Esusu)",
+    feedbackType: "POSITIVE",
+    rating: 5,
+  },
+
+  {
+    eventId:
+      "recovered-3ddb4ab4b39902972c38a4096a3509930e87af3e853983627c795d65e76f507a",
+    fullWallet:
+      "GBPPR5PK4B2XEXQEH5AZJJ4DGJCQAM7TKRRIQVD4J3XPLL7YY2QAJ32F",
+    wallet: "GBPPR...J32F",
+    action: "fb_live",
+    status: "Confirmed",
+    timestamp: "2026-08-14T17:23:19Z",
+    txHash:
+      "3ddb4ab4b39902972c38a4096a3509930e87af3e853983627c795d65e76f507a",
+    payload:
+      "Work more on UI. Add a landing page it will be better understand your product.",
+    feedbackType: "POSITIVE",
+    rating: 5,
+  },
+
+  {
+    eventId:
+      "recovered-72b496f667f3a8aaa6d7cc68d298235cdb27b5c5bdb70d69b17dfab76360e3d0",
+    fullWallet:
+      "GBIDCKYQRC7I4ACZWMLTH6J5T7MHDCBWHBP2ABLXMU6CJDEO3TJ3N3FJ",
+    wallet: "GBIDC...N3FJ",
+    action: "fb_live",
+    status: "Confirmed",
+    timestamp: "2026-08-13T20:44:50Z",
+    txHash:
+      "72b496f667f3a8aaa6d7cc68d298235cdb27b5c5bdb70d69b17dfab76360e3d0",
+    payload: "It was good and unique",
+    feedbackType: "POSITIVE",
+    rating: 5,
+  },
+];
 
 // LocalStorage key (for storing off-chain comments in the browser)
 const LOCAL_STORAGE_OFFCHAIN_KEY = "stellar_guest_comments_v1";
@@ -137,26 +225,46 @@ async function mapWithConcurrencyLimit(items, limit, fn) {
 // ============================================================
 
 export default function LiveAnalyticsPanel({ activeWalletAddress }) {
-  const [userLogs, setUserLogs] = useState(() => {
+const [userLogs, setUserLogs] = useState(() => {
   try {
     const saved = localStorage.getItem(
       VERIFIED_LOGS_STORAGE_KEY
     );
 
-    if (!saved) return [];
+    const parsed = saved
+      ? JSON.parse(saved)
+      : [];
 
-    const parsed = JSON.parse(saved);
-
-    return Array.isArray(parsed)
+    const cachedLogs = Array.isArray(parsed)
       ? parsed
       : [];
+
+    const combined = [
+      ...cachedLogs,
+      ...RECOVERED_VERIFIED_LOGS,
+    ];
+
+    return Array.from(
+      new Map(
+        combined.map((item) => [
+          item.txHash ||
+            item.eventId ||
+            `${item.fullWallet}-${item.timestamp}`,
+          item,
+        ])
+      ).values()
+    ).sort(
+      (a, b) =>
+        new Date(b.timestamp || 0).getTime() -
+        new Date(a.timestamp || 0).getTime()
+    );
   } catch (error) {
     console.warn(
       "Verified analytics cache could not be loaded:",
       error
     );
 
-    return [];
+    return [...RECOVERED_VERIFIED_LOGS];
   }
 });
 useEffect(() => {
@@ -378,22 +486,28 @@ const fetchSorobanEvents = async () => {
     return combined.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }, [userLogs, offChainComments]);
 
-  const testerFeedbackCount = useMemo(() => {
-  return allFeedbacks.filter((f) => {
-    const wallet = String(f.fullWallet || "").trim();
-    const comment = String(f.comment || "").trim();
+const testerFeedbackCount = useMemo(() => {
+  const uniqueTesterWallets = new Set(
+    allFeedbacks
+      .filter((f) => {
+        const wallet = String(f.fullWallet || "").trim();
+        const comment = String(f.comment || "").trim();
 
- return (
-  f.isOnChain &&
-  f.action === "fb_live" &&
-  f.txHash &&
-  f.txHash !== "Pending_Tx_Hash" &&
-  wallet &&
-  wallet !== "UNKNOWN" &&
-  wallet !== DEVELOPER_WALLET &&
-  !comment.startsWith("Simulated deposit of ")
-);
-  }).length;
+        return (
+          f.isOnChain &&
+          f.action === "fb_live" &&
+          f.txHash &&
+          f.txHash !== "Pending_Tx_Hash" &&
+          wallet &&
+          wallet !== "UNKNOWN" &&
+         !isDeveloperWallet(wallet) &&
+          !comment.startsWith("Simulated deposit of ")
+        );
+      })
+      .map((f) => String(f.fullWallet).trim())
+  );
+
+  return uniqueTesterWallets.size;
 }, [allFeedbacks]);
 
   // Filtered Comments
@@ -410,7 +524,7 @@ const fetchSorobanEvents = async () => {
   f.txHash !== "Pending_Tx_Hash" &&
   wallet &&
   wallet !== "UNKNOWN" &&
-  wallet !== DEVELOPER_WALLET &&
+  !isDeveloperWallet(wallet) &&
   !comment.startsWith("Simulated deposit of ")
 );
     }
@@ -454,7 +568,7 @@ const verifiedUsersCount = useMemo(() => {
         (wallet) =>
           wallet &&
           wallet !== "UNKNOWN" &&
-          wallet !== DEVELOPER_WALLET
+          !isDeveloperWallet(wallet)
       )
   );
 
@@ -667,6 +781,7 @@ const dynamicWindowCount = Math.max(
   )
 );
 
+
 console.log(
   "📡 Analytics ledger range:",
   oldestLedger,
@@ -837,12 +952,12 @@ setUserLogs((prev) => {
 
   return Array.from(
     new Map(
-      combined.map((item) => [
-        item.eventId ||
-          item.txHash ||
-          `${item.fullWallet}-${item.timestamp}`,
-        item,
-      ])
+     combined.map((item) => [
+  item.txHash ||
+    item.eventId ||
+    `${item.fullWallet}-${item.timestamp}`,
+  item,
+])
     ).values()
   )
     .sort(

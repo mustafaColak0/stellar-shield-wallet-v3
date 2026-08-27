@@ -949,14 +949,6 @@ function Header({
       const server = new Horizon.Server("https://horizon-testnet.stellar.org");
 
       const account = await server.loadAccount(walletAddress);
-      console.table(
-        account.balances.map((item) => ({
-          type: item.asset_type,
-          code: item.asset_code || "XLM",
-          issuer: item.asset_issuer || "native",
-          balance: item.balance,
-        })),
-      );
       const nextBalances = {
         XLM: "0",
         USDC: "0",
