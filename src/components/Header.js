@@ -2238,7 +2238,7 @@ function Header({
 
         // 1. Add to the transaction history table
         const newHistoryTx = {
-          id: Date.now(),
+          id: result.hash,
 
           timestamp: Date.now(),
           date: new Date().toLocaleString("tr-TR"),
@@ -2253,9 +2253,12 @@ function Header({
 
           isSorobanInteraction: true,
 
-          hash:
-            result.hash ||
-            "soroban_" + Math.random().toString(16).slice(2, 18) + "testnet",
+          hash: result.hash,
+
+          status: "SUCCESS",
+          statusText: "Success",
+
+          verifiedOnChain: true,
         };
         if (typeof setTransactions === "function") {
           setTransactions((prev) => [newHistoryTx, ...prev]);
@@ -4456,7 +4459,7 @@ function Header({
                               );
 
                               // We are preparing a secure artificial hash
-                              let currentTxHash = `soroban-tx-${Date.now()}`;
+                              let currentTxHash = "";
 
                               // Even if the function crashes, the video stream won’t stop!
                               try {
@@ -4467,23 +4470,27 @@ function Header({
                                   setSorobanError,
                                 );
 
-                                if (result?.txHash || result?.hash) {
-                                  currentTxHash = result.txHash || result.hash;
-                                }
-
-                                if (result?.cancelled) {
+                                if (!result?.success || !result?.hash) {
                                   if (typeof setSorobanError === "function") {
                                     setSorobanError(
-                                      "The transaction was cancelled by the user.",
+                                      result?.error ||
+                                        "Soroban transaction could not be confirmed.",
                                     );
                                   }
                                   return;
                                 }
+
+                                currentTxHash = result.hash;
                               } catch (error) {
-                                console.log(
-                                  "The Soroban function returned an error, but the visual stream is continuing for the jury:",
-                                  error,
-                                );
+                                console.error("Soroban deposit failed:", error);
+
+                                if (typeof setSorobanError === "function") {
+                                  setSorobanError(
+                                    error?.message || "Soroban deposit failed.",
+                                  );
+                                }
+
+                                return;
                               }
 
                               // UNCONDITIONAL SUCCESS: We’re now triggering the UI directly without getting held up by result checks!
@@ -4526,6 +4533,7 @@ function Header({
                                 timestamp: Date.now(),
                                 status: "SUCCESS",
                                 statusText: "Success",
+                                verifiedOnChain: true,
                                 memo: "",
                               };
 
@@ -7946,6 +7954,7 @@ disabled:hover:border-slate-800
                       ownerWallet: String(pubKey || ""),
                       status: "SUCCESS",
                       statusText: "Success",
+                      verifiedOnChain: true,
                       date: new Date().toLocaleTimeString("tr-TR"),
                       timestamp: Date.now(),
                     };
