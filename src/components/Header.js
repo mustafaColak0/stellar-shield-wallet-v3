@@ -169,14 +169,14 @@ const sendStellarAssetTransaction = async (
           amount: amountText,
         }),
       )
-      .setTimeout(30)
+      .setTimeout(180)
       .build();
 
     let signResult;
 
     try {
       signResult = await signTransaction(transaction.toXDR(), {
-        network: "TESTNET",
+        networkPassphrase: Networks.TESTNET,
         address: sourcePublicKey,
       });
 
@@ -226,10 +226,48 @@ const sendStellarAssetTransaction = async (
       asset: code,
     };
   } catch (error) {
-    console.error("Asset transfer error:", error);
+    const horizonData = error?.response?.data;
+    const resultCodes = horizonData?.extras?.result_codes;
 
-    const operationCode =
-      error?.response?.data?.extras?.result_codes?.operations?.[0];
+    const transactionCode = resultCodes?.transaction;
+    const operationCode = resultCodes?.operations?.[0];
+
+    console.error("Stellar transaction rejected:", {
+      httpStatus: error?.response?.status,
+      title: horizonData?.title,
+      detail: horizonData?.detail,
+      transactionCode,
+      operationCode,
+    });
+    if (transactionCode === "tx_bad_seq") {
+      return {
+        success: false,
+        error:
+          "Stellar sequence number uyuşmazlığı. Hesap yeniden senkronize edilmeli.",
+      };
+    }
+
+    if (transactionCode === "tx_too_late") {
+      return {
+        success: false,
+        error:
+          "İşlemin imzalama süresi doldu. İşlemi yeniden oluşturup imzalayın.",
+      };
+    }
+
+    if (transactionCode === "tx_bad_auth") {
+      return {
+        success: false,
+        error: "Freighter imzası veya Stellar Testnet ağı doğrulanamadı.",
+      };
+    }
+
+    if (transactionCode === "tx_insufficient_fee") {
+      return {
+        success: false,
+        error: "Stellar ağ ücreti yetersiz kaldı.",
+      };
+    }
 
     if (operationCode === "op_no_trust") {
       return {
@@ -1141,6 +1179,9 @@ function Header({
         amount,
         asset: selectedAsset || "XLM",
         hash: result.hash,
+        status: "SUCCESS",
+        statusText: "Success",
+        verifiedOnChain: true,
       };
 
       setTransactions((prev) => [newTx, ...prev]);
@@ -1558,18 +1599,21 @@ function Header({
   };
 
   const getHistorySecurityStatus = (tx) => {
-    const hash = String(tx?.hash || tx?.txHash || tx?.transactionHash || "");
-
-    const successful =
-      String(tx?.status || "").toUpperCase() === "SUCCESS" || hash.length > 20;
-
-    return successful ? "SHIELD OK" : "REVIEW";
+    return String(tx?.status || "").toUpperCase() === "SUCCESS"
+      ? "SHIELD OK"
+      : "REVIEW";
   };
 
   const getHistoryTxHash = (tx) => {
     return String(
-      tx?.hash || tx?.txHash || tx?.transactionHash || tx?.id || "",
+      tx?.hash || tx?.txHash || tx?.tx_hash || tx?.transactionHash || "",
     );
+  };
+
+  const isRealStellarTxHash = (tx) => {
+    const hash = getHistoryTxHash(tx);
+
+    return tx?.verifiedOnChain === true && /^[0-9a-f]{64}$/i.test(hash);
   };
 
   const getHistoryDestination = (tx) => {
@@ -5134,40 +5178,53 @@ md:static
                                         )
                                       : tx.date}
                                   </td>
-
                                   {/* STELLAR EXPERT */}
                                   <td className="p-4 text-right whitespace-nowrap">
-                                    <a
-                                      href={`https://stellar.expert/explorer/testnet/tx/${getHistoryTxHash(tx)}`}
-                                      onClick={(e) => e.stopPropagation()}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="
-                            inline-block
-                            px-2.5
-                            py-1
-
-                            bg-slate-900
-
-                            border
-                            border-slate-700
-
-                            text-slate-400
-
-                            rounded
-                            text-[10px]
-
-                            transition-all
-                            duration-200
-
-                            hover:border-cyan-500/50
-                            hover:text-cyan-400
-                            hover:bg-cyan-500/10
-                            hover:shadow-[0_0_12px_rgba(34,211,238,0.15)]
-                          "
-                                    >
-                                      Stellar Expert
-                                    </a>
+                                    {isRealStellarTxHash(tx) ? (
+                                      <a
+                                        href={`https://stellar.expert/explorer/testnet/tx/${getHistoryTxHash(tx)}`}
+                                        onClick={(e) => e.stopPropagation()}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="
+        inline-block
+        px-2.5
+        py-1
+        bg-slate-900
+        border
+        border-slate-700
+        text-slate-400
+        rounded
+        text-[10px]
+        transition-all
+        duration-200
+        hover:border-cyan-500/50
+        hover:text-cyan-400
+        hover:bg-cyan-500/10
+        hover:shadow-[0_0_12px_rgba(34,211,238,0.15)]
+      "
+                                      >
+                                        Stellar Expert ↗
+                                      </a>
+                                    ) : (
+                                      <span
+                                        className="
+        inline-block
+        px-2.5
+        py-1
+        rounded
+        text-[9px]
+        font-mono
+        font-bold
+        text-amber-400
+        bg-amber-500/5
+        border
+        border-amber-500/20
+      "
+                                      >
+                                        UNVERIFIED
+                                      </span>
+                                    )}
                                   </td>
                                 </tr>
                               ))
@@ -5446,28 +5503,47 @@ md:static
                           CLOSE
                         </button>
 
-                        <a
-                          href={`https://stellar.expert/explorer/testnet/tx/${getHistoryTxHash(
-                            selectedHistoryTx,
-                          )}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="
-            py-2.5
-            rounded-xl
-            bg-cyan-500
-            text-slate-950
-            text-[11px]
-            font-black
-            text-center
-            hover:bg-cyan-400
-            transition
-            shadow-lg
-            shadow-cyan-500/10
-          "
-                        >
-                          VIEW ON STELLAR EXPERT ↗
-                        </a>
+                        {isRealStellarTxHash(selectedHistoryTx) ? (
+                          <a
+                            href={`https://stellar.expert/explorer/testnet/tx/${getHistoryTxHash(
+                              selectedHistoryTx,
+                            )}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="
+      py-2.5
+      rounded-xl
+      bg-cyan-500
+      text-slate-950
+      text-[11px]
+      font-black
+      text-center
+      hover:bg-cyan-400
+      transition
+      shadow-lg
+      shadow-cyan-500/10
+    "
+                          >
+                            VIEW ON STELLAR EXPERT ↗
+                          </a>
+                        ) : (
+                          <div
+                            className="
+      py-2.5
+      rounded-xl
+      bg-amber-500/5
+      border
+      border-amber-500/20
+      text-amber-400
+      text-[11px]
+      font-black
+      text-center
+      cursor-not-allowed
+    "
+                          >
+                            UNVERIFIED TRANSACTION
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
