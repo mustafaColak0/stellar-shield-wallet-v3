@@ -3,3 +3,5 @@ target/
 build/
 .env
 .DS_Store
+# Git backup bundles
+*.bundle
