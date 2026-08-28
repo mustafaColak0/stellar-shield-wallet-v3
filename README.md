@@ -218,6 +218,7 @@ Follow these steps to run the project locally on your machine:
 
 2. Multi-Asset Transfer Engine with Compliance Filters
    The transfer panel supports real Stellar Testnet XLM, USDC, and EURC transfers through Freighter and Horizon. Issued-asset transfers validate the configured issuer, source balance, and required trustlines before signing. The interface also includes compliance-oriented status panels, integrated quick contacts, security confirmation, and the transaction signing workflow:
+   
    <img width="797" height="605" alt="soroban_auth_matrix" src="https://github.com/user-attachments/assets/3b0ec7e4-fb7c-489c-ac60-ac5b56b05049" />
    <img width="795" height="587" alt="multi_asset_transfer_usdc" src="https://github.com/user-attachments/assets/2cc19750-1b68-4e7f-af47-a050f35c0556" />
    <img width="1537" height="857" alt="transfer_overview" src="https://github.com/user-attachments/assets/9ede92f4-19c1-4ab2-baa7-a014ce527d83" />
@@ -225,11 +226,11 @@ Follow these steps to run the project locally on your machine:
    <img width="100%" src="docs/images/USDC_Transfer.png" alt="Real Stellar Testnet USDC Transfer"/>
    <img width="100%" src="docs/images/EURC_Transfer.png" alt="Real Stellar Testnet EURC Transfer"/>
 
-3. Dynamic QR Code Peer-to-Peer Payment Request Engine
+4. Dynamic QR Code Peer-to-Peer Payment Request Engine
    A real-time payment address sharing layout that generates a high-contrast QR code corresponding to the connected user's public key, with optional amount and memo fields:
    <img width="462" height="670" alt="qr_payment_request" src="https://github.com/user-attachments/assets/e8cdc46b-8786-4497-93b9-fafc964c52fd" />
 
-4. Level 2 Security Audit & Soroban Interaction Matrix
+5. Level 2 Security Audit & Soroban Interaction Matrix
    The centralized security-oriented sandbox showing audit simulations, cryptographic signing states, transaction monitoring, and exception / abort test handlers:
    <img width="1486" height="867" alt="security_audit_center" src="https://github.com/user-attachments/assets/403c14c1-d925-4109-b685-ab3d9aa75564" />
 
