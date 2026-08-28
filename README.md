@@ -299,10 +299,13 @@ Stellar Shield includes a responsive mobile interface designed to preserve the c
 
 The screenshots below demonstrate the responsive dashboard and transaction experience on mobile viewport sizes.
 
-<p align="center">
+<table>
+  <tr>
+    <td align="center"
 
 <img width="350" height="775" alt="dashboard_mobile" src="https://github.com/user-attachments/assets/96b9f6a2-27f6-4f43-8148-a57b5027df8d" />
-
+</td>
+ <td align="center">
 <img width="300" src="docs/images/mobile_dashboard.png" alt="Stellar Shield Mobile Dashboard"/>
 
 <img
@@ -310,20 +313,30 @@ The screenshots below demonstrate the responsive dashboard and transaction exper
     alt="Stellar Shield Mobile Transfer Engine"
     width="300"
   />
+   </td>
+  </tr>
 
+  
+  <tr>
+    <td align="center">
 <img
     src="docs/images/mobile_addressbook.png"
     alt="Stellar Shield Mobile Address Book"
     width="300"
   />
-
+      
+ </td>
+    <td align="center">
+      
 <img
     src="docs/images/mobile_feedback.png"
     alt="Stellar Shield Mobile Feedback"
     width="300"
   />
-
-</p>
+  
+ </td>
+  </tr>
+</table>
 
 ## 👥 Live Analytics & Real-User Testing (Level 4 Progress)
 
