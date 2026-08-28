@@ -218,6 +218,7 @@ Follow these steps to run the project locally on your machine:
 
 2. Multi-Asset Transfer Engine with Compliance Filters
    The transfer panel supports real Stellar Testnet XLM, USDC, and EURC transfers through Freighter and Horizon. Issued-asset transfers validate the configured issuer, source balance, and required trustlines before signing. The interface also includes compliance-oriented status panels, integrated quick contacts, security confirmation, and the transaction signing workflow:
+   
    <img width="797" height="605" alt="soroban_auth_matrix" src="https://github.com/user-attachments/assets/3b0ec7e4-fb7c-489c-ac60-ac5b56b05049" />
    <img width="795" height="587" alt="multi_asset_transfer_usdc" src="https://github.com/user-attachments/assets/2cc19750-1b68-4e7f-af47-a050f35c0556" />
    <img width="1537" height="857" alt="transfer_overview" src="https://github.com/user-attachments/assets/9ede92f4-19c1-4ab2-baa7-a014ce527d83" />
@@ -225,11 +226,11 @@ Follow these steps to run the project locally on your machine:
    <img width="100%" src="docs/images/USDC_Transfer.png" alt="Real Stellar Testnet USDC Transfer"/>
    <img width="100%" src="docs/images/EURC_Transfer.png" alt="Real Stellar Testnet EURC Transfer"/>
 
-3. Dynamic QR Code Peer-to-Peer Payment Request Engine
+4. Dynamic QR Code Peer-to-Peer Payment Request Engine
    A real-time payment address sharing layout that generates a high-contrast QR code corresponding to the connected user's public key, with optional amount and memo fields:
    <img width="462" height="670" alt="qr_payment_request" src="https://github.com/user-attachments/assets/e8cdc46b-8786-4497-93b9-fafc964c52fd" />
 
-4. Level 2 Security Audit & Soroban Interaction Matrix
+5. Level 2 Security Audit & Soroban Interaction Matrix
    The centralized security-oriented sandbox showing audit simulations, cryptographic signing states, transaction monitoring, and exception / abort test handlers:
    <img width="1486" height="867" alt="security_audit_center" src="https://github.com/user-attachments/assets/403c14c1-d925-4109-b685-ab3d9aa75564" />
 
@@ -295,6 +296,25 @@ Stellar Shield includes a responsive mobile interface designed to preserve the c
 
 The screenshots below demonstrate the responsive dashboard and transaction experience on mobile viewport sizes.
 
+#### 📱 Mobile Wallet Connection Options
+
+When Freighter is selected on a mobile device, Stellar Shield presents a dedicated wallet-choice interface for mobile users.
+
+The interface provides:
+
+- **Freighter Mobile** — opens the official Freighter mobile wallet option.
+- **Browser Extension** — provides access to the Freighter browser-extension option for supported desktop browsers.
+
+This keeps the mobile onboarding flow clear while avoiding any misleading simulated wallet connection.
+
+<p align="center">
+  <img
+    src="docs/images/mobile_freighter_options.png"
+    alt="Stellar Shield Mobile Freighter Connection Options"
+    width="350"
+  />
+</p>
+
 <table>
   <tr>
     <td align="center" valign="top">
@@ -343,9 +363,9 @@ StellarShield now includes a dedicated live analytics panel for external testing
 - **Tester Feedback Filter:** Displays external tester comments separately from developer/demo feedback.
 - **Verified Event Persistence:** Previously observed verified activity is preserved locally even when older RPC events move outside the active retention window.
 - **Unique User Validation:** Repeated interactions from the same wallet do not increase the verified unique wallet count.
-- **Current Verified Evidence Set:** 10 unique external tester wallets have been independently identified from real on-chain interaction evidence collected during testing.
+- **Current Verified Evidence Set:** 11 unique external tester wallets have been independently identified from real on-chain interaction evidence collected during testing.
 
-<img  width="700" src="docs/images/ten_users.png" alt="10 Verified External Tester Wallets"/>
+<img width="692" height="772" alt="11_user" src="https://github.com/user-attachments/assets/8285ece3-3a45-400f-b5cc-4f5f42ee6872" />
 
 ### 💬 Verified External Tester Feedback
 
