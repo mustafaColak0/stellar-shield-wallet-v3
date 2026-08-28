@@ -765,6 +765,7 @@ function Header({
   });
   const [loading, setLoading] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showFreighterOptions, setShowFreighterOptions] = useState(false);
   const [showAddressBook, setShowAddressBook] = useState(true);
   const [isSecurityChecked, setIsSecurityChecked] = useState(false);
   const [showSecurityCheck, setShowSecurityCheck] = useState(false);
@@ -1378,7 +1379,12 @@ function Header({
     const initWallet = async () => {
       try {
         // Do not attempt browser-extension auto connection on mobile.
-        if (isMobileDevice()) {
+        // The Freighter options modal should open only after the user clicks Freighter.
+        const isMobileClient =
+          typeof navigator !== "undefined" &&
+          /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+        if (isMobileClient) {
           return;
         }
 
@@ -1497,7 +1503,6 @@ function Header({
       setIsScanning(false);
     }, 2000);
   };
-
   // ============================================================
   // FREIGHTER DEVICE / INSTALL ROUTING
   // ============================================================
@@ -1517,53 +1522,72 @@ function Header({
     return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   };
 
-  const redirectToFreighter = () => {
+  const openFreighterMobile = () => {
     if (typeof window === "undefined") return;
 
     const userAgent = navigator.userAgent || "";
 
     if (/Android/i.test(userAgent)) {
-      window.location.assign(FREIGHTER_ANDROID_URL);
+      window.open(FREIGHTER_ANDROID_URL, "_blank", "noopener,noreferrer");
       return;
     }
 
     if (/iPhone|iPad|iPod/i.test(userAgent)) {
-      window.location.assign(FREIGHTER_IOS_URL);
+      window.open(FREIGHTER_IOS_URL, "_blank", "noopener,noreferrer");
       return;
     }
 
-    window.location.assign(FREIGHTER_CHROME_URL);
+    window.open(FREIGHTER_CHROME_URL, "_blank", "noopener,noreferrer");
   };
+
+  const openFreighterExtension = () => {
+    if (typeof window === "undefined") return;
+
+    window.open(FREIGHTER_CHROME_URL, "_blank", "noopener,noreferrer");
+  };
+
+  // ============================================================
+  // WALLET CONNECTION
+  // ============================================================
 
   const connectWallet = async (walletType) => {
     setLoading(true);
 
     try {
+      // ----------------------------------------------------------
+      // FREIGHTER
+      // ----------------------------------------------------------
       if (walletType === "Freighter") {
-        // MOBILE:
-        // Browser extension does not run on normal mobile browsers.
-        // Send the user directly to the official Freighter mobile app.
+        // Mobile browsers cannot use the desktop Freighter extension.
+        // Show the user the mobile/desktop options instead.
         if (isMobileDevice()) {
           setLoading(false);
-          redirectToFreighter();
+          setConnectedWalletType("");
+          setShowFreighterOptions(true);
           return;
         }
 
-        // DESKTOP:
-        // Make sure the real Freighter extension actually exists
-        // before running our connection helper.
-        const freighterInstalled = await isConnected();
+        // Desktop: verify that Freighter is actually installed.
+        const freighterStatus = await isConnected();
+
+        const freighterInstalled =
+          typeof freighterStatus === "boolean"
+            ? freighterStatus
+            : Boolean(freighterStatus?.isConnected);
 
         if (!freighterInstalled) {
           setLoading(false);
-          redirectToFreighter();
+          setConnectedWalletType("");
+          openFreighterExtension();
           return;
         }
 
+        // Preserve the existing real Freighter connection flow.
         const hasAccess = await checkConnection();
 
         if (!hasAccess) {
           setLoading(false);
+          setConnectedWalletType("");
           return;
         }
 
@@ -1571,6 +1595,7 @@ function Header({
 
         if (!key) {
           setLoading(false);
+          setConnectedWalletType("");
           return;
         }
 
@@ -1580,28 +1605,49 @@ function Header({
 
         const bal = await getBalance();
 
-        setBalance(bal);
+        if (bal !== undefined && bal !== null) {
+          setBalance(bal);
 
-        const now = new Date().toLocaleTimeString("tr-TR", {
-          hour: "2-digit",
-          minute: "2-digit",
-        });
+          const now = new Date().toLocaleTimeString("tr-TR", {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
 
-        setBalanceData([
-          { time: "Introduction", balance: parseFloat(bal) },
-          { time: now, balance: parseFloat(bal) },
-        ]);
+          setBalanceData([
+            {
+              time: "Introduction",
+              balance: parseFloat(bal),
+            },
+            {
+              time: now,
+              balance: parseFloat(bal),
+            },
+          ]);
+        }
 
         return;
       }
 
+      // ----------------------------------------------------------
+      // xBULL
+      // ----------------------------------------------------------
       if (walletType === "xBull") {
         window.open(
           "https://chromewebstore.google.com/detail/xbull-wallet/omajpeaffjgmlpmhbfdjepdejoemifpe",
           "_blank",
+          "noopener,noreferrer",
         );
-      } else if (walletType === "Albedo") {
-        window.open("https://albedo.link/signup", "_blank");
+      }
+
+      // ----------------------------------------------------------
+      // ALBEDO
+      // ----------------------------------------------------------
+      else if (walletType === "Albedo") {
+        window.open(
+          "https://albedo.link/signup",
+          "_blank",
+          "noopener,noreferrer",
+        );
       }
 
       setConnectedWalletType(walletType);
@@ -1609,15 +1655,16 @@ function Header({
       setTimeout(() => {
         if (!connected) {
           setLoading(false);
-          setConnectedWalletType(null);
+          setConnectedWalletType("");
         }
       }, 20000);
 
       return;
     } catch (error) {
       console.error("Wallet connection error:", error);
+
       setLoading(false);
-      setConnectedWalletType(null);
+      setConnectedWalletType("");
     } finally {
       if (walletType === "Freighter") {
         setLoading(false);
@@ -3114,7 +3161,157 @@ function Header({
                 and Live Analytics.
               </span>
             </div>
+            {/* FREIGHTER MOBILE OPTIONS */}
+            {showFreighterOptions && (
+              <div
+                className="
+      fixed
+      inset-0
+      z-[9999]
+      flex
+      items-center
+      justify-center
+      p-4
+      bg-slate-950/85
+      backdrop-blur-sm
+    "
+                onClick={() => setShowFreighterOptions(false)}
+              >
+                <div
+                  className={`
+        w-full
+        max-w-md
+        rounded-2xl
+        border
+        p-6
+        shadow-2xl
+        ${
+          darkMode
+            ? "bg-[#070d19] border-cyan-500/20"
+            : "bg-white border-slate-200"
+        }
+      `}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="text-center mb-6">
+                    <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
+                      <Wallet size={22} className="text-cyan-400" />
+                    </div>
 
+                    <h3
+                      className={`text-lg font-black ${
+                        darkMode ? "text-slate-100" : "text-slate-900"
+                      }`}
+                    >
+                      Connect with Freighter
+                    </h3>
+
+                    <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                      Choose how you want to use Freighter.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    {/* MOBILE APP */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowFreighterOptions(false);
+                        openFreighterMobile();
+                      }}
+                      className="
+            w-full
+            p-4
+            rounded-xl
+            bg-cyan-500/10
+            border
+            border-cyan-500/30
+            hover:bg-cyan-500/20
+            hover:border-cyan-400
+            transition-all
+            text-left
+          "
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="text-2xl">📱</div>
+
+                        <div>
+                          <div className="text-sm font-black text-cyan-400">
+                            Freighter Mobile
+                          </div>
+
+                          <div className="text-[10px] text-slate-400 mt-1">
+                            Open or install the official Freighter mobile
+                            wallet.
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+
+                    {/* BROWSER EXTENSION */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowFreighterOptions(false);
+                        openFreighterExtension();
+                      }}
+                      className="
+            w-full
+            p-4
+            rounded-xl
+            bg-slate-900/60
+            border
+            border-slate-800
+            hover:border-indigo-500/50
+            hover:bg-indigo-500/10
+            transition-all
+            text-left
+          "
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="text-2xl">💻</div>
+
+                        <div>
+                          <div className="text-sm font-black text-indigo-400">
+                            Browser Extension
+                          </div>
+
+                          <div className="text-[10px] text-slate-400 mt-1">
+                            Install Freighter Extension on a supported desktop
+                            browser.
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+
+                  <div className="mt-4 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                    <p className="text-[10px] text-amber-400 text-center font-mono">
+                      Browser extensions require a supported desktop browser.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowFreighterOptions(false)}
+                    className="
+          w-full
+          mt-4
+          py-2.5
+          rounded-lg
+          text-xs
+          font-bold
+          text-slate-400
+          hover:text-slate-200
+          hover:bg-slate-800/50
+          transition-all
+        "
+                  >
+                    CANCEL
+                  </button>
+                </div>
+              </div>
+            )}
             {loading && connectedWalletType === "Freighter" && (
               <div className="text-xs font-mono text-cyan-400 animate-pulse mt-4">
                 Cryptographic handshake is being performed...
