@@ -21,47 +21,47 @@ The project focuses on transparent verification: supported transactions expose t
 
 ## 🚀 Features
 
-\*🔐 **Freighter Wallet Integration:** Connects to the active Freighter account, restores the connected wallet on refresh, and synchronizes real Stellar Testnet balances.
+*🔐 **Freighter Wallet Integration:** Connects to the active Freighter account, restores the connected wallet on refresh, and synchronizes real Stellar Testnet balances.
 
-\*💸 **Real Multi-Asset Transfers — XLM / USDC / EURC:** Builds, signs, and submits real Stellar Classic payment operations through Freighter + Horizon. USDC and EURC transfers validate the exact Testnet issuer and require valid trustlines on both source and destination accounts.
+*💸 **Real Multi-Asset Transfers — XLM / USDC / EURC:** Builds, signs, and submits real Stellar Classic payment operations through Freighter + Horizon. USDC and EURC transfers validate the exact Testnet issuer and require valid trustlines on both source and destination accounts.
 
-\*🪙 **Live Multi-Asset Balance Sync:** Reads the connected account directly from Horizon and synchronizes native XLM plus the configured USDC and EURC trustline balances.
+*🪙 **Live Multi-Asset Balance Sync:** Reads the connected account directly from Horizon and synchronizes native XLM plus the configured USDC and EURC trustline balances.
 
-\*✅ **Verified Transaction History:** Successful Classic transfers are stored with the real Horizon transaction hash and verifiedOnChain: true. Explorer links are only enabled for verified 64-character Stellar transaction hashes; legacy/local records remain clearly marked as UNVERIFIED.
+*✅ **Verified Transaction History:** Successful Classic transfers are stored with the real Horizon transaction hash and verifiedOnChain: true. Explorer links are only enabled for verified 64-character Stellar transaction hashes; legacy/local records remain clearly marked as UNVERIFIED.
 
-\*📤 **Transaction History CSV Export:** Exports the currently visible transaction-history results while respecting active search and date filters.
+*📤 **Transaction History CSV Export:** Exports the currently visible transaction-history results while respecting active search and date filters.
 
-\*⚡ **Soroban create_feedback Interaction:** Builds, prepares, signs, submits, retries, and confirms Soroban Testnet transactions through Stellar RPC.
+*⚡ **Soroban create_feedback Interaction:** Builds, prepares, signs, submits, retries, and confirms Soroban Testnet transactions through Stellar RPC.
 
-\*🧠 **Soroban Transaction Reliability:** Uses prepareTransaction, fresh account sequence reads, retry handling for temporary network congestion, txBadSeq rebuild protection, and final ledger-confirmation polling before the UI reports success.
+*🧠 **Soroban Transaction Reliability:** Uses prepareTransaction, fresh account sequence reads, retry handling for temporary network congestion, txBadSeq rebuild protection, and final ledger-confirmation polling before the UI reports success.
 
-\*🔗 **Verified Soroban History:** Confirmed Soroban operations now persist their real RPC transaction hash in Transaction History. Fake/fallback transaction hashes are not treated as verified blockchain proof.
+*🔗 **Verified Soroban History:** Confirmed Soroban operations now persist their real RPC transaction hash in Transaction History. Fake/fallback transaction hashes are not treated as verified blockchain proof.
 
-\*🟢 **Live Broadcast Success UI:** Displays confirmed transaction hashes after successful on-chain operations and provides Stellar Expert links only for records that passed the application's verification guard.
+*🟢 **Live Broadcast Success UI:** Displays confirmed transaction hashes after successful on-chain operations and provides Stellar Expert links only for records that passed the application's verification guard.
 
-\*📊 **Live Stellar Network Metrics:** Refreshes every 15 seconds and displays the current base fee, network capacity usage, average ledger close time, Soroban inclusion fee (p50), protocol version, and a derived OPTIMAL / BUSY / CONGESTED dashboard status.
+*📊 **Live Stellar Network Metrics:** Refreshes every 15 seconds and displays the current base fee, network capacity usage, average ledger close time, Soroban inclusion fee (p50), protocol version, and a derived OPTIMAL / BUSY / CONGESTED dashboard status.
 
-\*👥 **Verified User Analytics:** Tracks real fb_live on-chain interactions, deduplicates wallets, excludes both legacy and current developer wallets from the external tester count, and merges live RPC activity with previously verified historical records when older events leave the active RPC retention window.
+*👥 **Verified User Analytics:** Tracks real fb_live on-chain interactions, deduplicates wallets, excludes both legacy and current developer wallets from the external tester count, and merges live RPC activity with previously verified historical records when older events leave the active RPC retention window.
 
-\*💬 **Tester Feedback Filter:** Separates verified external tester feedback from developer/demo activity so real tester comments can be reviewed independently.
+*💬 **Tester Feedback Filter:** Separates verified external tester feedback from developer/demo activity so real tester comments can be reviewed independently.
 
-\*🧾 **Wallet-Specific Persistent Transaction History:** Stores history under a wallet-specific localStorage key so different Freighter accounts in the same browser do not share transaction records. Includes All, Today, This Week, and This Month filters plus search by destination or transaction hash.
+*🧾 **Wallet-Specific Persistent Transaction History:** Stores history under a wallet-specific localStorage key so different Freighter accounts in the same browser do not share transaction records. Includes All, Today, This Week, and This Month filters plus search by destination or transaction hash.
 
-\*🔲 **Dynamic QR Payment Request:** Generates Stellar payment QR codes from the connected public key with optional numeric amount and sanitized memo fields.
+*🔲 **Dynamic QR Payment Request:** Generates Stellar payment QR codes from the connected public key with optional numeric amount and sanitized memo fields.
 
-\*📇 **Validated Address Book:** Prevents duplicate contact names and duplicate wallet addresses and supports quick-transfer workflows.
+*📇 **Validated Address Book:** Prevents duplicate contact names and duplicate wallet addresses and supports quick-transfer workflows.
 
-\*🛡️ **Security Audit & Confirmation UI:** Includes security-oriented confirmation flows, simulated audit/error scenarios, and explicit user approval before signing sensitive actions.
+*🛡️ **Security Audit & Confirmation UI:** Includes security-oriented confirmation flows, simulated audit/error scenarios, and explicit user approval before signing sensitive actions.
 
-\*🛑 **Network-Aware Error Handling:** Handles rejected signatures, temporary Soroban RPC conditions, failed contract execution, sequence synchronization, delayed confirmations, Horizon transaction result codes, missing trustlines, insufficient balances, and invalid destinations.
+*🛑 **Network-Aware Error Handling:** Handles rejected signatures, temporary Soroban RPC conditions, failed contract execution, sequence synchronization, delayed confirmations, Horizon transaction result codes, missing trustlines, insufficient balances, and invalid destinations.
 
-\*🌗 **Dark / Light Theme:** Provides a cyber-styled dark dashboard and a high-contrast light interface.
+*🌗 **Dark / Light Theme:** Provides a cyber-styled dark dashboard and a high-contrast light interface.
 
-\*📈 **Asset Flow Chart:** Recharts visualization synchronized with real Testnet balance refreshes after supported transactions.
+*📈 **Asset Flow Chart:** Recharts visualization synchronized with real Testnet balance refreshes after supported transactions.
 
-\*📘 **Integrated User Guide:** In-app guidance for connecting Freighter, using the transfer engine, interacting with the Soroban contract, verifying transactions, and obtaining Testnet assets. The guide can be accessed before completing the full wallet workflow.
+*📘 **Integrated User Guide:** In-app guidance for connecting Freighter, using the transfer engine, interacting with the Soroban contract, verifying transactions, and obtaining Testnet assets. The guide can be accessed before completing the full wallet workflow.
 
-\*📏 **Responsive Dashboard Layout:** Responsive layouts, interactive cards, status panels, and locally built Tailwind CSS transitions designed for a consistent Web3 dashboard experience.
+*📏 **Responsive Dashboard Layout:** Responsive layouts, interactive cards, status panels, and locally built Tailwind CSS transitions designed for a consistent Web3 dashboard experience.
 
 ---
 
