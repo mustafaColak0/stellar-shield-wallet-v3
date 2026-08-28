@@ -767,6 +767,7 @@ function Header({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showFreighterOptions, setShowFreighterOptions] = useState(false);
   const [simulationWalletType, setSimulationWalletType] = useState("");
+  const [isSimulationMode, setIsSimulationMode] = useState(false);
   const [showAddressBook, setShowAddressBook] = useState(true);
   const [isSecurityChecked, setIsSecurityChecked] = useState(false);
   const [showSecurityCheck, setShowSecurityCheck] = useState(false);
@@ -1151,6 +1152,136 @@ function Header({
     setShowSecurityCheck(false);
     setIsSecurityChecked(false);
 
+    // ============================================================
+    // LOCAL WALLET SIMULATION
+    // No Stellar transaction is signed or broadcast.
+    // ============================================================
+    if (isSimulationMode) {
+      const assetCode = selectedAsset || "XLM";
+      const amountText = String(amount || "").trim();
+      const numericAmount = Number(amountText);
+
+      if (!StrKey.isValidEd25519PublicKey(destination)) {
+        setTxStatus({
+          type: "error",
+          message:
+            "Simulation: Please enter a valid Stellar destination address.",
+          hash: "",
+        });
+
+        return;
+      }
+
+      if (
+        !/^\d+(\.\d{1,7})?$/.test(amountText) ||
+        !Number.isFinite(numericAmount) ||
+        numericAmount <= 0
+      ) {
+        setTxStatus({
+          type: "error",
+          message: "Simulation: Please enter a valid transfer amount.",
+          hash: "",
+        });
+
+        return;
+      }
+
+      const availableBalance = Number(
+        assetBalances?.[assetCode] ?? (assetCode === "XLM" ? balance : 0),
+      );
+
+      if (numericAmount > availableBalance) {
+        setTxStatus({
+          type: "error",
+          message: `Simulation: Insufficient ${assetCode} balance.`,
+          hash: "",
+        });
+
+        return;
+      }
+
+      // Clearly non-blockchain identifier.
+      // It cannot be confused with a real 64-character Stellar transaction hash.
+      const simulationId = `SIM-${Date.now()}`;
+
+      const nextBalance = Math.max(0, availableBalance - numericAmount);
+
+      const simulatedTx = {
+        id: simulationId,
+        timestamp: Date.now(),
+        date: new Date().toLocaleString("tr-TR"),
+
+        ownerWallet: pubKey || "",
+        from: pubKey || "",
+        to: destination,
+
+        amount: amountText,
+        asset: assetCode,
+
+        hash: simulationId,
+
+        status: "SIMULATED",
+        statusText: "Simulation Only",
+
+        verifiedOnChain: false,
+        isSimulation: true,
+      };
+
+      // Add to local Transaction History.
+      setTransactions((prev) => [simulatedTx, ...prev]);
+
+      // Update simulated asset balance locally.
+      setAssetBalances((prev) => ({
+        ...prev,
+        [assetCode]: nextBalance.toFixed(7),
+      }));
+
+      // Keep XLM dashboard balance/chart synchronized in simulation mode.
+      if (assetCode === "XLM") {
+        setBalance(nextBalance.toFixed(7));
+
+        const now = new Date().toLocaleTimeString("tr-TR", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
+
+        setBalanceData((prev) => [
+          ...(Array.isArray(prev) ? prev : []),
+          {
+            time: now,
+            name: now,
+            balance: nextBalance,
+            source: "simulation",
+            isSimulation: true,
+          },
+        ]);
+      }
+
+      setTxStatus({
+        type: "success",
+        message: `🧪 Simulation completed locally. ${amountText} ${assetCode} was simulated. No transaction was signed or broadcast to Stellar Testnet.`,
+        hash: simulationId,
+      });
+
+      setAmount("");
+      setDestination("");
+
+      setTimeout(() => {
+        setTxStatus({
+          type: "",
+          message: "",
+          hash: "",
+        });
+      }, 30000);
+
+      return;
+    }
+
+    // ============================================================
+    // REAL STELLAR TRANSACTION
+    // ============================================================
+
     setTxStatus({
       type: "loading",
       message: "Connecting to Freighter Wallet and signing transaction...",
@@ -1401,6 +1532,7 @@ function Header({
         setConnected(true);
         setConnectedWalletType("Freighter");
         setSimulationWalletType("");
+        setIsSimulationMode(false);
 
         const bal = await getBalance();
 
@@ -1607,6 +1739,7 @@ function Header({
         setConnected(true);
         setConnectedWalletType("Freighter");
         setSimulationWalletType("");
+        setIsSimulationMode(false);
 
         const bal = await getBalance();
 
@@ -1685,6 +1818,8 @@ function Header({
     setBalance("0");
     setBalanceData([]);
     setConnectedWalletType("");
+    setSimulationWalletType("");
+    setIsSimulationMode(false);
     setActiveTab("dashboard");
   };
 
@@ -1735,6 +1870,13 @@ function Header({
   };
 
   const getHistorySecurityStatus = (tx) => {
+    if (
+      tx?.isSimulation === true ||
+      String(tx?.status || "").toUpperCase() === "SIMULATED"
+    ) {
+      return "SIMULATION";
+    }
+
     return String(tx?.status || "").toUpperCase() === "SUCCESS"
       ? "SHIELD OK"
       : "REVIEW";
@@ -3351,8 +3493,15 @@ function Header({
                     setConnectedWalletType(simulationWalletType);
 
                     setConnected(true);
+                    setIsSimulationMode(true);
 
                     setBalance("10000.0000");
+
+                    setAssetBalances({
+                      XLM: "10000.0000",
+                      USDC: "10000.0000",
+                      EURC: "10000.0000",
+                    });
 
                     const now = new Date().toLocaleTimeString("tr-TR", {
                       hour: "2-digit",
@@ -7819,22 +7968,22 @@ disabled:hover:border-slate-800
                         e.preventDefault();
                         openSorobanDepositModal(e);
                       }}
-                      className="mt-4 flex gap-2"
+                      className="mt-4 flex flex-col sm:flex-row gap-2"
                     >
                       <input
                         type="number"
                         value={fundAmount}
                         onChange={(e) => setFundAmount(e.target.value)}
                         placeholder="Amount (XLM) e.g. 50"
-                        className="bg-slate-950 border border-slate-800 rounded px-3 py-1 text-xs text-slate-200 flex-1 focus:outline-none focus:border-cyan-500 transition-colors"
+                        className="w-full sm:flex-1 bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 transition-colors"
                       />
-                      <div className="flex flex-col items-start gap-2">
+                      <div className="w-full sm:w-auto flex flex-col items-start gap-2">
                         <button
                           type="button"
                           onClick={(e) => {
                             openSorobanDepositModal(e);
                           }}
-                          className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-4 py-1 rounded text-xs transition-colors"
+                          className="w-full sm:w-auto bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-4 py-2 rounded text-xs transition-colors"
                         >
                           deposit()
                         </button>
