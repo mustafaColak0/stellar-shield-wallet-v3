@@ -301,11 +301,11 @@ The screenshots below demonstrate the responsive dashboard and transaction exper
 
 <table>
   <tr>
-    <td align="center"
+    <td align="center" valign="top">
 
 <img width="350" height="775" alt="dashboard_mobile" src="https://github.com/user-attachments/assets/96b9f6a2-27f6-4f43-8148-a57b5027df8d" />
 </td>
- <td align="center">
+ <td align="center" valign="top">
 <img width="300" src="docs/images/mobile_dashboard.png" alt="Stellar Shield Mobile Dashboard"/>
 
 <img
@@ -317,16 +317,16 @@ The screenshots below demonstrate the responsive dashboard and transaction exper
   </tr>
 
   
-  <tr>
-    <td align="center">
+   <tr>
+    <td align="center" valign="top">
 <img
     src="docs/images/mobile_addressbook.png"
     alt="Stellar Shield Mobile Address Book"
     width="300"
   />
       
- </td>
-    <td align="center">
+</td>
+    <td align="center" valign="top">
       
 <img
     src="docs/images/mobile_feedback.png"
