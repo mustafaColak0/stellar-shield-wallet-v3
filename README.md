@@ -411,7 +411,7 @@ Every round of user feedback helps us shape the next iteration. Here is how we a
 | "UI could be much better and there is no logo for it. Work more on branding."                           | Refined the overall UI styling and introduced clearer Stellar Shield branding across the application.                                                                                                                       | **Completed** |
 | "I'd love to have a simple transaction history that explains what actually happened in plain language." | Added a dedicated Transaction Details view with operation type, verification status, transaction hash, destination, amount, network, ledger time, and Stellar Expert verification.                                          | **Completed** |
 | "Transaction history export (CSV) — handy for tax/record keeping."                                      | Added CSV export for filtered and searched transaction history results.                                                                                                                                                      | **Completed** |
-| "My recommendation will be add a walkthrough for beginners..."                                          | Added an integrated User Guide covering wallet connection, transfers, Soroban interactions, transaction verification, and Testnet asset usage. A fully interactive first-run walkthrough remains planned.                  | **Partially Completed** |
+| "My recommendation will be add a walkthrough for beginners..." | Added an integrated User Guide and onboarding flow that helps new users connect a wallet, use Testnet tools, transfer assets, interact with Soroban, and verify live transactions. | **Completed** |
 
 ---
 
