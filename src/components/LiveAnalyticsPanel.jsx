@@ -1121,184 +1121,173 @@ xl:-mx-3
   className="
     flex
     flex-col
-    items-center
-    justify-center
+    lg:flex-row
+    lg:items-start
+    lg:justify-between
+
     gap-4
 
     pb-4
     md:pb-6
+
     border-b
     border-slate-800
-
-    text-center
   "
 >
-  
-{/* LEFT Section */}
-<div
-  className="
-    w-full
-
-    flex
-    flex-row
-    sm:flex-col
-
-    items-start
-    sm:items-center
-
-    justify-start
-    sm:justify-center
-
-    gap-3
-    min-w-0
-  "
->
-  {/* ANALYTICS ICON */}
+  {/* LEFT SECTION */}
   <div
     className="
-      w-10
-      h-10
-      sm:w-12
-      sm:h-12
+      w-full
+      lg:w-auto
 
-      rounded-xl
-      border
-      border-emerald-500/20
-      bg-emerald-500/10
+      min-w-0
+      flex-1
 
       flex
-      items-center
-      justify-center
+      items-start
+
+      gap-3
+      sm:gap-4
+    "
+  >
+    {/* ANALYTICS ICON */}
+    <div
+      className="
+        w-10
+        h-10
+
+        sm:w-12
+        sm:h-12
+
+        rounded-xl
+
+        border
+        border-emerald-500/20
+
+        bg-emerald-500/10
+
+        flex
+        items-center
+        justify-center
+
+        shrink-0
+      "
+    >
+      <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400 animate-pulse" />
+    </div>
+
+    {/* TITLE */}
+    <div className="min-w-0 flex-1 text-left">
+      <h2
+        className="
+          text-sm
+          min-[380px]:text-base
+          sm:text-xl
+
+          font-bold
+          text-white
+          leading-tight
+        "
+      >
+        <span className="block sm:inline">
+          Live On-Chain{" "}
+        </span>
+
+        <span className="block sm:inline">
+          Analytics &amp; User Validation
+        </span>
+      </h2>
+
+      <p
+        className="
+          text-[10px]
+          sm:text-sm
+
+          text-slate-400
+
+          mt-1
+
+          max-w-2xl
+
+          leading-relaxed
+        "
+      >
+        Real Stellar Testnet contract events, verified source wallets and hybrid
+        feedback.
+      </p>
+    </div>
+  </div>
+
+  {/* RIGHT SECTION */}
+  <div
+    className="
+      w-full
+      lg:w-auto
 
       shrink-0
     "
   >
-    <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400 animate-pulse" />
-  </div>
-
-  {/* TITLE */}
-  <div
-    className="
-      min-w-0
-      flex-1
-      sm:flex-none
-      sm:w-full
-
-      flex
-      flex-col
-
-      items-start
-      sm:items-center
-
-      text-left
-      sm:text-center
-    "
-  >
-    <h2
+    <div
       className="
-        text-base
-        sm:text-xl
-        font-bold
-        text-white
-        leading-tight
+        grid
+        grid-cols-2
 
-        text-left
-        sm:text-center
-      "
-    >
-      <span className="block">Live On-Chain</span>
-      <span className="block">Analytics &amp; User Validation</span>
-    </h2>
+        gap-2
 
-    <p
-      className="
-        text-[10px]
-        sm:text-sm
-        text-slate-400
+        w-full
+        sm:w-auto
 
-        mt-1
-        max-w-2xl
-
-        leading-relaxed
-
-        text-left
-        sm:text-center
-        sm:mx-auto
-      "
-    >
-      Real Stellar Testnet contract events, verified source wallets and hybrid
-      feedback.
-    </p>
-  </div>
-</div>
-
-  {/* RIGHT Section */}
-  <div
-    className="
-  flex
-  flex-col
-  items-center
-  justify-center
-  gap-2
-
-  w-full
-
-  shrink-0
-"
-  >
-    {/* LIVE - DESKTOP RIGHT TOP */}
-    <span
-      className="
-        inline-flex
         items-center
-        gap-1.5
-
-        px-2.5
-        py-1
-
-        rounded-full
-
-        bg-emerald-500/10
-        border
-        border-emerald-500/20
-
-        text-[9px]
-        sm:text-xs
-        font-bold
-        text-emerald-400
-
-        whitespace-nowrap
       "
     >
-      <span className="relative flex w-2 h-2">
-        <span className="absolute inline-flex w-full h-full rounded-full bg-emerald-400 opacity-50 animate-ping" />
-        <span className="relative inline-flex w-full h-full rounded-full bg-emerald-400" />
+      {/* EMPTY CELL - keeps LIVE directly above RPC */}
+      <div aria-hidden="true" />
+
+      {/* LIVE */}
+      <span
+        className="
+          justify-self-end
+
+          inline-flex
+          items-center
+
+          gap-1.5
+
+          px-2.5
+          py-1
+
+          rounded-full
+
+          bg-emerald-500/10
+
+          border
+          border-emerald-500/20
+
+          text-[9px]
+          sm:text-xs
+
+          font-bold
+          text-emerald-400
+
+          whitespace-nowrap
+        "
+      >
+        <span className="relative flex w-2 h-2">
+          <span className="absolute inline-flex w-full h-full rounded-full bg-emerald-400 opacity-50 animate-ping" />
+          <span className="relative inline-flex w-full h-full rounded-full bg-emerald-400" />
+        </span>
+
+        LIVE
       </span>
 
-      LIVE
-    </span>
-
-    {/* NETWORK CONTROLS */}
-    <div
-     className="
-  flex
-  flex-row
-  items-center
-  justify-center
-  gap-2
-
-  w-full
-  sm:w-auto
-"
-    >
       {/* SYNC NETWORK */}
       <button
         type="button"
         onClick={() => fetchLiveAnalytics()}
         disabled={isRefreshing}
         className="
-          flex-1
-          lg:flex-none
+          w-full
+          sm:w-auto
 
           px-3
           py-2
@@ -1306,17 +1295,20 @@ xl:-mx-3
           rounded-lg
 
           bg-slate-800
+
           border
           border-slate-700
 
           text-[10px]
           sm:text-xs
+
           font-medium
           text-slate-300
 
           flex
           items-center
           justify-center
+
           gap-1.5
 
           whitespace-nowrap
@@ -1343,8 +1335,8 @@ xl:-mx-3
       {/* RPC STATUS */}
       <div
         className="
-          flex-1
-          lg:flex-none
+          w-full
+          sm:w-auto
 
           px-3
           py-2
@@ -1352,17 +1344,20 @@ xl:-mx-3
           rounded-lg
 
           bg-slate-800/80
+
           border
           border-slate-700/60
 
           text-[10px]
           sm:text-xs
+
           font-medium
           text-slate-300
 
           flex
           items-center
           justify-center
+
           gap-2
 
           whitespace-nowrap
