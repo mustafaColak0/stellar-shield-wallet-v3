@@ -1086,6 +1086,13 @@ setUserLogs((prev) => {
     relative
     w-full
 
+lg:w-[calc(100%+1rem)]
+lg:-mx-2
+xl:w-[calc(100%+1.5rem)]
+xl:-mx-3
+
+
+
     mt-5
     sm:mt-6
     md:mt-8
@@ -1126,7 +1133,7 @@ setUserLogs((prev) => {
   "
 >
   {/* LEFT Section */}
-  <div className="flex items-start gap-4 min-w-0 flex-1">
+  <div className="w-full flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-4 min-w-0 flex-1">
     {/* ANALYTICS ICON */}
     <div
       className="
@@ -1148,12 +1155,12 @@ setUserLogs((prev) => {
     </div>
 
     {/* TITLE */}
-    <div className="min-w-0">
-      <h2 className="text-lg sm:text-xl font-bold text-white leading-tight">
+    <div className="min-w-0 flex-1 text-center sm:text-left">
+      <h2 className="text-lg sm:text-xl font-bold text-white leading-tight text-center sm:text-left">
         Live On-Chain Analytics & User Validation
       </h2>
 
-      <p className="text-[11px] sm:text-sm text-slate-400 mt-1 max-w-2xl leading-relaxed">
+      <p className="text-[11px] sm:text-sm text-slate-400 mt-1 max-w-2xl leading-relaxed text-center sm:text-left">
         Real Stellar Testnet contract events, verified source wallets and hybrid
         feedback.
       </p>
@@ -1654,7 +1661,7 @@ hover:border-cyan-500/30 hover:shadow-[0_0_22px_rgba(34,211,238,0.10)]">
             <button
               type="button"
               onClick={() => setFeedbackFilter("ON_CHAIN")}
-              className={`shrink-0 whitespace-nowrappx-2.5 py-1 rounded transition-all cursor-pointer flex items-center gap-1 ${
+              className={`shrink-0 whitespace-nowrap px-2.5 py-1 rounded transition-all cursor-pointer flex items-center gap-1 ${
                 feedbackFilter === "ON_CHAIN" ? "bg-emerald-500/20 text-emerald-400 font-bold" : "text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/10"
               }`}
             >
@@ -1672,7 +1679,7 @@ hover:border-cyan-500/30 hover:shadow-[0_0_22px_rgba(34,211,238,0.10)]">
             <button
               type="button"
               onClick={() => setFeedbackFilter("POSITIVE")}
-              className={`shrink-0 whitespace-nowrappx-2.5 py-1 rounded transition-all cursor-pointer ${
+              className={`shrink-0 whitespace-nowrap px-2.5 py-1 rounded transition-all cursor-pointer ${
                 feedbackFilter === "POSITIVE" ? "bg-emerald-500/20 text-emerald-400 font-bold" : "text-slate-400 hover:text-slate-200"
               }`}
             >
@@ -1715,9 +1722,9 @@ hover:border-cyan-500/30 hover:shadow-[0_0_18px_rgba(34,211,238,0.10)]">
               <span className="text-xs text-slate-400 font-mono">Post As:</span>
               <div
   className="
-    grid
-    grid-cols-2
-    gap-1.5
+   grid
+grid-cols-2
+gap-2
 
     w-full
     sm:w-auto
@@ -1732,7 +1739,7 @@ hover:border-cyan-500/30 hover:shadow-[0_0_18px_rgba(34,211,238,0.10)]">
                 <button
                   type="button"
                   onClick={() => setCommentType("ON_CHAIN")}
-                  className={`justify-center whitespace-nowrap flex items-center gap-1 text-xs px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                  className={`min-w-0 justify-center whitespace-nowrap flex items-center gap-1 text-[9px] min-[380px]:text-[10px] sm:text-xs px-1.5 sm:px-2.5 py-1.5 rounded-md transition-all cursor-pointer ${
                     commentType === "ON_CHAIN"
                       ? "bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30"
                       : "text-slate-400 hover:text-slate-200"
@@ -1743,7 +1750,7 @@ hover:border-cyan-500/30 hover:shadow-[0_0_18px_rgba(34,211,238,0.10)]">
                 <button
                   type="button"
                   onClick={() => setCommentType("OFF_CHAIN")}
-                  className={`flex items-center justify-center whitespace-nowrap gap-1 text-xs px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                  className={`min-w-0 flex items-center justify-center whitespace-nowrap gap-1 text-[9px] min-[380px]:text-[10px] sm:text-xs px-1.5 sm:px-2.5 py-1.5 rounded-md transition-all cursor-pointer ${
                     commentType === "OFF_CHAIN"
                       ? "bg-blue-500/20 text-blue-400 font-bold border border-blue-500/30"
                       : "text-slate-400 hover:text-slate-200"
@@ -1755,7 +1762,7 @@ hover:border-cyan-500/30 hover:shadow-[0_0_18px_rgba(34,211,238,0.10)]">
             </div>
 
             {/* Star and Emotion Selection */}
-            <div className="w-full sm:w-auto flex items-center justify-between sm:justify-start gap-3">
+            <div className="w-full sm:w-auto flex flex-wrap items-center justify-between sm:justify-start gap-2">
               <div className="flex items-center gap-0.5">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -1773,11 +1780,11 @@ hover:border-cyan-500/30 hover:shadow-[0_0_18px_rgba(34,211,238,0.10)]">
                 ))}
               </div>
 
-              <div className="flex gap-1.5">
+              <div className="flex gap-1.5 shrink-0">
                 <button
                   type="button"
                   onClick={() => setFeedbackType("POSITIVE")}
-                  className={`text-xs px-2 py-1 rounded border transition-all cursor-pointer ${
+                  className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-1 rounded border transition-all cursor-pointer ${
                     feedbackType === "POSITIVE"
                       ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400 font-semibold"
                       : "border-slate-800 text-slate-500 hover:text-slate-300"
@@ -1788,7 +1795,7 @@ hover:border-cyan-500/30 hover:shadow-[0_0_18px_rgba(34,211,238,0.10)]">
                 <button
                   type="button"
                   onClick={() => setFeedbackType("NEGATIVE")}
-                  className={`text-xs px-2 py-1 rounded border transition-all cursor-pointer ${
+                  className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-1 rounded border transition-all cursor-pointer ${
                     feedbackType === "NEGATIVE"
                       ? "bg-rose-500/20 border-rose-500/40 text-rose-400 font-semibold"
                       : "border-slate-800 text-slate-500 hover:text-slate-300"
