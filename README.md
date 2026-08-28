@@ -295,6 +295,25 @@ Stellar Shield includes a responsive mobile interface designed to preserve the c
 
 The screenshots below demonstrate the responsive dashboard and transaction experience on mobile viewport sizes.
 
+#### 📱 Mobile Wallet Connection Options
+
+When Freighter is selected on a mobile device, Stellar Shield presents a dedicated wallet-choice interface for mobile users.
+
+The interface provides:
+
+- **Freighter Mobile** — opens the official Freighter mobile wallet option.
+- **Browser Extension** — provides access to the Freighter browser-extension option for supported desktop browsers.
+
+This keeps the mobile onboarding flow clear while avoiding any misleading simulated wallet connection.
+
+<p align="center">
+  <img
+    src="docs/images/mobile_freighter_options.png"
+    alt="Stellar Shield Mobile Freighter Connection Options"
+    width="350"
+  />
+</p>
+
 <table>
   <tr>
     <td align="center" valign="top">
