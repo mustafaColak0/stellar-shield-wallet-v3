@@ -220,22 +220,24 @@ Follow these steps to run the project locally on your machine:
 
 2. Multi-Asset Transfer Engine with Compliance Filters
    The transfer panel supports real Stellar Testnet XLM, USDC, and EURC transfers through Freighter and Horizon. Issued-asset transfers validate the configured issuer, source balance, and required trustlines before signing. The interface also includes compliance-oriented status panels, integrated quick contacts, security confirmation, and the transaction signing workflow:
-   <img width="1918" height="876" alt="transfer2" src="https://github.com/user-attachments/assets/43b7ae37-7d09-40a3-b898-143e9f2d9036" />
-   <img width="423" height="377" alt="sorobanauthmatrix" src="https://github.com/user-attachments/assets/a4063688-8369-4caa-9e2f-08d0788ba859" />
-   <img width="845" height="503" alt="transfer_enforced" src="https://github.com/user-attachments/assets/5d5bb9ba-56a0-4eb6-8bcd-751bdb10152d" />
+<img width="797" height="605" alt="soroban_auth_matrix" src="https://github.com/user-attachments/assets/3b0ec7e4-fb7c-489c-ac60-ac5b56b05049" />
+<img width="795" height="587" alt="multi_asset_transfer_usdc" src="https://github.com/user-attachments/assets/2cc19750-1b68-4e7f-af47-a050f35c0556" />
+<img width="1537" height="857" alt="transfer_overview" src="https://github.com/user-attachments/assets/9ede92f4-19c1-4ab2-baa7-a014ce527d83" />
    <img width="100%" src="docs/images/XLM_Transfer.png" alt="Real Stellar Testnet XLM Transfer"/>
    <img width="100%" src="docs/images/USDC_Transfer.png" alt="Real Stellar Testnet USDC Transfer"/>
    <img width="100%" src="docs/images/EURC_Transfer.png" alt="Real Stellar Testnet EURC Transfer"/>
 
 3. Dynamic QR Code Peer-to-Peer Payment Request Engine
    A real-time payment address sharing layout that generates a high-contrast QR code corresponding to the connected user's public key, with optional amount and memo fields:
-   <img width="1918" height="861" alt="qrkod2" src="https://github.com/user-attachments/assets/3cb5ae92-b2a2-44d5-8f06-80d5f5d80300" />
+  <img width="462" height="670" alt="qr_payment_request" src="https://github.com/user-attachments/assets/e8cdc46b-8786-4497-93b9-fafc964c52fd" />
+
 
 4. Level 2 Security Audit & Soroban Interaction Matrix
    The centralized security-oriented sandbox showing audit simulations, cryptographic signing states, transaction monitoring, and exception / abort test handlers:
-   <img width="1918" height="862" alt="security_autdit_empty" src="https://github.com/user-attachments/assets/27a5100c-71e1-406b-84c2-b7d95b3084dd" />
+   <img width="1486" height="867" alt="security_audit_center" src="https://github.com/user-attachments/assets/403c14c1-d925-4109-b685-ab3d9aa75564" />
 
-   #### Loading & Error Handling Proofs
+
+## Loading & Error Handling Proofs
 
 Stellar Shield provides visible runtime loading states and graceful failure handling for both simulated wallet exceptions and real Stellar network interruptions.
 
@@ -261,13 +263,14 @@ Stellar Shield provides visible runtime loading states and graceful failure hand
 
 6. Integrated Address Book for Verified Test Accounts
    A local registry allowing users to manage, save, and launch quick-transfer workflows directly to saved Stellar wallet addresses:
-   <img width="1918" height="863" alt="adressbook2" src="https://github.com/user-attachments/assets/4728197a-e93b-4d24-8bd8-cc3f5d34488b" />
+  <img width="767" height="596" alt="address_book" src="https://github.com/user-attachments/assets/5ea2cc3c-c505-46e5-ae53-b7e08e550bbc" />
+
 
 7. Verified Transaction History
    A wallet-specific transaction-history interface that provides real transaction hashes, verified and unverified status indicators, Stellar Expert verification links, Soroban interaction labels, destination and transaction-hash search, date-based filters, wallet-specific persistence, and CSV export functionality.
+<img width="732" height="856" alt="transaction_history_hashes" src="https://github.com/user-attachments/assets/0eea9a15-88c9-4450-bcd5-7725a97437e4"/>
+<img width="727" height="767" alt="transaction_history_explorer_links" src="https://github.com/user-attachments/assets/98b364e6-24f4-4a5b-9d91-f2669a850be5" />
 
-   <img width="1912" height="863" alt="Transaction History 2" src="https://github.com/user-attachments/assets/c1704740-fa60-474b-9c6a-6de623887d84" />
-   <img width="881" height="312" alt="transaction_history_process" src="https://github.com/user-attachments/assets/6766b6f6-642f-40c4-86b5-dee11bb8c7ff" />
 
 8. Automated CI/CD Pipeline & Smart Contract Unit Tests (Level 3 Core Requirement)
    Proof of the GitHub Actions workflow execution. The pipeline compiles the repository, executes Soroban unit tests, validates the frontend build, and reports the workflow result:
