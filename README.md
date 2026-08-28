@@ -215,8 +215,6 @@ Follow these steps to run the project locally on your machine:
 1. Wallet Connected State & Live Dashboard (Dashboard Overview)
    Proof of successful Freighter wallet connection showing the active Testnet account, real XLM balance, live Stellar network metrics, base fee, network capacity, ledger close time, Soroban inclusion fee, protocol version, and the dynamic asset flow chart:
 <img width="1916" height="852" alt="dashboard_overview" src="https://github.com/user-attachments/assets/1f16e410-3a78-4689-bf5f-263ba4f930b7" />
-<img width="350" height="775" alt="dashboard_mobile" src="https://github.com/user-attachments/assets/96b9f6a2-27f6-4f43-8148-a57b5027df8d" />
-
 
 2. Multi-Asset Transfer Engine with Compliance Filters
    The transfer panel supports real Stellar Testnet XLM, USDC, and EURC transfers through Freighter and Horizon. Issued-asset transfers validate the configured issuer, source balance, and required trustlines before signing. The interface also includes compliance-oriented status panels, integrated quick contacts, security confirmation, and the transaction signing workflow:
