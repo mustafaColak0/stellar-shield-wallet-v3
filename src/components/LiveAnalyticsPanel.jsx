@@ -1121,65 +1121,130 @@ xl:-mx-3
   className="
     flex
     flex-col
-    lg:flex-row
-    lg:items-start
-    lg:justify-between
+    items-center
+    justify-center
     gap-4
 
     pb-4
     md:pb-6
     border-b
     border-slate-800
+
+    text-center
   "
 >
-  {/* LEFT Section */}
-  <div className="w-full flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-4 min-w-0 flex-1">
-    {/* ANALYTICS ICON */}
-    <div
+  
+{/* LEFT Section */}
+<div
+  className="
+    w-full
+
+    flex
+    flex-row
+    sm:flex-col
+
+    items-start
+    sm:items-center
+
+    justify-start
+    sm:justify-center
+
+    gap-3
+    min-w-0
+  "
+>
+  {/* ANALYTICS ICON */}
+  <div
+    className="
+      w-10
+      h-10
+      sm:w-12
+      sm:h-12
+
+      rounded-xl
+      border
+      border-emerald-500/20
+      bg-emerald-500/10
+
+      flex
+      items-center
+      justify-center
+
+      shrink-0
+    "
+  >
+    <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400 animate-pulse" />
+  </div>
+
+  {/* TITLE */}
+  <div
+    className="
+      min-w-0
+      flex-1
+      sm:flex-none
+      sm:w-full
+
+      flex
+      flex-col
+
+      items-start
+      sm:items-center
+
+      text-left
+      sm:text-center
+    "
+  >
+    <h2
       className="
-        w-12
-        h-12
-        rounded-xl
-        border
-        border-emerald-500/20
-        bg-emerald-500/10
+        text-base
+        sm:text-xl
+        font-bold
+        text-white
+        leading-tight
 
-        flex
-        items-center
-        justify-center
-
-        shrink-0
+        text-left
+        sm:text-center
       "
     >
-      <Activity className="w-5 h-5 text-emerald-400 animate-pulse" />
-    </div>
+      <span className="block">Live On-Chain</span>
+      <span className="block">Analytics &amp; User Validation</span>
+    </h2>
 
-    {/* TITLE */}
-    <div className="min-w-0 flex-1 text-center sm:text-left">
-      <h2 className="text-lg sm:text-xl font-bold text-white leading-tight text-center sm:text-left">
-        Live On-Chain Analytics & User Validation
-      </h2>
+    <p
+      className="
+        text-[10px]
+        sm:text-sm
+        text-slate-400
 
-      <p className="text-[11px] sm:text-sm text-slate-400 mt-1 max-w-2xl leading-relaxed text-center sm:text-left">
-        Real Stellar Testnet contract events, verified source wallets and hybrid
-        feedback.
-      </p>
-    </div>
+        mt-1
+        max-w-2xl
+
+        leading-relaxed
+
+        text-left
+        sm:text-center
+        sm:mx-auto
+      "
+    >
+      Real Stellar Testnet contract events, verified source wallets and hybrid
+      feedback.
+    </p>
   </div>
+</div>
 
   {/* RIGHT Section */}
   <div
     className="
-      flex
-      flex-col
-      items-end
-      gap-2
+  flex
+  flex-col
+  items-center
+  justify-center
+  gap-2
 
-      w-full
-      lg:w-auto
+  w-full
 
-      shrink-0
-    "
+  shrink-0
+"
   >
     {/* LIVE - DESKTOP RIGHT TOP */}
     <span
@@ -1215,16 +1280,16 @@ xl:-mx-3
 
     {/* NETWORK CONTROLS */}
     <div
-      className="
-        flex
-        flex-row
-        items-center
-        justify-end
-        gap-2
+     className="
+  flex
+  flex-row
+  items-center
+  justify-center
+  gap-2
 
-        w-full
-        lg:w-auto
-      "
+  w-full
+  sm:w-auto
+"
     >
       {/* SYNC NETWORK */}
       <button

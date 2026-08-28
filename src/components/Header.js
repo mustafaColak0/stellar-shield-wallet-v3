@@ -2848,21 +2848,24 @@ function Header({
       {/* MAIN CONTENT */}
       <div
         className="
-  p-3
-  sm:p-5
-  md:p-8
-  lg:p-12
-  min-w-0
-  w-full
-  max-w-5xl
-  mx-auto
-  flex-1
-  min-h-0
-  flex
-  flex-col
-  justify-start
-  overflow-y-auto
-"
+    p-3
+    sm:p-5
+    md:p-8
+    lg:p-12
+    min-w-0
+    w-full
+    max-w-5xl
+    mx-auto
+    flex-1
+    min-h-0
+    flex
+    flex-col
+    justify-start
+    overflow-y-auto
+    [scrollbar-width:none]
+    [-ms-overflow-style:none]
+    [&::-webkit-scrollbar]:hidden
+  "
       >
         {activeTab === "user-guide" ? (
           <div className="w-full min-h-[calc(100vh-6rem)]">
