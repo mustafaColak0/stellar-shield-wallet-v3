@@ -301,6 +301,8 @@ The screenshots below demonstrate the responsive dashboard and transaction exper
 
 <p align="center">
 
+<img width="350" height="775" alt="dashboard_mobile" src="https://github.com/user-attachments/assets/96b9f6a2-27f6-4f43-8148-a57b5027df8d" />
+
 <img width="300" src="docs/images/mobile_dashboard.png" alt="Stellar Shield Mobile Dashboard"/>
 
 <img
