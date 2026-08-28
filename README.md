@@ -345,7 +345,7 @@ StellarShield now includes a dedicated live analytics panel for external testing
 - **Unique User Validation:** Repeated interactions from the same wallet do not increase the verified unique wallet count.
 - **Current Verified Evidence Set:** 10 unique external tester wallets have been independently identified from real on-chain interaction evidence collected during testing.
 
-<img  width="700" src="docs/images/ten_users.png" alt="10 Verified External Tester Wallets"/>
+<img width="692" height="772" alt="11_user" src="https://github.com/user-attachments/assets/8285ece3-3a45-400f-b5cc-4f5f42ee6872" />
 
 ### 💬 Verified External Tester Feedback
 
