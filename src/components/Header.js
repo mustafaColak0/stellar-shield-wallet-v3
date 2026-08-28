@@ -1377,6 +1377,11 @@ function Header({
   useEffect(() => {
     const initWallet = async () => {
       try {
+        // Do not attempt browser-extension auto connection on mobile.
+        if (isMobileDevice()) {
+          return;
+        }
+
         const hasAccess = await checkConnection();
 
         if (!hasAccess) return;
@@ -1493,53 +1498,130 @@ function Header({
     }, 2000);
   };
 
+  // ============================================================
+  // FREIGHTER DEVICE / INSTALL ROUTING
+  // ============================================================
+
+  const FREIGHTER_CHROME_URL =
+    "https://chromewebstore.google.com/detail/freighter/bcacfldlkkdogcmkkibnjlakofdplcbk";
+
+  const FREIGHTER_ANDROID_URL =
+    "https://play.google.com/store/apps/details?id=org.stellar.freighterwallet";
+
+  const FREIGHTER_IOS_URL =
+    "https://apps.apple.com/us/app/freighter/id6743947720";
+
+  const isMobileDevice = () => {
+    if (typeof navigator === "undefined") return false;
+
+    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  };
+
+  const redirectToFreighter = () => {
+    if (typeof window === "undefined") return;
+
+    const userAgent = navigator.userAgent || "";
+
+    if (/Android/i.test(userAgent)) {
+      window.location.assign(FREIGHTER_ANDROID_URL);
+      return;
+    }
+
+    if (/iPhone|iPad|iPod/i.test(userAgent)) {
+      window.location.assign(FREIGHTER_IOS_URL);
+      return;
+    }
+
+    window.location.assign(FREIGHTER_CHROME_URL);
+  };
+
   const connectWallet = async (walletType) => {
     setLoading(true);
+
     try {
       if (walletType === "Freighter") {
+        // MOBILE:
+        // Browser extension does not run on normal mobile browsers.
+        // Send the user directly to the official Freighter mobile app.
+        if (isMobileDevice()) {
+          setLoading(false);
+          redirectToFreighter();
+          return;
+        }
+
+        // DESKTOP:
+        // Make sure the real Freighter extension actually exists
+        // before running our connection helper.
+        const freighterInstalled = await isConnected();
+
+        if (!freighterInstalled) {
+          setLoading(false);
+          redirectToFreighter();
+          return;
+        }
+
         const hasAccess = await checkConnection();
-        if (hasAccess) {
-          const key = await retrievePublicKey();
-          if (key) {
-            setPubKey(key);
-            setConnected(true);
-            setConnectedWalletType("Freighter");
-            const bal = await getBalance();
-            setBalance(bal);
-            const now = new Date().toLocaleTimeString("tr-TR", {
-              hour: "2-digit",
-              minute: "2-digit",
-            });
-            setBalanceData([
-              { time: "Introduction", balance: parseFloat(bal) },
-              { time: now, balance: parseFloat(bal) },
-            ]);
-          }
+
+        if (!hasAccess) {
+          setLoading(false);
+          return;
         }
-      } else {
-        if (walletType === "xBull") {
-          window.open(
-            "https://chromewebstore.google.com/detail/xbull-wallet/omajpeaffjgmlpmhbfdjepdejoemifpe",
-            "_blank",
-          );
-        } else if (walletType === "Albedo") {
-          window.open("https://albedo.link/signup", "_blank");
+
+        const key = await retrievePublicKey();
+
+        if (!key) {
+          setLoading(false);
+          return;
         }
-        setConnectedWalletType(walletType);
-        setTimeout(() => {
-          if (!connected) {
-            setLoading(false);
-            setConnectedWalletType(null);
-          }
-        }, 20000);
+
+        setPubKey(key);
+        setConnected(true);
+        setConnectedWalletType("Freighter");
+
+        const bal = await getBalance();
+
+        setBalance(bal);
+
+        const now = new Date().toLocaleTimeString("tr-TR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
+        setBalanceData([
+          { time: "Introduction", balance: parseFloat(bal) },
+          { time: now, balance: parseFloat(bal) },
+        ]);
+
         return;
       }
+
+      if (walletType === "xBull") {
+        window.open(
+          "https://chromewebstore.google.com/detail/xbull-wallet/omajpeaffjgmlpmhbfdjepdejoemifpe",
+          "_blank",
+        );
+      } else if (walletType === "Albedo") {
+        window.open("https://albedo.link/signup", "_blank");
+      }
+
+      setConnectedWalletType(walletType);
+
+      setTimeout(() => {
+        if (!connected) {
+          setLoading(false);
+          setConnectedWalletType(null);
+        }
+      }, 20000);
+
+      return;
     } catch (error) {
-      console.error(error);
+      console.error("Wallet connection error:", error);
       setLoading(false);
       setConnectedWalletType(null);
     } finally {
-      if (walletType === "Freighter") setLoading(false);
+      if (walletType === "Freighter") {
+        setLoading(false);
+      }
     }
   };
 
