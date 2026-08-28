@@ -766,6 +766,7 @@ function Header({
   const [loading, setLoading] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showFreighterOptions, setShowFreighterOptions] = useState(false);
+  const [simulationWalletType, setSimulationWalletType] = useState("");
   const [showAddressBook, setShowAddressBook] = useState(true);
   const [isSecurityChecked, setIsSecurityChecked] = useState(false);
   const [showSecurityCheck, setShowSecurityCheck] = useState(false);
@@ -1399,6 +1400,7 @@ function Header({
         setPubKey(key);
         setConnected(true);
         setConnectedWalletType("Freighter");
+        setSimulationWalletType("");
 
         const bal = await getBalance();
 
@@ -1563,6 +1565,7 @@ function Header({
         if (isMobileDevice()) {
           setLoading(false);
           setConnectedWalletType("");
+          setSimulationWalletType("Freighter");
           setShowFreighterOptions(true);
           return;
         }
@@ -1578,6 +1581,7 @@ function Header({
         if (!freighterInstalled) {
           setLoading(false);
           setConnectedWalletType("");
+          setSimulationWalletType("Freighter");
           openFreighterExtension();
           return;
         }
@@ -1602,6 +1606,7 @@ function Header({
         setPubKey(key);
         setConnected(true);
         setConnectedWalletType("Freighter");
+        setSimulationWalletType("");
 
         const bal = await getBalance();
 
@@ -1651,11 +1656,13 @@ function Header({
       }
 
       setConnectedWalletType(walletType);
+      setSimulationWalletType(walletType);
 
       setTimeout(() => {
         if (!connected) {
           setLoading(false);
           setConnectedWalletType("");
+          setSimulationWalletType("");
         }
       }, 20000);
 
@@ -3318,38 +3325,65 @@ function Header({
               </div>
             )}
 
-            {loading && connectedWalletType !== "Freighter" && (
+            {simulationWalletType && !connected && (
               <div className="text-center mt-6 bg-slate-900/50 p-6 rounded-xl border border-slate-800 max-w-md mx-auto flex flex-col gap-4">
-                <p className="text-sm text-slate-400 animate-pulse">
-                  {connectedWalletType} connection opened in a separate tab.
+                <p className="text-sm text-slate-400">
+                  {simulationWalletType === "Freighter"
+                    ? "Freighter connection is unavailable on this browser. You can continue in simulation mode."
+                    : `${simulationWalletType} connection opened in a separate tab.`}
                 </p>
+
                 <button
+                  type="button"
                   onClick={() => {
+                    const mockKeys = {
+                      Freighter: "GBFREIGHTERSIMULATIONTESTNETWALLET",
+                      xBull: "GBXBULL1234567890XBULLTESTNETSECRETKEY",
+                      Albedo: "GBALBEDO0987654321ALBEDOTESTNETSECRETKEY",
+                    };
+
                     const mockKey =
-                      connectedWalletType === "xBull"
-                        ? "GBXBULL1234567890XBULLTESTNETSECRETKEY"
-                        : "GBALBEDO0987654321ALBEDOTESTNETSECRETKEY";
+                      mockKeys[simulationWalletType] ||
+                      "GBWALLETSIMULATIONTESTNET";
+
                     setPubKey(mockKey);
+
+                    setConnectedWalletType(simulationWalletType);
+
                     setConnected(true);
+
                     setBalance("10000.0000");
+
                     const now = new Date().toLocaleTimeString("tr-TR", {
                       hour: "2-digit",
                       minute: "2-digit",
                     });
+
                     setBalanceData([
-                      { time: "Start", balance: 10000 },
-                      { time: now, balance: 10000 },
+                      {
+                        time: "Start",
+                        balance: 10000,
+                      },
+                      {
+                        time: now,
+                        balance: 10000,
+                      },
                     ]);
+
                     setLoading(false);
+                    setSimulationWalletType("");
                   }}
                   className="text-xs bg-cyan-600 hover:bg-cyan-500 text-white font-medium px-4 py-2.5 rounded-lg transition-all shadow-lg shadow-cyan-600/20 mx-auto"
                 >
-                  {connectedWalletType} Simulation Continue →
+                  {simulationWalletType} Simulation Continue →
                 </button>
+
                 <button
+                  type="button"
                   onClick={() => {
                     setLoading(false);
-                    setConnectedWalletType(null);
+                    setConnectedWalletType("");
+                    setSimulationWalletType("");
                   }}
                   className="text-sm text-slate-400 hover:text-white underline block mx-auto"
                 >
