@@ -14,7 +14,8 @@ The project focuses on transparent verification: supported transactions expose t
 
 > **Live Demo (Vercel):** [🚀 Click Here to Open Live App](https://stellar-shield-wallet-v3-puce.vercel.app/)
 
-> 💡 **Want to see the full, uncut workflow?** > If you would like to watch the complete step-by-step wallet connection, multi-asset transfer processes, and live network confirmations in full detail, you can watch our comprehensive video here:  
+> 💡 **Want to see the full, uncut workflow?**  
+> If you would like to watch the complete step-by-step wallet connection, multi-asset transfer processes, and live network confirmations in full detail, you can watch our comprehensive video here: 
 >  👉 **[Click Here to Watch the Full Detailed Project Demo Video](https://drive.google.com/file/d/1Zzi0ePz9l-t_eatqX5D8_e62atrYPNhD/view)**
 
 ---
@@ -65,16 +66,13 @@ The project focuses on transparent verification: supported transactions expose t
 
 ---
 
-🪙 Configured Stellar Testnet Assets
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++|
-Asset | Type | Issuer |
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++|
-XLM | Native | Native |
-----------------------------------------------------------------------------------------|
-USDC | credit_alphanum4 | GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5|
-----------------------------------------------------------------------------------------|
-EURC | credit_alphanum4 | GB3Q6QDZYTHWT7E5PVS3W7FUT5GVAFC5KSZFFLPU25GO7VTC3NM2ZTVO|
-----------------------------------------------------------------------------------------|
+## 🪙 Configured Stellar Testnet Assets
+
+| Asset | Type | Issuer |
+|---|---|---|
+| **XLM** | Native | Native |
+| **USDC** | `credit_alphanum4` | `GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5` |
+| **EURC** | `credit_alphanum4` | `GB3Q6QDZYTHWT7E5PVS3W7FUT5GVAFC5KSZFFLPU25GO7VTC3NM2ZTVO` |
 
 > USDC and EURC transfers require the correct Testnet trustline on both the sender and recipient account.
 
@@ -280,7 +278,7 @@ A feedback and status verification module integrated with smart contracts runnin
 - **Create Feedback:** Records feedback through the create_feedback contract function.
 - **On-Chain Verification:** Displays confirmed transaction hashes and network validation status for supported contract interactions.
 - **Verified Tester Analytics:** Separates real external tester activity from developer activity and provides a dedicated Testers feedback filter.
-- **Unique Wallet Tracking:** Counts verified external wallets toward the testing target while excluding the developer wallet.
+- **Unique Wallet Tracking:** Counts verified external wallets toward the testing target while excluding developer wallets.
 - **Retention-Aware Recovery:** Previously verified historical transactions can be merged with recent RPC results when older Testnet events fall outside the RPC retention window.
 
 <img width="1918" height="862" alt="feedback" src="https://github.com/user-attachments/assets/a6f19c87-54cb-49e4-810f-6ad74224ec7d" />
@@ -296,11 +294,7 @@ The screenshots below demonstrate the responsive dashboard and transaction exper
 
 <p align="center">
 
-<img
-    src="docs/images/mobile_dashboard.png"
-    alt="Stellar Shield Mobile Dashboard"
-    width="300"
-  />
+<img width="300" src="docs/images/mobile_dashboard.png" alt="Stellar Shield Mobile Dashboard"/>
 
 <img
     src="docs/images/mobile_transfer.png"
@@ -316,7 +310,7 @@ The screenshots below demonstrate the responsive dashboard and transaction exper
 
 <img
     src="docs/images/mobile_feedback.png"
-    alt="Stellar Shield Mobile Address Book"
+    alt="Stellar Shield Mobile Feedback"
     width="300"
   />
 
