@@ -15,62 +15,62 @@ The project focuses on transparent verification: supported transactions expose t
 > **Live Demo (Vercel):** [🚀 Click Here to Open Live App](https://stellar-shield-wallet-v3-puce.vercel.app/)
 
 > 💡 **Want to see the full, uncut workflow?**  
-> If you would like to watch the complete step-by-step wallet connection, multi-asset transfer processes, and live network confirmations in full detail, you can watch our comprehensive video here: 
->  👉 **[Click Here to Watch the Full Detailed Project Demo Video](https://drive.google.com/file/d/1Zzi0ePz9l-t_eatqX5D8_e62atrYPNhD/view)**
+> If you would like to watch the complete step-by-step wallet connection, multi-asset transfer processes, and live network confirmations in full detail, you can watch our comprehensive video here:
+> 👉 **[Click Here to Watch the Full Detailed Project Demo Video](https://drive.google.com/file/d/1Zzi0ePz9l-t_eatqX5D8_e62atrYPNhD/view)**
 
 ---
 
 ## 🚀 Features
 
-* 🔐 **Freighter Wallet Integration:** Connects to the active Freighter account, restores the connected wallet on refresh, and synchronizes real Stellar Testnet balances.
+- 🔐 **Freighter Wallet Integration:** Connects to the active Freighter account, restores the connected wallet on refresh, and synchronizes real Stellar Testnet balances.
 
-* 💸 **Real Multi-Asset Transfers — XLM / USDC / EURC:** Builds, signs, and submits real Stellar Classic payment operations through Freighter + Horizon. USDC and EURC transfers validate the exact Testnet issuer and require valid trustlines on both source and destination accounts.
+- 💸 **Real Multi-Asset Transfers — XLM / USDC / EURC:** Builds, signs, and submits real Stellar Classic payment operations through Freighter + Horizon. USDC and EURC transfers validate the exact Testnet issuer and require valid trustlines on both source and destination accounts.
 
-* 🪙 **Live Multi-Asset Balance Sync:** Reads the connected account directly from Horizon and synchronizes native XLM plus the configured USDC and EURC trustline balances.
+- 🪙 **Live Multi-Asset Balance Sync:** Reads the connected account directly from Horizon and synchronizes native XLM plus the configured USDC and EURC trustline balances.
 
-* ✅ **Verified Transaction History:** Successful Classic transfers are stored with the real Horizon transaction hash and verifiedOnChain: true. Explorer links are only enabled for verified 64-character Stellar transaction hashes; legacy/local records remain clearly marked as UNVERIFIED.
+- ✅ **Verified Transaction History:** Successful Classic transfers are stored with the real Horizon transaction hash and verifiedOnChain: true. Explorer links are only enabled for verified 64-character Stellar transaction hashes; legacy/local records remain clearly marked as UNVERIFIED.
 
-* 📤 **Transaction History CSV Export:** Exports the currently visible transaction-history results while respecting active search and date filters.
+- 📤 **Transaction History CSV Export:** Exports the currently visible transaction-history results while respecting active search and date filters.
 
-* ⚡ **Soroban create_feedback Interaction:** Builds, prepares, signs, submits, retries, and confirms Soroban Testnet transactions through Stellar RPC.
+- ⚡ **Soroban create_feedback Interaction:** Builds, prepares, signs, submits, retries, and confirms Soroban Testnet transactions through Stellar RPC.
 
-* 🧠 **Soroban Transaction Reliability:** Uses prepareTransaction, fresh account sequence reads, retry handling for temporary network congestion, txBadSeq rebuild protection, and final ledger-confirmation polling before the UI reports success.
+- 🧠 **Soroban Transaction Reliability:** Uses prepareTransaction, fresh account sequence reads, retry handling for temporary network congestion, txBadSeq rebuild protection, and final ledger-confirmation polling before the UI reports success.
 
-* 🔗 **Verified Soroban History:** Confirmed Soroban operations now persist their real RPC transaction hash in Transaction History. Fake/fallback transaction hashes are not treated as verified blockchain proof.
+- 🔗 **Verified Soroban History:** Confirmed Soroban operations now persist their real RPC transaction hash in Transaction History. Fake/fallback transaction hashes are not treated as verified blockchain proof.
 
-* 🟢 **Live Broadcast Success UI:** Displays confirmed transaction hashes after successful on-chain operations and provides Stellar Expert links only for records that passed the application's verification guard.
+- 🟢 **Live Broadcast Success UI:** Displays confirmed transaction hashes after successful on-chain operations and provides Stellar Expert links only for records that passed the application's verification guard.
 
-* 📊 **Live Stellar Network Metrics:** Refreshes every 15 seconds and displays the current base fee, network capacity usage, average ledger close time, Soroban inclusion fee (p50), protocol version, and a derived OPTIMAL / BUSY / CONGESTED dashboard status.
- 
-* 👥 **Verified User Analytics:** Tracks real fb_live on-chain interactions, deduplicates wallets, excludes both legacy and current developer wallets from the external tester count, and merges live RPC activity with previously verified historical records when older events leave the active RPC retention window.
+- 📊 **Live Stellar Network Metrics:** Refreshes every 15 seconds and displays the current base fee, network capacity usage, average ledger close time, Soroban inclusion fee (p50), protocol version, and a derived OPTIMAL / BUSY / CONGESTED dashboard status.
 
-* 💬 **Tester Feedback Filter:** Separates verified external tester feedback from developer/demo activity so real tester comments can be reviewed independently.
+- 👥 **Verified User Analytics:** Tracks real fb_live on-chain interactions, deduplicates wallets, excludes both legacy and current developer wallets from the external tester count, and merges live RPC activity with previously verified historical records when older events leave the active RPC retention window.
 
-* 🧾 **Wallet-Specific Persistent Transaction History:** Stores history under a wallet-specific localStorage key so different Freighter accounts in the same browser do not share transaction records. Includes All, Today, This Week, and This Month filters plus search by destination or transaction hash.
+- 💬 **Tester Feedback Filter:** Separates verified external tester feedback from developer/demo activity so real tester comments can be reviewed independently.
 
-* 🔲 **Dynamic QR Payment Request:** Generates Stellar payment QR codes from the connected public key with optional numeric amount and sanitized memo fields.
+- 🧾 **Wallet-Specific Persistent Transaction History:** Stores history under a wallet-specific localStorage key so different Freighter accounts in the same browser do not share transaction records. Includes All, Today, This Week, and This Month filters plus search by destination or transaction hash.
 
-* 📇 **Validated Address Book:** Prevents duplicate contact names and duplicate wallet addresses and supports quick-transfer workflows.
+- 🔲 **Dynamic QR Payment Request:** Generates Stellar payment QR codes from the connected public key with optional numeric amount and sanitized memo fields.
 
-* 🛡️ **Security Audit & Confirmation UI:** Includes security-oriented confirmation flows, simulated audit/error scenarios, and explicit user approval before signing sensitive actions.
+- 📇 **Validated Address Book:** Prevents duplicate contact names and duplicate wallet addresses and supports quick-transfer workflows.
 
-* 🛑 **Network-Aware Error Handling:** Handles rejected signatures, temporary Soroban RPC conditions, failed contract execution, sequence synchronization, delayed confirmations, Horizon transaction result codes, missing trustlines, insufficient balances, and invalid destinations.
+- 🛡️ **Security Audit & Confirmation UI:** Includes security-oriented confirmation flows, simulated audit/error scenarios, and explicit user approval before signing sensitive actions.
 
-* 🌗 **Dark / Light Theme:** Provides a cyber-styled dark dashboard and a high-contrast light interface.
+- 🛑 **Network-Aware Error Handling:** Handles rejected signatures, temporary Soroban RPC conditions, failed contract execution, sequence synchronization, delayed confirmations, Horizon transaction result codes, missing trustlines, insufficient balances, and invalid destinations.
 
-* 📈 **Asset Flow Chart:** Recharts visualization synchronized with real Testnet balance refreshes after supported transactions.
+- 🌗 **Dark / Light Theme:** Provides a cyber-styled dark dashboard and a high-contrast light interface.
 
-* 📘 **Integrated User Guide:** In-app guidance for connecting Freighter, using the transfer engine, interacting with the Soroban contract, verifying transactions, and obtaining Testnet assets. The guide can be accessed before completing the full wallet workflow.
+- 📈 **Asset Flow Chart:** Recharts visualization synchronized with real Testnet balance refreshes after supported transactions.
 
-* 📏 **Responsive Dashboard Layout:** Responsive layouts, interactive cards, status panels, and locally built Tailwind CSS transitions designed for a consistent Web3 dashboard experience.
+- 📘 **Integrated User Guide:** In-app guidance for connecting Freighter, using the transfer engine, interacting with the Soroban contract, verifying transactions, and obtaining Testnet assets. The guide can be accessed before completing the full wallet workflow.
+
+- 📏 **Responsive Dashboard Layout:** Responsive layouts, interactive cards, status panels, and locally built Tailwind CSS transitions designed for a consistent Web3 dashboard experience.
 
 ---
 
 ## 🪙 Configured Stellar Testnet Assets
 
-| Asset | Type | Issuer |
-|---|---|---|
-| **XLM** | Native | Native |
+| Asset    | Type               | Issuer                                                     |
+| -------- | ------------------ | ---------------------------------------------------------- |
+| **XLM**  | Native             | Native                                                     |
 | **USDC** | `credit_alphanum4` | `GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5` |
 | **EURC** | `credit_alphanum4` | `GB3Q6QDZYTHWT7E5PVS3W7FUT5GVAFC5KSZFFLPU25GO7VTC3NM2ZTVO` |
 
@@ -234,6 +234,25 @@ Follow these steps to run the project locally on your machine:
    The centralized security-oriented sandbox showing audit simulations, cryptographic signing states, transaction monitoring, and exception / abort test handlers:
    <img width="1918" height="862" alt="security_autdit_empty" src="https://github.com/user-attachments/assets/27a5100c-71e1-406b-84c2-b7d95b3084dd" />
 
+   #### Loading & Error Handling Proofs
+
+Stellar Shield provides visible runtime loading states and graceful failure handling for both simulated wallet exceptions and real Stellar network interruptions.
+
+- **Loading State:** The Security Audit Center displays an active `SCANNING LEDGER...` state while the audit process is running.
+- **Wallet Rejection Simulation:** The `REJECT 401` test validates the UI and exception-handler response to a rejected wallet signature. This test is explicitly simulation-only and does not broadcast a transaction.
+- **Insufficient Balance Simulation:** The `BALANCE 402` test validates the application's failure-state UI for insufficient-balance scenarios. This test is explicitly simulation-only.
+- **Real Network Failure Handling:** When Stellar Testnet endpoints become unreachable, the dashboard falls back to an `UNAVAILABLE` network state instead of crashing.
+
+<p align="center">
+  <img width="48%" src="docs/images/loading_state.png" alt="Stellar Shield Loading State"/>
+  <img width="48%" src="docs/images/network_unavailable.png" alt="Stellar Shield Network Unavailable State"/>
+</p>
+
+<p align="center">
+  <img width="48%" src="docs/images/reject_401_error.png" alt="Stellar Shield Wallet Rejection Simulation"/>
+  <img width="48%" src="docs/images/balance_402_error.png" alt="Stellar Shield Insufficient Balance Simulation"/>
+</p>
+
 5. Soroban Contract Interface & Emitted Event Timeline
    The Soroban interaction panel contains a crowdfunding-style demonstration interface, cryptographically signed `create_feedback` contract interactions, transaction confirmation states, and live contract event visualization:
    <img width="886" height="700" alt="security_audit_deposit" src="https://github.com/user-attachments/assets/edbbb585-91fc-4e0b-93b5-b70b9ad23c14" />
@@ -244,7 +263,7 @@ Follow these steps to run the project locally on your machine:
    <img width="1918" height="863" alt="adressbook2" src="https://github.com/user-attachments/assets/4728197a-e93b-4d24-8bd8-cc3f5d34488b" />
 
 7. Verified Transaction History
-   A wallet-specific transaction-history interface that provides real transaction hashes, verified and unverified status indicators, Stellar Expert verification links, Soroban interaction labels, destination and transaction-hash search,      date-based filters, wallet-specific persistence, and CSV export functionality.
+   A wallet-specific transaction-history interface that provides real transaction hashes, verified and unverified status indicators, Stellar Expert verification links, Soroban interaction labels, destination and transaction-hash search, date-based filters, wallet-specific persistence, and CSV export functionality.
 
    <img width="1912" height="863" alt="Transaction History 2" src="https://github.com/user-attachments/assets/c1704740-fa60-474b-9c6a-6de623887d84" />
    <img width="881" height="312" alt="transaction_history_process" src="https://github.com/user-attachments/assets/6766b6f6-642f-40c4-86b5-dee11bb8c7ff" />
