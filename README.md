@@ -244,21 +244,7 @@ Follow these steps to run the project locally on your machine:
    <img width="1918" height="863" alt="adressbook2" src="https://github.com/user-attachments/assets/4728197a-e93b-4d24-8bd8-cc3f5d34488b" />
 
 7. Verified Transaction History
-
-   The wallet-specific transaction-history interface includes:
-
-- Real transaction hashes
-- Verified / unverified status
-- Stellar Expert verification links
-- Soroban interaction labels
-- Destination search
-- Transaction hash search
-- All filter
-- Today filter
-- This Week filter
-- This Month filter
-- Wallet-specific persistence
-- CSV export
+   A wallet-specific transaction-history interface that provides real transaction hashes, verified and unverified status indicators, Stellar Expert verification links, Soroban interaction labels, destination and transaction-hash search,      date-based filters, wallet-specific persistence, and CSV export functionality.
 
    <img width="1912" height="863" alt="Transaction History 2" src="https://github.com/user-attachments/assets/c1704740-fa60-474b-9c6a-6de623887d84" />
    <img width="881" height="312" alt="transaction_history_process" src="https://github.com/user-attachments/assets/6766b6f6-642f-40c4-86b5-dee11bb8c7ff" />
