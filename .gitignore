@@ -5,3 +5,5 @@ build/
 .DS_Store
 # Git backup bundles
 *.bundle
+.vercel
+.env*.local

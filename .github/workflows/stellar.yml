@@ -1,4 +1,4 @@
-name: Stellar Soroban CI
+name: Stellar Soroban CI/CD
 
 on:
   push:
@@ -8,6 +8,7 @@ on:
 
 jobs:
   build-and-test:
+    name: Smart Contract CI
     runs-on: ubuntu-latest
 
     steps:
@@ -23,3 +24,23 @@ jobs:
         run: |
           cd anonymousFeedbackSmartContract
           cargo test
+
+  frontend-ci:
+    name: Frontend CI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install frontend dependencies
+        run: npm install --force
+
+      - name: Build frontend
+        run: npm run build

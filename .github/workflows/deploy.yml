@@ -1,0 +1,92 @@
+name: Stellar Shield Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+    inputs:
+      deploy_contract:
+        description: "Deploy a new Soroban contract instance to Testnet"
+        required: true
+        default: false
+        type: boolean
+
+jobs:
+  deploy-frontend:
+    name: Deploy Frontend to Vercel
+    runs-on: ubuntu-latest
+
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel configuration
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build frontend for Vercel
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy frontend to production
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+  deploy-contract:
+    name: Deploy Soroban Contract to Testnet
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.deploy_contract == true }}
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: anonymousFeedbackSmartContract
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32v1-none
+
+      - name: Setup Stellar CLI
+        uses: stellar/stellar-cli@v23.0.1
+
+      - name: Build Soroban contract
+        run: |
+          mkdir -p artifacts
+          stellar contract build --out-dir artifacts
+
+      - name: Locate contract WASM
+        id: wasm
+        shell: bash
+        run: |
+          WASM_FILE=$(find artifacts -maxdepth 1 -name "*.wasm" | head -n 1)
+
+          if [ -z "$WASM_FILE" ]; then
+            echo "No WASM contract found."
+            exit 1
+          fi
+
+          echo "file=$WASM_FILE" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy contract to Stellar Testnet
+        env:
+          STELLAR_DEPLOYER_SECRET: ${{ secrets.STELLAR_DEPLOYER_SECRET }}
+        run: |
+          stellar contract deploy \
+            --wasm "${{ steps.wasm.outputs.file }}" \
+            --source-account "$STELLAR_DEPLOYER_SECRET" \
+            --network testnet
