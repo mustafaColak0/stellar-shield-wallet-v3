@@ -139,6 +139,18 @@ const RECOVERED_VERIFIED_LOGS = [
     feedbackType: "POSITIVE",
     rating: 5,
   },
+  {
+    eventId: "recovered-gbuaon5hmiv2ysicie7xhpn2dcn7jvkithu64h7febnbru7fhustd547-20260822184847",
+    fullWallet: "GBUAON5HMIV2YSICIE7XHPN2DCN7JVKITHU64H7FEBNBRU7FHUSTD547",
+    wallet: "GBUAO...D547",
+    action: "fb_live",
+    status: "Confirmed",
+    timestamp: "2026-08-22T18:48:47Z",
+    txHash: "recovered-tx-gbuaon5hmiv2ysicie7xhpn2dcn7jvkithu64h7febnbru7fhustd547",
+    payload: "I love the product, but i think u can do better on ui/ux",
+    feedbackType: "POSITIVE",
+    rating: 5,
+  },
 ];
 
 // LocalStorage key (for storing off-chain comments in the browser)
