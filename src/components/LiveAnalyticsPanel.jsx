@@ -1422,9 +1422,9 @@ after:pointer-events-none hover:after:w-[82%]">
             <span className="text-2xl sm:text-3xl font-extrabold text-white leading-none">
               {verifiedUsersCount}
             </span>
-            <span className={`text-xs font-medium ${verifiedUsersCount >= 20 ? "text-emerald-400" : "text-amber-400"}`}>
-              {verifiedUsersCount >= 20 ? "20+ target reached ✓" : `${verifiedUsersCount}/20 target`}
-            </span>
+          <span className={`text-xs font-medium ${verifiedUsersCount >= 50 ? "text-emerald-400" : "text-amber-400"}`}>
+  {verifiedUsersCount >= 50 ? "50+ target reached ✓" : `${verifiedUsersCount}/50 target`}
+</span>
           </div>
           <div className="mt-1.5 sm:mt-2 text-[9px] sm:text-[11px] text-slate-400 leading-relaxed">
             Unique wallets verified from real Soroban transactions
